@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALDT – Advanced Land Development Tools</title>
+  <meta name="description" content="Civil 3D automation tools for land development. Eliminate repetitive workflows with ALDT's professional plugin suite for AutoCAD Civil 3D 2026." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════
+       NAVIGATION
+  ══════════════════════════════════════ -->
+  <nav class="nav" aria-label="Main navigation">
+    <div class="container nav__inner">
+      <a href="#" class="nav__logo">
+        <!-- Logo Icon: pipe elbow -->
+        <svg class="nav__logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="rgba(0,191,255,0.1)"/>
+          <path d="M8 24 L8 16 Q8 10 14 10 L24 10" stroke="#00BFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="8" cy="24" r="2.5" fill="#00BFFF"/>
+          <circle cx="24" cy="10" r="2.5" fill="#FF6B2B"/>
+          <circle cx="8" cy="16" r="1.5" fill="rgba(0,191,255,0.5)"/>
+        </svg>
+        ALDT
+      </a>
+
+      <ul class="nav__links" role="list">
+        <li><a href="#tools">Tools</a></li>
+        <li><a href="#workflow">How It Works</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#download" class="btn btn--warm nav__cta">Download</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════
+       HERO
+  ══════════════════════════════════════ -->
+  <section class="hero" id="home" aria-label="Hero">
+
+    <!-- Animated pipe network background -->
+    <div class="hero__bg">
+      <svg id="hero-pipes" viewBox="0 0 1440 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+        <!-- Horizontal mains -->
+        <line class="pipe-line" x1="0"    y1="160" x2="1440" y2="160" stroke="#00BFFF" stroke-width="1.5"/>
+        <line class="pipe-line" x1="0"    y1="400" x2="1440" y2="400" stroke="#00BFFF" stroke-width="1.5"/>
+        <line class="pipe-line" x1="0"    y1="640" x2="1440" y2="640" stroke="#00BFFF" stroke-width="1"/>
+
+        <!-- Vertical laterals -->
+        <line class="pipe-line" x1="240"  y1="0"   x2="240"  y2="800" stroke="#00BFFF" stroke-width="1"/>
+        <line class="pipe-line" x1="560"  y1="0"   x2="560"  y2="800" stroke="#00BFFF" stroke-width="1"/>
+        <line class="pipe-line" x1="880"  y1="0"   x2="880"  y2="800" stroke="#00BFFF" stroke-width="1"/>
+        <line class="pipe-line" x1="1200" y1="0"   x2="1200" y2="800" stroke="#00BFFF" stroke-width="1"/>
+
+        <!-- Diagonal cross-pipes -->
+        <line class="pipe-line" x1="0"    y1="0"   x2="400"  y2="400" stroke="#FF6B2B" stroke-width="1"/>
+        <line class="pipe-line" x1="1440" y1="0"   x2="1040" y2="400" stroke="#FF6B2B" stroke-width="1"/>
+        <line class="pipe-line" x1="400"  y1="400" x2="720"  y2="800" stroke="#FF6B2B" stroke-width="0.8"/>
+        <line class="pipe-line" x1="1040" y1="400" x2="720"  y2="800" stroke="#FF6B2B" stroke-width="0.8"/>
+
+        <!-- Intersection nodes -->
+        <circle class="pipe-node" cx="240"  cy="160" r="4" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="560"  cy="160" r="4" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="880"  cy="160" r="4" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="1200" cy="160" r="4" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="240"  cy="400" r="5" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="560"  cy="400" r="5" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="880"  cy="400" r="5" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="1200" cy="400" r="5" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="240"  cy="640" r="3" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="560"  cy="640" r="3" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="880"  cy="640" r="3" fill="#00BFFF"/>
+        <circle class="pipe-node" cx="1200" cy="640" r="3" fill="#00BFFF"/>
+
+        <!-- Orange crossing markers -->
+        <circle class="pipe-node" cx="400"  cy="400" r="6" fill="#FF6B2B"/>
+        <circle class="pipe-node" cx="1040" cy="400" r="6" fill="#FF6B2B"/>
+        <circle class="pipe-node" cx="720"  cy="800" r="5" fill="#FF6B2B"/>
+      </svg>
+      <div class="hero__glow"></div>
+    </div>
+
+    <div class="container">
+      <div class="hero__content">
+        <div class="hero__eyebrow">
+          <span class="hero__eyebrow-dot"></span>
+          <span class="hero__eyebrow-text">Civil 3D 2026 &nbsp;·&nbsp; .NET 8 &nbsp;·&nbsp; v1.0</span>
+        </div>
+
+        <h1 class="hero__title">
+          Civil&nbsp;3D.<br>
+          <span class="line--accent">Automated.</span><br>
+          <span class="line--warm">Accelerated.</span>
+        </h1>
+
+        <p class="hero__subtitle">
+          Stop losing hours to repetitive Civil 3D tasks. ALDT's professional plugin suite automates surface profiles, pipe crossings, alignment deployments, and invert calculations — so you can focus on engineering, not clicks.
+        </p>
+
+        <div class="hero__actions">
+          <a href="#tools" class="btn btn--outline">Explore Tools</a>
+          <a href="#download" class="btn btn--primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Plugin
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero__scroll-hint" aria-hidden="true">
+      <span>Scroll</span>
+      <svg class="hero__scroll-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       TOOLS
+  ══════════════════════════════════════ -->
+  <section class="tools" id="tools" aria-label="Tools">
+    <div class="container">
+      <div class="tools__header">
+        <p class="section-label reveal">Command Suite</p>
+        <h2 class="reveal">Four commands.<br><span>One plugin.</span></h2>
+        <p class="reveal">Each tool targets the most time-consuming tasks in a land development workflow — from profile creation to pipe network analysis.</p>
+      </div>
+
+      <div class="tools__grid">
+
+        <!-- BULKSUR -->
+        <article class="tool-card">
+          <div class="tool-card__icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- Surface triangulation mesh -->
+              <polyline points="4,28 10,16 18,22 26,10 32,18" stroke="#00BFFF" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+              <polyline points="4,28 18,22 32,18" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
+              <polyline points="10,16 26,10" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
+              <line x1="10" y1="16" x2="18" y2="22" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
+              <line x1="18" y1="22" x2="26" y2="10" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
+              <!-- Profile view box at bottom -->
+              <rect x="4" y="30" width="28" height="4" rx="1" stroke="#FF6B2B" stroke-width="1" fill="none"/>
+              <line x1="12" y1="30" x2="12" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
+              <line x1="20" y1="30" x2="20" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
+              <line x1="28" y1="30" x2="28" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
+              <!-- Elevation points -->
+              <circle cx="4"  cy="28" r="2" fill="#00BFFF"/>
+              <circle cx="10" cy="16" r="2" fill="#00BFFF"/>
+              <circle cx="18" cy="22" r="2" fill="#00BFFF"/>
+              <circle cx="26" cy="10" r="2" fill="#00BFFF"/>
+              <circle cx="32" cy="18" r="2" fill="#00BFFF"/>
+            </svg>
+          </div>
+          <p class="tool-card__command">BULKSUR</p>
+          <h3 class="tool-card__name">Bulk Surface Profile Creator</h3>
+          <p class="tool-card__desc">Batch-creates surface profiles and profile views for multiple alignments simultaneously. Eliminate the repetitive one-by-one workflow and process entire project corridors in seconds.</p>
+        </article>
+
+        <!-- ALIGNDEPLOY -->
+        <article class="tool-card">
+          <div class="tool-card__icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- Main alignment path -->
+              <path d="M4 28 Q12 20 18 18 Q24 16 32 8" stroke="#00BFFF" stroke-width="2" stroke-linecap="round" fill="none"/>
+              <!-- Cross sections (perpendicular ticks) -->
+              <line x1="8"  y1="23" x2="11" y2="26" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="13" y1="19" x2="16" y2="22" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="18" y1="15" x2="21" y2="18" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="23" y1="12" x2="26" y2="15" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+              <line x1="28" y1="9"  x2="31" y2="12" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+              <!-- Interval dots on alignment -->
+              <circle cx="8"  cy="24" r="2" fill="#00BFFF"/>
+              <circle cx="13" cy="20" r="2" fill="#00BFFF"/>
+              <circle cx="18" cy="17" r="2" fill="#00BFFF"/>
+              <circle cx="23" cy="13" r="2" fill="#00BFFF"/>
+              <circle cx="28" cy="10" r="2" fill="#00BFFF"/>
+            </svg>
+          </div>
+          <p class="tool-card__command">ALIGNDEPLOY</p>
+          <h3 class="tool-card__name">Align Deploy</h3>
+          <p class="tool-card__desc">Deploys copies of a cross alignment along a main alignment at defined intervals. Perfect for road corridors, utility easements, and subdivision layouts that require repeated cross-section geometry.</p>
+        </article>
+
+        <!-- PIPEMAGIC -->
+        <article class="tool-card">
+          <div class="tool-card__icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- Profile view frame -->
+              <rect x="2" y="2" width="32" height="32" rx="3" stroke="#00BFFF" stroke-width="1" stroke-dasharray="3,2" fill="none"/>
+              <!-- Main pipe (horizontal) -->
+              <rect x="4" y="15" width="28" height="6" rx="3" stroke="#00BFFF" stroke-width="1.5" fill="none"/>
+              <!-- Crossing pipe (diagonal) -->
+              <line x1="14" y1="4"  x2="22" y2="32" stroke="#FF6B2B" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Ellipse representing pipe circle cross-section -->
+              <ellipse cx="18" cy="18" rx="4" ry="2.5" stroke="#FF6B2B" stroke-width="1.2" fill="rgba(255,107,43,0.12)"/>
+              <!-- Projection arrows -->
+              <line x1="14" y1="15" x2="14" y2="4" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
+              <line x1="22" y1="21" x2="22" y2="32" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
+            </svg>
+          </div>
+          <p class="tool-card__command">PIPEMAGIC</p>
+          <h3 class="tool-card__name">Pipe Magic</h3>
+          <p class="tool-card__desc">Automatically detects crossing pipe networks and projects them into profile views. No more manually finding and plotting pipe conflicts — PIPEMAGIC handles the spatial analysis and annotation instantly.</p>
+        </article>
+
+        <!-- INVERTPULLUP -->
+        <article class="tool-card">
+          <div class="tool-card__icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <!-- Pipe cross section (circle) -->
+              <circle cx="18" cy="24" r="8" stroke="#00BFFF" stroke-width="1.5" fill="none"/>
+              <circle cx="18" cy="24" r="4" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
+              <!-- Invert point (bottom of pipe) -->
+              <circle cx="18" cy="32" r="2.5" fill="#FF6B2B"/>
+              <!-- Elevation leader line -->
+              <line x1="18" y1="30" x2="18" y2="20" stroke="#FF6B2B" stroke-width="1.2" stroke-dasharray="2,2"/>
+              <line x1="18" y1="20" x2="28" y2="12" stroke="#FF6B2B" stroke-width="1.2"/>
+              <!-- Label box -->
+              <rect x="26" y="8" width="8" height="7" rx="1.5" fill="rgba(255,107,43,0.15)" stroke="#FF6B2B" stroke-width="1"/>
+              <!-- EL text placeholder lines -->
+              <line x1="27.5" y1="10.5" x2="32.5" y2="10.5" stroke="#FF6B2B" stroke-width="0.8"/>
+              <line x1="27.5" y1="12.5" x2="31"   y2="12.5" stroke="#FF6B2B" stroke-width="0.8"/>
+              <!-- Station tick on pipe -->
+              <line x1="18" y1="16" x2="18" y2="12" stroke="#00BFFF" stroke-width="1.2" stroke-linecap="round"/>
+              <line x1="15" y1="12" x2="21" y2="12" stroke="#00BFFF" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="tool-card__command">INVERTPULLUP</p>
+          <h3 class="tool-card__name">Invert Pull Up</h3>
+          <p class="tool-card__desc">Calculates invert elevation at any point along a pipe and labels it directly in the drawing. Eliminates manual math and drafting errors when documenting pipe inverts for construction documents.</p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       WORKFLOW
+  ══════════════════════════════════════ -->
+  <section class="workflow" id="workflow" aria-label="How it works">
+    <div class="container">
+      <div class="workflow__header">
+        <p class="section-label reveal">Getting Started</p>
+        <h2 class="reveal">Up and running in minutes</h2>
+        <p class="reveal">Install once — all four tools load automatically into Civil 3D's ribbon.</p>
+      </div>
+
+      <div class="workflow__steps">
+        <!-- Step 1 -->
+        <div class="workflow__step">
+          <p class="workflow__step-num">01</p>
+          <div class="workflow__step-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M16 4 L16 20 M10 14 L16 20 L22 14" stroke="#00BFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6 24 L26 24" stroke="#FF6B2B" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>Download & Install</h3>
+          <p>Run the Inno Setup installer. It deploys the bundle to your Civil 3D 2026 application plugins folder automatically.</p>
+        </div>
+
+        <div class="workflow__connector" aria-hidden="true">
+          <svg width="40" height="2" viewBox="0 0 40 2">
+            <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4,3"/>
+          </svg>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="workflow__step">
+          <p class="workflow__step-num">02</p>
+          <div class="workflow__step-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="4" y="6" width="24" height="20" rx="3" stroke="#00BFFF" stroke-width="1.5" fill="none"/>
+              <line x1="4" y1="12" x2="28" y2="12" stroke="#00BFFF" stroke-width="1"/>
+              <rect x="8" y="15" width="6" height="3" rx="1" fill="#FF6B2B" opacity="0.9"/>
+              <rect x="17" y="15" width="7" height="3" rx="1" fill="rgba(0,191,255,0.4)"/>
+              <rect x="8" y="20" width="10" height="3" rx="1" fill="rgba(0,191,255,0.3)"/>
+            </svg>
+          </div>
+          <h3>Open Civil 3D</h3>
+          <p>Launch AutoCAD Civil 3D 2026. The <strong>Advanced Land Dev Tools</strong> ribbon tab appears automatically — no manual loading needed.</p>
+        </div>
+
+        <div class="workflow__connector" aria-hidden="true">
+          <svg width="40" height="2" viewBox="0 0 40 2">
+            <line x1="0" y1="1" x2="40" y2="1" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4,3"/>
+          </svg>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="workflow__step">
+          <p class="workflow__step-num">03</p>
+          <div class="workflow__step-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <polyline points="6,24 12,14 18,19 24,9 30,14" stroke="#00BFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <circle cx="6"  cy="24" r="2.5" fill="#FF6B2B"/>
+              <circle cx="12" cy="14" r="2.5" fill="#FF6B2B"/>
+              <circle cx="18" cy="19" r="2.5" fill="#FF6B2B"/>
+              <circle cx="24" cy="9"  r="2.5" fill="#FF6B2B"/>
+              <circle cx="30" cy="14" r="2.5" fill="#FF6B2B"/>
+            </svg>
+          </div>
+          <h3>Run Commands</h3>
+          <p>Click any tool button in the ribbon — or type the command (BULKSUR, ALIGNDEPLOY, PIPEMAGIC, INVERTPULLUP) directly in the command line.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       STATS
+  ══════════════════════════════════════ -->
+  <section class="stats" aria-label="Statistics">
+    <div class="container">
+      <div class="stats__grid">
+        <div class="stat">
+          <div class="stat__value" data-count="4">0</div>
+          <p class="stat__label">Automation Commands</p>
+        </div>
+        <div class="stat">
+          <div class="stat__value" data-count="100">0</div>
+          <p class="stat__label">% Civil 3D Native</p>
+        </div>
+        <div class="stat">
+          <div class="stat__value" data-count="1">0</div>
+          <p class="stat__label">Plugin — All Tools Included</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       ABOUT
+  ══════════════════════════════════════ -->
+  <section class="about" id="about" aria-label="About Juan">
+    <div class="container">
+      <div class="about__inner">
+        <div class="about__content">
+          <p class="section-label reveal">About the Founder</p>
+          <h2 class="reveal">Built by a civil engineer,<br><span>for civil engineers.</span></h2>
+          <p class="reveal">
+            I'm <strong>Juan Felipe Cadavid Herrera</strong>, a civil engineer specializing in land development. After years of watching project timelines expand because of repetitive, manual Civil 3D workflows, I built ALDT to solve the problem from the inside.
+          </p>
+          <p class="reveal">
+            Every tool in this plugin was designed to address a real bottleneck I encountered in the field — from batch-creating hundreds of surface profiles to instantly labeling pipe inverts that would otherwise require manual station math.
+          </p>
+          <p class="reveal">
+            ALDT is the result of combining civil engineering expertise with modern .NET development — purpose-built for AutoCAD Civil 3D 2026 and designed to fit seamlessly into your existing workflow.
+          </p>
+          <div class="about__links reveal">
+            <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer" class="btn btn--outline">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+              Connect on LinkedIn
+            </a>
+            <a href="#download" class="btn btn--primary">Get the Plugin</a>
+          </div>
+        </div>
+
+        <div class="about__visual reveal">
+          <!-- Abstract civil engineering diagram -->
+          <svg id="about-diagram" class="about__diagram" viewBox="0 0 460 360" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <!-- Ground surface profile -->
+            <path d="M20,280 L80,240 L140,260 L200,210 L260,230 L320,190 L380,220 L440,180"
+                  stroke="#00BFFF" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+            <!-- Existing ground (dashed) -->
+            <path d="M20,300 L80,270 L140,285 L200,250 L260,265 L320,240 L380,255 L440,230"
+                  stroke="#6B7A99" stroke-width="1" stroke-dasharray="5,4" stroke-linecap="round" fill="none"/>
+
+            <!-- Horizontal datum lines -->
+            <line x1="20" y1="320" x2="440" y2="320" stroke="#0E1320" stroke-width="1.5"/>
+            <line x1="20" y1="320" x2="20"  y2="160" stroke="#0E1320" stroke-width="1.5"/>
+
+            <!-- Vertical datum ticks -->
+            <line x1="20"  y1="320" x2="20"  y2="325" stroke="#6B7A99" stroke-width="1"/>
+            <line x1="110" y1="320" x2="110" y2="325" stroke="#6B7A99" stroke-width="1"/>
+            <line x1="200" y1="320" x2="200" y2="325" stroke="#6B7A99" stroke-width="1"/>
+            <line x1="290" y1="320" x2="290" y2="325" stroke="#6B7A99" stroke-width="1"/>
+            <line x1="380" y1="320" x2="380" y2="325" stroke="#6B7A99" stroke-width="1"/>
+
+            <!-- Pipe 1 (storm sewer – horizontal run) -->
+            <path d="M20,295 L440,280" stroke="#FF6B2B" stroke-width="3" stroke-linecap="round"/>
+            <!-- Pipe 2 (crossing lateral) -->
+            <path d="M200,160 L240,320" stroke="#FF6B2B" stroke-width="2.5" stroke-linecap="round"/>
+
+            <!-- Pipe crossing highlight -->
+            <circle cx="221" cy="246" r="8" stroke="#FF6B2B" stroke-width="1.5" fill="rgba(255,107,43,0.15)"/>
+            <circle cx="221" cy="246" r="3" fill="#FF6B2B"/>
+
+            <!-- Invert callout -->
+            <line x1="221" y1="254" x2="290" y2="290" stroke="#FF6B2B" stroke-width="1" stroke-dasharray="3,2"/>
+            <rect x="290" y="282" width="80" height="22" rx="4" fill="rgba(255,107,43,0.12)" stroke="#FF6B2B" stroke-width="1"/>
+            <line x1="298" y1="290" x2="360" y2="290" stroke="#FF6B2B" stroke-width="0.8"/>
+            <line x1="298" y1="295" x2="348" y2="295" stroke="#FF6B2B" stroke-width="0.8"/>
+
+            <!-- Alignment markers along surface -->
+            <circle cx="80"  cy="240" r="4" fill="#00BFFF"/>
+            <circle cx="140" cy="260" r="4" fill="#00BFFF"/>
+            <circle cx="200" cy="210" r="4" fill="#00BFFF"/>
+            <circle cx="260" cy="230" r="4" fill="#00BFFF"/>
+            <circle cx="320" cy="190" r="4" fill="#00BFFF"/>
+            <circle cx="380" cy="220" r="4" fill="#00BFFF"/>
+
+            <!-- Profile view box outline -->
+            <rect x="20" y="160" width="420" height="160" rx="4"
+                  stroke="rgba(0,191,255,0.2)" stroke-width="1" fill="none"/>
+
+            <!-- Grid lines inside profile -->
+            <line x1="20" y1="200" x2="440" y2="200" stroke="rgba(0,191,255,0.06)" stroke-width="1"/>
+            <line x1="20" y1="240" x2="440" y2="240" stroke="rgba(0,191,255,0.06)" stroke-width="1"/>
+            <line x1="20" y1="280" x2="440" y2="280" stroke="rgba(0,191,255,0.06)" stroke-width="1"/>
+            <line x1="110" y1="160" x2="110" y2="320" stroke="rgba(0,191,255,0.06)" stroke-width="1"/>
+            <line x1="200" y1="160" x2="200" y2="320" stroke="rgba(0,191,255,0.06)" stroke-width="1"/>
+            <line x1="290" y1="160" x2="290" y2="320" stroke="rgba(0,191,255,0.06)" stroke-width="1"/>
+            <line x1="380" y1="160" x2="380" y2="320" stroke="rgba(0,191,255,0.06)" stroke-width="1"/>
+
+            <!-- Label: ALDT label -->
+            <text x="36" y="185" font-family="JetBrains Mono, monospace" font-size="9" fill="#6B7A99" opacity="0.7">PROFILE VIEW — MAIN ALIGNMENT</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       DOWNLOAD CTA
+  ══════════════════════════════════════ -->
+  <section class="download" id="download" aria-label="Download">
+    <div class="download__glow"></div>
+    <div class="container">
+      <div class="download__content">
+        <span class="tag tag--warm reveal">v1.0 — Available Now</span>
+        <h2 class="reveal">Ready to automate<br>your <span>workflow?</span></h2>
+        <p class="reveal">Download the installer and have all four tools running in Civil 3D within minutes. Free for civil engineers who are tired of doing it the slow way.</p>
+
+        <div class="download__actions reveal">
+          <a href="#" class="btn btn--warm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Installer (.exe)
+          </a>
+          <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer" class="btn btn--outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            Contact Juan
+          </a>
+        </div>
+
+        <div class="download__reqs reveal">
+          <span class="req-pill">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            Civil 3D 2026
+          </span>
+          <span class="req-pill">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            .NET 8
+          </span>
+          <span class="req-pill">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            Windows 10+ 64-bit
+          </span>
+          <span class="req-pill">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+            AutoCAD R26
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════ -->
+  <footer class="footer" aria-label="Footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div class="footer__brand">
+          <a href="#" class="nav__logo">
+            <svg class="nav__logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="32" height="32" rx="8" fill="rgba(0,191,255,0.1)"/>
+              <path d="M8 24 L8 16 Q8 10 14 10 L24 10" stroke="#00BFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <circle cx="8" cy="24" r="2.5" fill="#00BFFF"/>
+              <circle cx="24" cy="10" r="2.5" fill="#FF6B2B"/>
+              <circle cx="8" cy="16" r="1.5" fill="rgba(0,191,255,0.5)"/>
+            </svg>
+            ALDT
+          </a>
+          <p>Advanced Land Development Tools — Civil 3D automation for modern land development workflows.</p>
+        </div>
+
+        <div class="footer__links">
+          <div class="footer__col">
+            <h4>Tools</h4>
+            <ul>
+              <li><a href="#tools">BULKSUR</a></li>
+              <li><a href="#tools">ALIGNDEPLOY</a></li>
+              <li><a href="#tools">PIPEMAGIC</a></li>
+              <li><a href="#tools">INVERTPULLUP</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <h4>Navigate</h4>
+            <ul>
+              <li><a href="#workflow">How It Works</a></li>
+              <li><a href="#about">About Juan</a></li>
+              <li><a href="#download">Download</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <h4>Connect</h4>
+            <ul>
+              <li>
+                <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p class="footer__copy">&copy; 2026 Advanced Land Development Tools. All rights reserved.</p>
+        <div class="footer__social">
+          <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Scripts ─────────────────────────────────────────────── -->
+  <!-- Lenis smooth scroll -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+  <!-- GSAP core -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <!-- ScrollTrigger plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <!-- Site logic -->
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
