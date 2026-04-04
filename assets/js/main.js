@@ -329,6 +329,34 @@
       if (e.key === 'ArrowRight') { stopTimer(); goTo(current + 1,  1); startTimer(); }
     });
 
+    /* ── Lock track height to tallest slide ──────────────── */
+    function lockTrackHeight() {
+      const track = document.getElementById('carouselTrack');
+      if (!track) return;
+      // Temporarily make all slides visible to measure natural heights
+      slides.forEach((s) => {
+        s.style.position = 'relative';
+        s.style.opacity  = '1';
+        s.style.visibility = 'hidden';
+      });
+      const maxH = Math.max(...slides.map((s) => s.offsetHeight));
+      slides.forEach((s) => {
+        s.style.position   = '';
+        s.style.opacity    = '';
+        s.style.visibility = '';
+      });
+      track.style.height = maxH + 'px';
+    }
+
+    lockTrackHeight();
+
+    // Re-lock on resize (layout reflows can change card heights)
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(lockTrackHeight, 120);
+    });
+
     /* ── Init ─────────────────────────────────────────────── */
     resetProgressBar();
     startTimer();

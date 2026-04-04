@@ -730,12 +730,14 @@ img, svg { display: block; max-width: 100%; }
 
 .carousel__track {
   position: relative;
-  min-height: 420px;
+  /* height is set by JS to the tallest slide — never changes on transition */
 }
 
 .carousel__slide {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1),
@@ -747,7 +749,6 @@ img, svg { display: block; max-width: 100%; }
   opacity: 1;
   pointer-events: auto;
   transform: translateX(0);
-  position: relative; /* re-enter flow so track height follows active card */
   z-index: 1;
 }
 
@@ -978,14 +979,13 @@ img, svg { display: block; max-width: 100%; }
   .carousel__btn--prev { left: 0.3rem; }
   .carousel__btn--next { right: 0.3rem; }
 
-  .carousel__track { min-height: 560px; }
+  /* track height is managed by JS */
 
   .carousel__hint { display: none; }
 }
 
 @media (max-width: 500px) {
   .carousel__card-visual { flex-direction: column; align-items: center; }
-  .carousel__track { min-height: 640px; }
 }
 
 /* ── Reveal Animations ──────────────────────────────────────── */
