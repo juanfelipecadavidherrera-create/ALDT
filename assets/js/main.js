@@ -195,16 +195,143 @@
     });
   });
 
-  /* ── 12. Stats Section Horizontal Line Animation ──────── */
-  gsap.fromTo(
-    '.stats',
-    { '--line-width': '0%' },
-    {
-      '--line-width': '100%',
-      scrollTrigger: { trigger: '.stats', start: 'top 80%' },
-      duration: 1.2,
-      ease: 'power2.out',
+  /* ── 12. Tool Carousel ──────────────────────────────────── */
+  (function initCarousel() {
+    const carousel  = document.getElementById('toolsCarousel');
+    if (!carousel) return;
+
+    const slides    = [...carousel.querySelectorAll('.carousel__slide')];
+    const dots      = [...carousel.querySelectorAll('.carousel__dot')];
+    const timerBar  = document.getElementById('carouselTimerBar');
+    const btnPrev   = carousel.querySelector('.carousel__btn--prev');
+    const btnNext   = carousel.querySelector('.carousel__btn--next');
+    const DURATION  = 5000; // ms per slide
+
+    let current     = 0;
+    let intervalId  = null;
+    let timerTween  = null;
+    let paused      = false;
+
+    /* ── Navigate to slide index ──────────────────────────── */
+    function goTo(index, direction) {
+      const next = ((index % slides.length) + slides.length) % slides.length;
+      if (next === current) return;
+
+      const outgoing = slides[current];
+      const incoming = slides[next];
+      const dir      = direction ?? (next > current ? 1 : -1);
+
+      // Outgoing: slide out to the left/right
+      gsap.to(outgoing, {
+        opacity: 0,
+        x: dir * -50,
+        duration: 0.45,
+        ease: 'power2.in',
+        onComplete() {
+          outgoing.classList.remove('active');
+          gsap.set(outgoing, { x: 0 });
+        },
+      });
+
+      // Incoming: slide in from the right/left
+      gsap.fromTo(
+        incoming,
+        { opacity: 0, x: dir * 60 },
+        {
+          opacity: 1,
+          x: 0,
+          duration: 0.55,
+          ease: 'power3.out',
+          delay: 0.1,
+          onStart() { incoming.classList.add('active'); },
+        }
+      );
+
+      // Update dots
+      dots[current].classList.remove('active');
+      dots[current].setAttribute('aria-selected', 'false');
+      dots[next].classList.add('active');
+      dots[next].setAttribute('aria-selected', 'true');
+
+      current = next;
+      resetProgressBar();
     }
-  );
+
+    /* ── Progress bar animation ───────────────────────────── */
+    function resetProgressBar() {
+      if (timerTween) timerTween.kill();
+      if (!timerBar) return;
+      gsap.set(timerBar, { width: '0%' });
+      timerTween = gsap.to(timerBar, {
+        width: '100%',
+        duration: DURATION / 1000,
+        ease: 'none',
+      });
+    }
+
+    /* ── Auto-advance timer ───────────────────────────────── */
+    function startTimer() {
+      intervalId = setInterval(() => {
+        if (!paused) goTo(current + 1, 1);
+      }, DURATION);
+    }
+
+    function stopTimer() {
+      clearInterval(intervalId);
+      if (timerTween) timerTween.pause();
+    }
+
+    function resumeTimer() {
+      if (timerTween) timerTween.resume();
+    }
+
+    /* ── Button listeners ─────────────────────────────────── */
+    if (btnPrev) {
+      btnPrev.addEventListener('click', () => {
+        stopTimer(); goTo(current - 1, -1); startTimer();
+      });
+    }
+    if (btnNext) {
+      btnNext.addEventListener('click', () => {
+        stopTimer(); goTo(current + 1, 1); startTimer();
+      });
+    }
+
+    /* ── Dot listeners ────────────────────────────────────── */
+    dots.forEach((dot, i) => {
+      dot.addEventListener('click', () => {
+        const dir = i > current ? 1 : -1;
+        stopTimer(); goTo(i, dir); startTimer();
+      });
+    });
+
+    /* ── Pause on hover ───────────────────────────────────── */
+    carousel.addEventListener('mouseenter', () => { paused = true;  resumeTimer(); });
+    carousel.addEventListener('mouseleave', () => { paused = false; });
+
+    /* ── Touch / swipe ────────────────────────────────────── */
+    let touchStartX = 0;
+    carousel.addEventListener('touchstart', (e) => {
+      touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+
+    carousel.addEventListener('touchend', (e) => {
+      const diff = touchStartX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 45) {
+        const dir = diff > 0 ? 1 : -1;
+        stopTimer(); goTo(current + dir, dir); startTimer();
+      }
+    }, { passive: true });
+
+    /* ── Keyboard navigation ──────────────────────────────── */
+    carousel.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft')  { stopTimer(); goTo(current - 1, -1); startTimer(); }
+      if (e.key === 'ArrowRight') { stopTimer(); goTo(current + 1,  1); startTimer(); }
+    });
+
+    /* ── Init ─────────────────────────────────────────────── */
+    resetProgressBar();
+    startTimer();
+  })();
 
 })();

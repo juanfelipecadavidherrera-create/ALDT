@@ -130,117 +130,170 @@
   <section class="tools" id="tools" aria-label="Tools">
     <div class="container">
       <div class="tools__header">
-        <p class="section-label reveal">Command Suite</p>
-        <h2 class="reveal">Four commands.<br><span>One plugin.</span></h2>
-        <p class="reveal">Each tool targets the most time-consuming tasks in a land development workflow — from profile creation to pipe network analysis.</p>
-      </div>
-
-      <div class="tools__grid">
-
-        <!-- BULKSUR -->
-        <article class="tool-card">
-          <div class="tool-card__icon">
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <!-- Surface triangulation mesh -->
-              <polyline points="4,28 10,16 18,22 26,10 32,18" stroke="#00BFFF" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
-              <polyline points="4,28 18,22 32,18" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
-              <polyline points="10,16 26,10" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
-              <line x1="10" y1="16" x2="18" y2="22" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
-              <line x1="18" y1="22" x2="26" y2="10" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
-              <!-- Profile view box at bottom -->
-              <rect x="4" y="30" width="28" height="4" rx="1" stroke="#FF6B2B" stroke-width="1" fill="none"/>
-              <line x1="12" y1="30" x2="12" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
-              <line x1="20" y1="30" x2="20" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
-              <line x1="28" y1="30" x2="28" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
-              <!-- Elevation points -->
-              <circle cx="4"  cy="28" r="2" fill="#00BFFF"/>
-              <circle cx="10" cy="16" r="2" fill="#00BFFF"/>
-              <circle cx="18" cy="22" r="2" fill="#00BFFF"/>
-              <circle cx="26" cy="10" r="2" fill="#00BFFF"/>
-              <circle cx="32" cy="18" r="2" fill="#00BFFF"/>
-            </svg>
-          </div>
-          <p class="tool-card__command">BULKSUR</p>
-          <h3 class="tool-card__name">Bulk Surface Profile Creator</h3>
-          <p class="tool-card__desc">Batch-creates surface profiles and profile views for multiple alignments simultaneously. Eliminate the repetitive one-by-one workflow and process entire project corridors in seconds.</p>
-        </article>
-
-        <!-- ALIGNDEPLOY -->
-        <article class="tool-card">
-          <div class="tool-card__icon">
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <!-- Main alignment path -->
-              <path d="M4 28 Q12 20 18 18 Q24 16 32 8" stroke="#00BFFF" stroke-width="2" stroke-linecap="round" fill="none"/>
-              <!-- Cross sections (perpendicular ticks) -->
-              <line x1="8"  y1="23" x2="11" y2="26" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="13" y1="19" x2="16" y2="22" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="18" y1="15" x2="21" y2="18" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="23" y1="12" x2="26" y2="15" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="28" y1="9"  x2="31" y2="12" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
-              <!-- Interval dots on alignment -->
-              <circle cx="8"  cy="24" r="2" fill="#00BFFF"/>
-              <circle cx="13" cy="20" r="2" fill="#00BFFF"/>
-              <circle cx="18" cy="17" r="2" fill="#00BFFF"/>
-              <circle cx="23" cy="13" r="2" fill="#00BFFF"/>
-              <circle cx="28" cy="10" r="2" fill="#00BFFF"/>
-            </svg>
-          </div>
-          <p class="tool-card__command">ALIGNDEPLOY</p>
-          <h3 class="tool-card__name">Align Deploy</h3>
-          <p class="tool-card__desc">Deploys copies of a cross alignment along a main alignment at defined intervals. Perfect for road corridors, utility easements, and subdivision layouts that require repeated cross-section geometry.</p>
-        </article>
-
-        <!-- PIPEMAGIC -->
-        <article class="tool-card">
-          <div class="tool-card__icon">
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <!-- Profile view frame -->
-              <rect x="2" y="2" width="32" height="32" rx="3" stroke="#00BFFF" stroke-width="1" stroke-dasharray="3,2" fill="none"/>
-              <!-- Main pipe (horizontal) -->
-              <rect x="4" y="15" width="28" height="6" rx="3" stroke="#00BFFF" stroke-width="1.5" fill="none"/>
-              <!-- Crossing pipe (diagonal) -->
-              <line x1="14" y1="4"  x2="22" y2="32" stroke="#FF6B2B" stroke-width="2.5" stroke-linecap="round"/>
-              <!-- Ellipse representing pipe circle cross-section -->
-              <ellipse cx="18" cy="18" rx="4" ry="2.5" stroke="#FF6B2B" stroke-width="1.2" fill="rgba(255,107,43,0.12)"/>
-              <!-- Projection arrows -->
-              <line x1="14" y1="15" x2="14" y2="4" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
-              <line x1="22" y1="21" x2="22" y2="32" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
-            </svg>
-          </div>
-          <p class="tool-card__command">PIPEMAGIC</p>
-          <h3 class="tool-card__name">Pipe Magic</h3>
-          <p class="tool-card__desc">Automatically detects crossing pipe networks and projects them into profile views. No more manually finding and plotting pipe conflicts — PIPEMAGIC handles the spatial analysis and annotation instantly.</p>
-        </article>
-
-        <!-- INVERTPULLUP -->
-        <article class="tool-card">
-          <div class="tool-card__icon">
-            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <!-- Pipe cross section (circle) -->
-              <circle cx="18" cy="24" r="8" stroke="#00BFFF" stroke-width="1.5" fill="none"/>
-              <circle cx="18" cy="24" r="4" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
-              <!-- Invert point (bottom of pipe) -->
-              <circle cx="18" cy="32" r="2.5" fill="#FF6B2B"/>
-              <!-- Elevation leader line -->
-              <line x1="18" y1="30" x2="18" y2="20" stroke="#FF6B2B" stroke-width="1.2" stroke-dasharray="2,2"/>
-              <line x1="18" y1="20" x2="28" y2="12" stroke="#FF6B2B" stroke-width="1.2"/>
-              <!-- Label box -->
-              <rect x="26" y="8" width="8" height="7" rx="1.5" fill="rgba(255,107,43,0.15)" stroke="#FF6B2B" stroke-width="1"/>
-              <!-- EL text placeholder lines -->
-              <line x1="27.5" y1="10.5" x2="32.5" y2="10.5" stroke="#FF6B2B" stroke-width="0.8"/>
-              <line x1="27.5" y1="12.5" x2="31"   y2="12.5" stroke="#FF6B2B" stroke-width="0.8"/>
-              <!-- Station tick on pipe -->
-              <line x1="18" y1="16" x2="18" y2="12" stroke="#00BFFF" stroke-width="1.2" stroke-linecap="round"/>
-              <line x1="15" y1="12" x2="21" y2="12" stroke="#00BFFF" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-          </div>
-          <p class="tool-card__command">INVERTPULLUP</p>
-          <h3 class="tool-card__name">Invert Pull Up</h3>
-          <p class="tool-card__desc">Calculates invert elevation at any point along a pipe and labels it directly in the drawing. Eliminates manual math and drafting errors when documenting pipe inverts for construction documents.</p>
-        </article>
-
+        <p class="section-label reveal">20-Command Suite</p>
+        <h2 class="reveal">Flagship tools.<br><span>Four that change everything.</span></h2>
+        <p class="reveal">Part of a comprehensive 20-command Civil 3D suite. These four core tools tackle the highest-impact bottlenecks in any land development workflow.</p>
       </div>
     </div>
+
+    <!-- ── Carousel ─────────────────────────────────────────── -->
+    <div class="carousel" id="toolsCarousel" aria-label="Tool showcase">
+      <div class="carousel__track" id="carouselTrack">
+
+        <!-- ── SLIDE 0: PIPEMAGIC (default active) ── -->
+        <div class="carousel__slide active" data-index="0" role="tabpanel" aria-label="Pipe Magic">
+          <div class="container carousel__card">
+            <div class="carousel__card-visual">
+              <span class="carousel__card-badge">PIPEMAGIC</span>
+              <div class="carousel__card-icon" aria-hidden="true">
+                <svg width="90" height="90" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="2" y="2" width="32" height="32" rx="3" stroke="#00BFFF" stroke-width="1" stroke-dasharray="3,2" fill="none"/>
+                  <rect x="4" y="15" width="28" height="6" rx="3" stroke="#00BFFF" stroke-width="1.5" fill="none"/>
+                  <line x1="14" y1="4"  x2="22" y2="32" stroke="#FF6B2B" stroke-width="2.5" stroke-linecap="round"/>
+                  <ellipse cx="18" cy="18" rx="4" ry="2.5" stroke="#FF6B2B" stroke-width="1.2" fill="rgba(255,107,43,0.12)"/>
+                  <line x1="14" y1="15" x2="14" y2="4" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
+                  <line x1="22" y1="21" x2="22" y2="32" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
+                </svg>
+              </div>
+            </div>
+            <div class="carousel__card-body">
+              <h3 class="carousel__card-title">Pipe Magic</h3>
+              <p class="carousel__card-desc">Automatically detects crossing pipe networks and projects them into profile views. No more manually hunting for pipe conflicts — PIPEMAGIC handles the spatial analysis and annotation instantly.</p>
+              <ul class="carousel__card-features">
+                <li>Automatic detection of all pipe network crossings</li>
+                <li>Projects crossing pipes directly into profile views</li>
+                <li>Works across multiple network types simultaneously</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SLIDE 1: BULKSUR ── -->
+        <div class="carousel__slide" data-index="1" role="tabpanel" aria-label="Bulk Surface Profile Creator">
+          <div class="container carousel__card">
+            <div class="carousel__card-visual">
+              <span class="carousel__card-badge">BULKSUR</span>
+              <div class="carousel__card-icon" aria-hidden="true">
+                <svg width="90" height="90" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <polyline points="4,28 10,16 18,22 26,10 32,18" stroke="#00BFFF" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+                  <polyline points="4,28 18,22 32,18" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
+                  <polyline points="10,16 26,10" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
+                  <line x1="10" y1="16" x2="18" y2="22" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
+                  <line x1="18" y1="22" x2="26" y2="10" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2"/>
+                  <rect x="4" y="30" width="28" height="4" rx="1" stroke="#FF6B2B" stroke-width="1" fill="none"/>
+                  <line x1="12" y1="30" x2="12" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
+                  <line x1="20" y1="30" x2="20" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
+                  <line x1="28" y1="30" x2="28" y2="34" stroke="#FF6B2B" stroke-width="0.8"/>
+                  <circle cx="4"  cy="28" r="2" fill="#00BFFF"/>
+                  <circle cx="10" cy="16" r="2" fill="#00BFFF"/>
+                  <circle cx="18" cy="22" r="2" fill="#00BFFF"/>
+                  <circle cx="26" cy="10" r="2" fill="#00BFFF"/>
+                  <circle cx="32" cy="18" r="2" fill="#00BFFF"/>
+                </svg>
+              </div>
+            </div>
+            <div class="carousel__card-body">
+              <h3 class="carousel__card-title">Bulk Surface Profile Creator</h3>
+              <p class="carousel__card-desc">Batch-creates surface profiles and profile views for multiple alignments simultaneously. Eliminate the repetitive one-by-one workflow and process entire project corridors in seconds.</p>
+              <ul class="carousel__card-features">
+                <li>Select all alignments at once — profiles created in batch</li>
+                <li>Consistent profile view formatting across the project</li>
+                <li>Saves hours on multi-alignment corridor projects</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SLIDE 2: ALIGNDEPLOY ── -->
+        <div class="carousel__slide" data-index="2" role="tabpanel" aria-label="Align Deploy">
+          <div class="container carousel__card">
+            <div class="carousel__card-visual">
+              <span class="carousel__card-badge">ALIGNDEPLOY</span>
+              <div class="carousel__card-icon" aria-hidden="true">
+                <svg width="90" height="90" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 28 Q12 20 18 18 Q24 16 32 8" stroke="#00BFFF" stroke-width="2" stroke-linecap="round" fill="none"/>
+                  <line x1="8"  y1="23" x2="11" y2="26" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="13" y1="19" x2="16" y2="22" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="18" y1="15" x2="21" y2="18" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="23" y1="12" x2="26" y2="15" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="28" y1="9"  x2="31" y2="12" stroke="#FF6B2B" stroke-width="1.5" stroke-linecap="round"/>
+                  <circle cx="8"  cy="24" r="2" fill="#00BFFF"/>
+                  <circle cx="13" cy="20" r="2" fill="#00BFFF"/>
+                  <circle cx="18" cy="17" r="2" fill="#00BFFF"/>
+                  <circle cx="23" cy="13" r="2" fill="#00BFFF"/>
+                  <circle cx="28" cy="10" r="2" fill="#00BFFF"/>
+                </svg>
+              </div>
+            </div>
+            <div class="carousel__card-body">
+              <h3 class="carousel__card-title">Align Deploy</h3>
+              <p class="carousel__card-desc">Deploys copies of a cross alignment along a main alignment at defined intervals. Perfect for road corridors, utility easements, and subdivision layouts that require repeated cross-section geometry.</p>
+              <ul class="carousel__card-features">
+                <li>Set interval spacing and deploy all copies at once</li>
+                <li>Works on curved and straight main alignments</li>
+                <li>Ideal for road cross-sections and utility corridor layouts</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── SLIDE 3: INVERTPULLUP ── -->
+        <div class="carousel__slide" data-index="3" role="tabpanel" aria-label="Invert Pull Up">
+          <div class="container carousel__card">
+            <div class="carousel__card-visual">
+              <span class="carousel__card-badge">INVERTPULLUP</span>
+              <div class="carousel__card-icon" aria-hidden="true">
+                <svg width="90" height="90" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="18" cy="24" r="8" stroke="#00BFFF" stroke-width="1.5" fill="none"/>
+                  <circle cx="18" cy="24" r="4" stroke="#00BFFF" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
+                  <circle cx="18" cy="32" r="2.5" fill="#FF6B2B"/>
+                  <line x1="18" y1="30" x2="18" y2="20" stroke="#FF6B2B" stroke-width="1.2" stroke-dasharray="2,2"/>
+                  <line x1="18" y1="20" x2="28" y2="12" stroke="#FF6B2B" stroke-width="1.2"/>
+                  <rect x="26" y="8" width="8" height="7" rx="1.5" fill="rgba(255,107,43,0.15)" stroke="#FF6B2B" stroke-width="1"/>
+                  <line x1="27.5" y1="10.5" x2="32.5" y2="10.5" stroke="#FF6B2B" stroke-width="0.8"/>
+                  <line x1="27.5" y1="12.5" x2="31"   y2="12.5" stroke="#FF6B2B" stroke-width="0.8"/>
+                  <line x1="18" y1="16" x2="18" y2="12" stroke="#00BFFF" stroke-width="1.2" stroke-linecap="round"/>
+                  <line x1="15" y1="12" x2="21" y2="12" stroke="#00BFFF" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="carousel__card-body">
+              <h3 class="carousel__card-title">Invert Pull Up</h3>
+              <p class="carousel__card-desc">Calculates invert elevation at any point along a pipe and labels it directly in the drawing. Eliminates manual math and drafting errors when documenting pipe inverts for construction documents.</p>
+              <ul class="carousel__card-features">
+                <li>Pick any station point — invert calculated instantly</li>
+                <li>Label placed automatically with correct elevation</li>
+                <li>Eliminates manual station math and drafting errors</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /carousel__track -->
+
+      <!-- Prev / Next buttons -->
+      <button class="carousel__btn carousel__btn--prev" aria-label="Previous tool">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="carousel__btn carousel__btn--next" aria-label="Next tool">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <!-- Dots + progress bar -->
+      <div class="carousel__nav container">
+        <div class="carousel__dots" role="tablist" aria-label="Select tool">
+          <button class="carousel__dot active" data-slide="0" role="tab" aria-label="Pipe Magic" aria-selected="true"></button>
+          <button class="carousel__dot" data-slide="1" role="tab" aria-label="Bulk Surface Profile Creator" aria-selected="false"></button>
+          <button class="carousel__dot" data-slide="2" role="tab" aria-label="Align Deploy" aria-selected="false"></button>
+          <button class="carousel__dot" data-slide="3" role="tab" aria-label="Invert Pull Up" aria-selected="false"></button>
+        </div>
+        <div class="carousel__timer" aria-hidden="true">
+          <div class="carousel__timer-bar" id="carouselTimerBar"></div>
+        </div>
+        <p class="carousel__hint" aria-hidden="true">← swipe or use arrows →</p>
+      </div>
+
+    </div><!-- /carousel -->
   </section>
 
   <!-- ══════════════════════════════════════
@@ -323,8 +376,8 @@
     <div class="container">
       <div class="stats__grid">
         <div class="stat">
-          <div class="stat__value" data-count="4">0</div>
-          <p class="stat__label">Automation Commands</p>
+          <div class="stat__value" data-count="20">0</div>
+          <p class="stat__label">Commands in Suite</p>
         </div>
         <div class="stat">
           <div class="stat__value" data-count="100">0</div>
@@ -438,14 +491,19 @@
     <div class="download__glow"></div>
     <div class="container">
       <div class="download__content">
-        <span class="tag tag--warm reveal">v1.0 — Available Now</span>
+        <span class="tag tag--warm reveal">v1.0 — Available on Autodesk App Store</span>
         <h2 class="reveal">Ready to automate<br>your <span>workflow?</span></h2>
-        <p class="reveal">Download the installer and have all four tools running in Civil 3D within minutes. Free for civil engineers who are tired of doing it the slow way.</p>
+        <p class="reveal">Get ALDT directly through the Autodesk App Store — the official marketplace for Civil 3D plugins. Installs in minutes, loads automatically on launch.</p>
 
         <div class="download__actions reveal">
-          <a href="#" class="btn btn--warm">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download Installer (.exe)
+          <a href="#" class="btn btn--autodesk" target="_blank" rel="noopener noreferrer">
+            <!-- Autodesk-style icon -->
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" fill="currentColor"/>
+              <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+              <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>
+            </svg>
+            Get on Autodesk App Store
           </a>
           <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer" class="btn btn--outline">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
