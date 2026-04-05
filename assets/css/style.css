@@ -123,6 +123,89 @@ img, svg { display: block; max-width: 100%; }
   box-shadow: 0 8px 32px rgba(255,107,43,0.35);
 }
 
+/* ── Pipe Assembly Intro ────────────────────────────────────── */
+.pipe-intro {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  overflow: hidden;
+  z-index: 200; /* above fixed nav during pin */
+}
+
+.pipe-intro__svg {
+  width: 100%;
+  height: 100%;
+  max-width: 1000px;
+  overflow: visible;
+}
+
+/* Wires hidden by default, shown via JS */
+#pa-wires {
+  opacity: 0;
+}
+
+/* Text overlay */
+.pipe-intro__text {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.pipe-intro__eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.55rem;
+}
+
+.pipe-intro__tagline {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.8vw, 1.9rem);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Scroll hint */
+.pipe-intro__hint {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: opacity 0.4s;
+}
+
+@media (max-width: 680px) {
+  .pipe-intro__svg {
+    transform: scale(0.72);
+  }
+  .pipe-intro__tagline {
+    font-size: 1rem;
+  }
+}
+
 /* ── Navigation ─────────────────────────────────────────────── */
 .nav {
   position: fixed;

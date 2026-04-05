@@ -17,6 +17,179 @@
 <body>
 
   <!-- ══════════════════════════════════════
+       PIPE ASSEMBLY INTRO
+  ══════════════════════════════════════ -->
+  <div class="pipe-intro" id="pipeIntro" aria-hidden="true">
+
+    <svg id="pipeAssembly" class="pipe-intro__svg"
+         viewBox="0 0 1000 560"
+         xmlns="http://www.w3.org/2000/svg"
+         preserveAspectRatio="xMidYMid meet">
+
+      <!-- ── Subtle grid backdrop (static) ── -->
+      <defs>
+        <pattern id="pi-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+          <path d="M 60 0 L 0 0 0 60" fill="none" stroke="rgba(0,191,255,0.04)" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <rect width="1000" height="560" fill="url(#pi-grid)"/>
+
+      <!-- ── Hanging wires (appear at assembly end) ── -->
+      <g id="pa-wires">
+        <line x1="310" y1="0" x2="310" y2="204" stroke="rgba(0,191,255,0.35)" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <line x1="651" y1="0" x2="651" y2="166" stroke="rgba(0,191,255,0.35)" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <circle cx="310" cy="0"   r="3" fill="rgba(0,191,255,0.4)"/>
+        <circle cx="651" cy="0"   r="3" fill="rgba(0,191,255,0.4)"/>
+        <circle cx="310" cy="204" r="3" fill="rgba(0,191,255,0.4)"/>
+        <circle cx="651" cy="166" r="3" fill="rgba(0,191,255,0.4)"/>
+      </g>
+
+      <!-- ─────────────────────────────────────────────
+           PIPE PIECES — drawn at assembled positions.
+           GSAP will transform them to scattered start.
+      ───────────────────────────────────────────────── -->
+
+      <!-- PIECE 1 · Bottom elbow (130,362 → 310,248) -->
+      <g id="pa-elbow-b" class="pa-piece">
+        <path d="M 130 362 C 130 285 185 248 310 248"
+              fill="none" stroke="#00BFFF" stroke-width="30" stroke-linecap="round"/>
+        <path d="M 130 362 C 130 285 185 248 310 248"
+              fill="none" stroke="#080B10" stroke-width="22"/>
+        <path d="M 130 362 C 130 285 185 248 310 248"
+              fill="none" stroke="rgba(0,191,255,0.55)" stroke-width="1.5"/>
+      </g>
+
+      <!-- PIECE 2 · Bottom vertical pipe (130, 362→448) -->
+      <g id="pa-pipe-b" class="pa-piece">
+        <line x1="130" y1="362" x2="130" y2="448"
+              stroke="#00BFFF" stroke-width="30" stroke-linecap="square"/>
+        <line x1="130" y1="362" x2="130" y2="448"
+              stroke="#080B10" stroke-width="22" stroke-linecap="square"/>
+        <line x1="130" y1="362" x2="130" y2="448"
+              stroke="rgba(0,191,255,0.55)" stroke-width="1.5" stroke-linecap="square"/>
+      </g>
+
+      <!-- PIECE 3 · Diagonal upper pipe (310,248 → 572,178) -->
+      <g id="pa-pipe-d" class="pa-piece">
+        <line x1="310" y1="248" x2="572" y2="178"
+              stroke="#00BFFF" stroke-width="30" stroke-linecap="square"/>
+        <line x1="310" y1="248" x2="572" y2="178"
+              stroke="#080B10" stroke-width="22" stroke-linecap="square"/>
+        <line x1="310" y1="248" x2="572" y2="178"
+              stroke="rgba(0,191,255,0.55)" stroke-width="1.5" stroke-linecap="square"/>
+      </g>
+
+      <!-- PIECE 4 · Top elbow (572,178 → 742,155) -->
+      <g id="pa-elbow-t" class="pa-piece">
+        <path d="M 572 178 C 640 162 682 155 742 155"
+              fill="none" stroke="#00BFFF" stroke-width="30" stroke-linecap="round"/>
+        <path d="M 572 178 C 640 162 682 155 742 155"
+              fill="none" stroke="#080B10" stroke-width="22"/>
+        <path d="M 572 178 C 640 162 682 155 742 155"
+              fill="none" stroke="rgba(0,191,255,0.55)" stroke-width="1.5"/>
+      </g>
+
+      <!-- PIECE 5 · Right horizontal pipe (742,155 → 877,155) -->
+      <g id="pa-pipe-r" class="pa-piece">
+        <line x1="742" y1="155" x2="877" y2="155"
+              stroke="#00BFFF" stroke-width="30" stroke-linecap="square"/>
+        <line x1="742" y1="155" x2="877" y2="155"
+              stroke="#080B10" stroke-width="22" stroke-linecap="square"/>
+        <line x1="742" y1="155" x2="877" y2="155"
+              stroke="rgba(0,191,255,0.55)" stroke-width="1.5" stroke-linecap="square"/>
+      </g>
+
+      <!-- PIECE 6 · Left end flange (center 130,490) -->
+      <g id="pa-flange-l" class="pa-piece">
+        <circle cx="130" cy="490" r="34" fill="#0D1219" stroke="#00BFFF" stroke-width="3"/>
+        <circle cx="130" cy="490" r="20" fill="rgba(0,191,255,0.07)" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="130" cy="490" r="4.5" fill="#00BFFF"/>
+        <!-- 8 bolt holes at r=34 -->
+        <circle cx="130" cy="456" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="154" cy="466" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="164" cy="490" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="154" cy="514" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="130" cy="524" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="106" cy="514" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="96"  cy="490" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="106" cy="466" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+      </g>
+
+      <!-- PIECE 7 · Right end flange (center 877,155) -->
+      <g id="pa-flange-r" class="pa-piece">
+        <circle cx="877" cy="155" r="34" fill="#0D1219" stroke="#00BFFF" stroke-width="3"/>
+        <circle cx="877" cy="155" r="20" fill="rgba(0,191,255,0.07)" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="877" cy="155" r="4.5" fill="#00BFFF"/>
+        <!-- 8 bolt holes at r=34 -->
+        <circle cx="877" cy="121" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="901" cy="131" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="911" cy="155" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="901" cy="179" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="877" cy="189" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="853" cy="179" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="843" cy="155" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="853" cy="131" r="3.5" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+      </g>
+
+      <!-- PIECE 8 · Center connection flange (center 310,248) -->
+      <g id="pa-flange-m" class="pa-piece">
+        <circle cx="310" cy="248" r="44" fill="#0D1219" stroke="#00BFFF" stroke-width="3.5"/>
+        <circle cx="310" cy="248" r="35" fill="none" stroke="rgba(0,191,255,0.22)" stroke-width="1"/>
+        <circle cx="310" cy="248" r="16" fill="rgba(0,191,255,0.07)" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="310" cy="248" r="4.5" fill="#00BFFF"/>
+        <!-- 8 bolt holes at r=44 -->
+        <circle cx="310" cy="204" r="4" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="341" cy="217" r="4" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="354" cy="248" r="4" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="341" cy="279" r="4" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="310" cy="292" r="4" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="279" cy="279" r="4" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="266" cy="248" r="4" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+        <circle cx="279" cy="217" r="4" fill="#121c28" stroke="#00BFFF" stroke-width="1.5"/>
+      </g>
+
+      <!-- PIECE 9 · Pressure gauge (body center 310,350) -->
+      <g id="pa-gauge" class="pa-piece">
+        <line x1="310" y1="292" x2="310" y2="320"
+              stroke="#00BFFF" stroke-width="4" stroke-linecap="round"/>
+        <rect x="303" y="318" width="14" height="8" rx="2"
+              fill="#00BFFF" opacity="0.75"/>
+        <circle cx="310" cy="350" r="27" fill="#0D1219" stroke="#00BFFF" stroke-width="2.5"/>
+        <circle cx="310" cy="350" r="20" fill="none" stroke="rgba(0,191,255,0.2)" stroke-width="1"/>
+        <!-- Tick marks -->
+        <line x1="310" y1="330" x2="310" y2="325" stroke="#00BFFF" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="296" y1="334" x2="293" y2="330"  stroke="#00BFFF" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="324" y1="334" x2="327" y2="330"  stroke="#00BFFF" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="289" y1="350" x2="284" y2="350"  stroke="#00BFFF" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="331" y1="350" x2="336" y2="350"  stroke="#00BFFF" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Gauge needle -->
+        <line x1="310" y1="350" x2="321" y2="337"  stroke="#FF6B2B" stroke-width="2.5" stroke-linecap="round"/>
+        <circle cx="310" cy="350" r="3.5" fill="#FF6B2B"/>
+      </g>
+
+    </svg>
+
+    <!-- Text reveal at end of assembly -->
+    <div class="pipe-intro__text" id="pipeIntroText">
+      <span class="pipe-intro__eyebrow">ALDT</span>
+      <p class="pipe-intro__tagline">Engineered. Piece&nbsp;by&nbsp;piece.</p>
+    </div>
+
+    <!-- Initial scroll hint -->
+    <div class="pipe-intro__hint" id="pipeScrollHint">
+      <span>Scroll to assemble</span>
+      <svg width="14" height="22" viewBox="0 0 14 22" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="12" height="20" rx="6" stroke="currentColor" stroke-width="1.5"/>
+        <circle cx="7" cy="6" r="2" fill="currentColor">
+          <animate attributeName="cy" values="6;13;6" dur="1.8s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/>
+        </circle>
+      </svg>
+    </div>
+
+  </div><!-- /pipe-intro -->
+
+  <!-- ══════════════════════════════════════
        NAVIGATION
   ══════════════════════════════════════ -->
   <nav class="nav" aria-label="Main navigation">

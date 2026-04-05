@@ -26,7 +26,85 @@
   /* ── 2. Register ScrollTrigger ──────────────────────────── */
   gsap.registerPlugin(ScrollTrigger);
 
-  /* ── 3. Navigation Scroll Behavior ─────────────────────── */
+  /* ── 3. Pipe Assembly Intro ──────────────────────────────── */
+  (function initPipeAssembly() {
+    const intro = document.getElementById('pipeIntro');
+    if (!intro) return;
+
+    // Hide nav initially (pipe intro covers full viewport)
+    gsap.set('.nav', { opacity: 0, y: -10, pointerEvents: 'none' });
+
+    // Each piece: id, SVG-space transform origin, scatter offset from assembled pos
+    const pieces = [
+      // Pipes & elbows (drawn in assembled positions; scatter them outward)
+      { id: '#pa-elbow-b',  origin: '195 305', sx: -80,  sy: -72,  sr: 42  },
+      { id: '#pa-pipe-b',   origin: '130 405', sx: 150,  sy: -328, sr: 0   },
+      { id: '#pa-pipe-d',   origin: '441 213', sx: 116,  sy: 18,   sr: 6   },
+      { id: '#pa-elbow-t',  origin: '655 165', sx: 122,  sy: 62,   sr: -32 },
+      { id: '#pa-pipe-r',   origin: '809 155', sx: -310, sy: 232,  sr: 0   },
+      // Flanges (fly in from corners / top)
+      { id: '#pa-flange-l', origin: '130 490', sx: -44,  sy: -412, sr: -12 },
+      { id: '#pa-flange-r', origin: '877 155', sx: -48,  sy: -78,  sr: 12  },
+      { id: '#pa-flange-m', origin: '310 248', sx: 68,   sy: -170, sr: 18  },
+      // Gauge last (attaches to center flange)
+      { id: '#pa-gauge',    origin: '310 350', sx: 308,  sy: -272, sr: -26 },
+    ];
+
+    // Set each piece to its scattered start position
+    pieces.forEach(({ id, origin, sx, sy, sr }) => {
+      gsap.set(id, { x: sx, y: sy, rotation: sr, svgOrigin: origin, opacity: 1 });
+    });
+
+    // Build the scroll-driven assembly timeline
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: '#pipeIntro',
+        start: 'top top',
+        end: '+=220%',
+        pin: true,
+        scrub: 1.4,
+        onLeave() {
+          // Fade nav in when the intro unpins
+          gsap.to('.nav', { opacity: 1, y: 0, duration: 0.55, pointerEvents: 'auto' });
+        },
+        onEnterBack() {
+          gsap.to('.nav', { opacity: 0, y: -10, duration: 0.3, pointerEvents: 'none' });
+        },
+      },
+    });
+
+    // Phase 1 — Assemble pipes first, then flanges, then gauge
+    // Each piece animates from its scattered position back to (0,0,0)
+    const assembleOrder = [
+      '#pa-pipe-b', '#pa-pipe-r',   // straight sections
+      '#pa-elbow-b', '#pa-elbow-t', // elbows
+      '#pa-pipe-d',                  // diagonal connector
+      '#pa-flange-l', '#pa-flange-r', '#pa-flange-m', // flanges click into place
+      '#pa-gauge',                   // gauge attaches last
+    ];
+
+    assembleOrder.forEach((id, i) => {
+      tl.to(id, {
+        x: 0, y: 0, rotation: 0,
+        duration: 0.55,
+        ease: 'power3.out',
+      }, i * 0.07); // stagger each piece by 0.07 timeline units
+    });
+
+    // Phase 2 — Wires drop down
+    tl.to('#pa-wires', { opacity: 1, duration: 0.25, ease: 'power2.out' }, 0.72);
+
+    // Phase 3 — Text overlay fades in
+    tl.to('#pipeIntroText', { opacity: 1, duration: 0.3, ease: 'power2.out' }, 0.82);
+
+    // Phase 4 — Hide scroll hint once assembly is well underway
+    tl.to('#pipeScrollHint', { opacity: 0, duration: 0.2 }, 0.05);
+
+    // Hold assembled state (buffer before unpin)
+    tl.to({}, { duration: 0.35 });
+  })();
+
+  /* ── 4. Navigation Scroll Behavior ─────────────────────── */
   const nav = document.querySelector('.nav');
   ScrollTrigger.create({
     start: 'top -60',
@@ -35,7 +113,7 @@
     },
   });
 
-  /* ── 4. Hero Pipe SVG Draw Animation ───────────────────── */
+  /* ── 5. Hero Pipe SVG Draw Animation ───────────────────── */
   const heroLines = document.querySelectorAll('#hero-pipes .pipe-line');
   heroLines.forEach((line) => {
     const len = line.getTotalLength ? line.getTotalLength() : 300;
