@@ -198,9 +198,6 @@ img, svg { display: block; max-width: 100%; }
 }
 
 @media (max-width: 680px) {
-  .pipe-intro__svg {
-    transform: scale(0.72);
-  }
   .pipe-intro__tagline {
     font-size: 1rem;
   }
@@ -1040,6 +1037,9 @@ img, svg { display: block; max-width: 100%; }
     grid-template-columns: 1fr;
     gap: 2rem;
     text-align: center;
+    /* Inset content so it clears the 46px absolute-positioned side buttons */
+    padding-left: 3.6rem;
+    padding-right: 3.6rem;
   }
 
   .carousel__card-visual {
@@ -1068,6 +1068,11 @@ img, svg { display: block; max-width: 100%; }
 }
 
 @media (max-width: 500px) {
+  .carousel__card {
+    /* Slightly reduce padding on very small screens while still clearing buttons */
+    padding-left: 3.2rem;
+    padding-right: 3.2rem;
+  }
   .carousel__card-visual { flex-direction: column; align-items: center; }
 }
 
