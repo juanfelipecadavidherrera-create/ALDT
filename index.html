@@ -549,7 +549,7 @@
     <div class="container">
       <div class="stats__grid">
         <div class="stat">
-          <div class="stat__value" data-count="20">0</div>
+          <div class="stat__value"><span data-count="20">0</span><span class="stat__suffix">+</span></div>
           <p class="stat__label">Commands in Suite</p>
         </div>
         <div class="stat">
@@ -653,6 +653,45 @@
             <text x="36" y="185" font-family="JetBrains Mono, monospace" font-size="9" fill="#6B7A99" opacity="0.7">PROFILE VIEW — MAIN ALIGNMENT</text>
           </svg>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       PRICING
+  ══════════════════════════════════════ -->
+  <section class="pricing" id="pricing" aria-label="Pricing">
+    <div class="container">
+      <p class="section-label reveal">Simple Pricing</p>
+      <h2 class="reveal">One plugin.<br><span>All 20+ commands.</span></h2>
+
+      <div class="pricing__grid reveal">
+
+        <!-- Monthly -->
+        <div class="pricing__card">
+          <p class="pricing__period">Monthly</p>
+          <div class="pricing__amount">
+            <span class="pricing__currency">$</span>
+            <span class="pricing__number">15.99</span>
+            <span class="pricing__unit">/mo</span>
+          </div>
+          <p class="pricing__billed">Billed month to month</p>
+          <a href="#download" class="btn btn--outline pricing__cta">Get Started</a>
+        </div>
+
+        <!-- Annual -->
+        <div class="pricing__card pricing__card--featured">
+          <span class="pricing__badge">Best Value &nbsp;·&nbsp; Save 48%</span>
+          <p class="pricing__period">Annual</p>
+          <div class="pricing__amount">
+            <span class="pricing__currency">$</span>
+            <span class="pricing__number">99.99</span>
+            <span class="pricing__unit">/yr</span>
+          </div>
+          <p class="pricing__billed">Equivalent to $8.33 /mo — billed yearly</p>
+          <a href="#download" class="btn btn--primary pricing__cta">Get Started</a>
+        </div>
+
       </div>
     </div>
   </section>
