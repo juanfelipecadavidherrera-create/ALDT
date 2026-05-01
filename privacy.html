@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — ALDT</title>
+  <meta name="description" content="Privacy policy for Advanced Land Development Tools — a Civil 3D plugin by Juan Felipe Cadavid." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet" />
+
+  <!-- Shared styles -->
+  <link rel="stylesheet" href="assets/css/style.css" />
+
+  <style>
+    /* ── Privacy page specific ── */
+    .privacy-hero {
+      padding: 9rem 0 4rem;
+      text-align: center;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .privacy-hero .tag { margin-bottom: 1.4rem; }
+
+    .privacy-hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      line-height: 1.1;
+      margin-bottom: 0.8rem;
+    }
+
+    .privacy-hero h1 span { color: var(--accent); }
+
+    .privacy-hero__meta {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 0.6rem;
+    }
+
+    /* Content area */
+    .privacy-body {
+      padding: 5rem 0 7rem;
+      background: var(--bg-primary);
+    }
+
+    .privacy-content {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    /* Summary highlight box */
+    .privacy-summary {
+      background: rgba(0,191,255,0.06);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 3rem;
+      font-size: 0.97rem;
+      color: var(--text-primary);
+    }
+
+    .privacy-summary strong { color: var(--accent); }
+
+    /* Section headings */
+    .privacy-content h2 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-top: 3rem;
+      margin-bottom: 0.9rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .privacy-content h3 {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--accent);
+      margin-top: 1.6rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .privacy-content p {
+      color: var(--text-muted);
+      font-size: 0.97rem;
+      line-height: 1.75;
+      margin-bottom: 0.9rem;
+    }
+
+    .privacy-content ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 1rem;
+    }
+
+    .privacy-content ul li {
+      position: relative;
+      padding-left: 1.3rem;
+      color: var(--text-muted);
+      font-size: 0.97rem;
+      line-height: 1.75;
+      margin-bottom: 0.4rem;
+    }
+
+    .privacy-content ul li::before {
+      content: '—';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 0.8rem;
+    }
+
+    .privacy-content strong { color: var(--text-primary); }
+
+    .privacy-content code {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      background: rgba(0,191,255,0.08);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 0.12em 0.5em;
+      border-radius: 4px;
+    }
+
+    .privacy-content a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-decoration-color: rgba(0,191,255,0.4);
+      text-underline-offset: 3px;
+    }
+
+    .privacy-content a:hover {
+      text-decoration-color: var(--accent);
+    }
+
+    /* Mid-page note box */
+    .privacy-note {
+      background: rgba(255,107,43,0.06);
+      border: 1px solid var(--border-warm);
+      border-left: 3px solid var(--accent-warm);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1.1rem 1.4rem;
+      margin: 2rem 0;
+      font-size: 0.93rem;
+      color: var(--text-muted);
+    }
+
+    .privacy-note strong { color: var(--accent-warm); }
+
+    /* Divider */
+    .privacy-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2.5rem 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Navigation (same as main site) ── -->
+  <nav class="nav scrolled" aria-label="Main navigation">
+    <div class="container nav__inner">
+      <a href="index.html" class="nav__logo">
+        <svg class="nav__logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="32" height="32" rx="8" fill="rgba(0,191,255,0.1)"/>
+          <path d="M8 24 L8 16 Q8 10 14 10 L24 10" stroke="#00BFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="8" cy="24" r="2.5" fill="#00BFFF"/>
+          <circle cx="24" cy="10" r="2.5" fill="#FF6B2B"/>
+          <circle cx="8" cy="16" r="1.5" fill="rgba(0,191,255,0.5)"/>
+        </svg>
+        ALDT
+      </a>
+
+      <ul class="nav__links" role="list">
+        <li><a href="index.html#tools">Tools</a></li>
+        <li><a href="index.html#workflow">How It Works</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#download" class="btn btn--warm nav__cta">Download</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ── Page Hero ── -->
+  <div class="privacy-hero">
+    <div class="container">
+      <span class="tag">Legal</span>
+      <h1>Privacy <span>Policy</span></h1>
+      <p class="privacy-hero__meta">Advanced Land Development Tools &nbsp;·&nbsp; Last updated: April 29, 2026</p>
+    </div>
+  </div>
+
+  <!-- ── Content ── -->
+  <section class="privacy-body" aria-label="Privacy Policy">
+    <div class="container">
+      <div class="privacy-content">
+
+        <div class="privacy-summary">
+          <strong>Summary:</strong> Advanced Land Development Tools does not collect,
+          transmit, or store any personal data on remote servers. All user data stays
+          on your local machine.
+        </div>
+
+        <h2>1. Overview</h2>
+        <p>
+          Advanced Land Development Tools ("the App") is a productivity plugin for
+          Autodesk Civil 3D, published by Juan Felipe Cadavid. This privacy policy
+          explains what data the App accesses, how it is used, and your rights
+          regarding that data.
+        </p>
+
+        <h2>2. Data We Do Not Collect</h2>
+        <ul>
+          <li>We do <strong>not</strong> collect personal information (name, email, address, etc.).</li>
+          <li>We do <strong>not</strong> use analytics, telemetry, or tracking services.</li>
+          <li>We do <strong>not</strong> transmit your drawing files, project data, or design
+              information to any external server.</li>
+          <li>We do <strong>not</strong> use cookies or similar tracking technologies.</li>
+        </ul>
+
+        <h2>3. Data Accessed Locally</h2>
+        <p>
+          The App stores a small license/trial file on your local computer to manage the
+          free trial period:
+        </p>
+        <ul>
+          <li><strong>Location:</strong> <code>%APPDATA%\AdvancedLandDevTools\</code></li>
+          <li><strong>Contents:</strong> First-use date and product version (no personal data).</li>
+          <li><strong>Purpose:</strong> To track the 30-day free trial period.</li>
+        </ul>
+        <p>
+          This file is stored only on your machine and is never transmitted externally.
+          You may delete it at any time.
+        </p>
+
+        <h2>4. Third-Party Services</h2>
+        <p>
+          Certain commands in the App query publicly available government and Autodesk
+          web services. When you use these commands, the following data is sent:
+        </p>
+
+        <h3>4.1 Autodesk Entitlement API</h3>
+        <ul>
+          <li><strong>What is sent:</strong> Your Autodesk User ID (already known to Autodesk) and the App ID.</li>
+          <li><strong>Purpose:</strong> To verify your App Store purchase/license status.</li>
+          <li><strong>Endpoint:</strong> <code>apps.autodesk.com/webservices/checkentitlement</code></li>
+        </ul>
+
+        <h3>4.2 FEMA National Flood Hazard Layer (NFHL)</h3>
+        <ul>
+          <li><strong>What is sent:</strong> Geographic coordinates (X, Y) from your drawing.</li>
+          <li><strong>Purpose:</strong> To query flood zone designations for the FLOODZONE command.</li>
+          <li><strong>Service:</strong> FEMA Map Service (public, no authentication required).</li>
+        </ul>
+
+        <h3>4.3 Miami-Dade County GIS Services</h3>
+        <ul>
+          <li><strong>What is sent:</strong> Geographic coordinates from your drawing.</li>
+          <li><strong>Purpose:</strong> To query flood criteria elevations, groundwater levels, and
+              other county-specific data (FLOODCRITERIA, GWMAY, GWOCT commands).</li>
+          <li><strong>Service:</strong> Miami-Dade County Open Data (public, no authentication required).</li>
+        </ul>
+
+        <h3>4.4 SFWMD PLSS Service</h3>
+        <ul>
+          <li><strong>What is sent:</strong> Geographic coordinates from your drawing.</li>
+          <li><strong>Purpose:</strong> To look up PLSS Section/Township/Range (SECTIONLOOKUP command).</li>
+          <li><strong>Service:</strong> South Florida Water Management District (public).</li>
+        </ul>
+
+        <div class="privacy-note">
+          <strong>Note:</strong> The geographic coordinates sent to these services are derived
+          from your Civil 3D drawing coordinate system. No file names, user names, project names,
+          or other identifying information is included in these requests.
+        </div>
+
+        <h2>5. Data Sharing</h2>
+        <p>
+          We do not sell, trade, or share any data with third parties. The only external
+          communications are the public API queries described in Section 4, which are initiated
+          solely by user action (running a specific command).
+        </p>
+
+        <h2>6. Data Security</h2>
+        <p>
+          The local trial/license file uses basic obfuscation to prevent casual tampering.
+          No sensitive personal data is stored by the App.
+        </p>
+
+        <h2>7. Children's Privacy</h2>
+        <p>
+          The App is a professional engineering tool and is not directed at children under 13.
+          We do not knowingly collect data from children.
+        </p>
+
+        <h2>8. Changes to This Policy</h2>
+        <p>
+          We may update this privacy policy from time to time. Changes will be reflected by
+          updating the "Last updated" date above. Continued use of the App after changes
+          constitutes acceptance of the revised policy.
+        </p>
+
+        <h2>9. Contact</h2>
+        <p>If you have questions about this privacy policy, please contact:</p>
+        <ul>
+          <li><strong>Publisher:</strong> Juan Felipe Cadavid</li>
+          <li><strong>Email:</strong> <a href="mailto:juanfcadavidherrera21@gmail.com">juanfcadavidherrera21@gmail.com</a></li>
+        </ul>
+
+        <hr class="privacy-divider">
+        <p style="font-size:0.82rem; text-align:center;">&copy; 2026 Juan Felipe Cadavid. All rights reserved. &mdash; Advanced Land Development Tools for Autodesk Civil 3D</p>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer (same as main site) ── -->
+  <footer class="footer" aria-label="Footer">
+    <div class="container">
+      <div class="footer__inner">
+        <div class="footer__brand">
+          <a href="index.html" class="nav__logo">
+            <svg class="nav__logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="32" height="32" rx="8" fill="rgba(0,191,255,0.1)"/>
+              <path d="M8 24 L8 16 Q8 10 14 10 L24 10" stroke="#00BFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <circle cx="8" cy="24" r="2.5" fill="#00BFFF"/>
+              <circle cx="24" cy="10" r="2.5" fill="#FF6B2B"/>
+              <circle cx="8" cy="16" r="1.5" fill="rgba(0,191,255,0.5)"/>
+            </svg>
+            ALDT
+          </a>
+          <p>Advanced Land Development Tools — Civil 3D automation for modern land development workflows.</p>
+        </div>
+
+        <div class="footer__links">
+          <div class="footer__col">
+            <h4>Tools</h4>
+            <ul>
+              <li><a href="index.html#tools">BULKSUR</a></li>
+              <li><a href="index.html#tools">ALIGNDEPLOY</a></li>
+              <li><a href="index.html#tools">PIPEMAGIC</a></li>
+              <li><a href="index.html#tools">INVERTPULLUP</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <h4>Navigate</h4>
+            <ul>
+              <li><a href="index.html#workflow">How It Works</a></li>
+              <li><a href="index.html#about">About Juan</a></li>
+              <li><a href="index.html#download">Download</a></li>
+              <li><a href="privacy.html">Privacy Policy</a></li>
+            </ul>
+          </div>
+          <div class="footer__col">
+            <h4>Connect</h4>
+            <ul>
+              <li>
+                <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer__bottom">
+        <p class="footer__copy">&copy; 2026 Advanced Land Development Tools. All rights reserved.</p>
+        <div class="footer__social">
+          <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
