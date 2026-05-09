@@ -83,8 +83,8 @@ function initPipe3D() {
       seg,
       segScatter[i],
       { pos: { x: 0, y: -0.8, z }, rot: { x: Math.PI / 2, y: 0, z: 0 } },
-      i * 0.08,
-      i * 0.08 + 0.55
+      i * 0.05,
+      i * 0.05 + 0.30
     );
   });
 
@@ -100,8 +100,8 @@ function initPipe3D() {
       m,
       scatter,
       { pos: { x: 0, y: -0.7, z }, rot: { x: 0, y: 0, z: 0 } },
-      0.22 + i * 0.07,
-      0.22 + i * 0.07 + 0.50
+      0.20 + i * 0.05,
+      0.20 + i * 0.05 + 0.30
     );
   });
 
@@ -117,27 +117,34 @@ function initPipe3D() {
       r,
       scatter,
       { pos: { x: 0, y: -0.8, z }, rot: { x: 0, y: Math.PI / 2, z: 0 } },
-      0.45 + i * 0.06,
-      0.45 + i * 0.06 + 0.45
+      0.40 + i * 0.05,
+      0.40 + i * 0.05 + 0.25
     );
   });
 
   // ── Scroll progress driver ─────────────────────────────────
-  // Use the same trigger as main.js's GSAP pin (#pipeIntro, top top, +=220%).
-  // We don't need GSAP — compute progress from the intro's bounding box
-  // against the pinned scroll distance.
+  // Hook into GSAP ScrollTrigger directly — main.js's pin makes the intro
+  // position:fixed so getBoundingClientRect().top stays at 0 the whole pin,
+  // which broke a manual scrollY calculation.
   let progress = 0;
-  function computeProgress() {
-    const rect = intro.getBoundingClientRect();
-    // intro height is 100vh; pin extends scroll by 220% of viewport.
-    const pinDist = window.innerHeight * 2.2;
-    // -rect.top is how far past intro's top we've scrolled
-    const scrolled = -rect.top;
-    const t = scrolled / pinDist;
-    progress = Math.min(1, Math.max(0, t));
+  if (window.ScrollTrigger && window.gsap) {
+    window.ScrollTrigger.create({
+      trigger: '#pipeIntro',
+      start: 'top top',
+      end: '+=220%',
+      scrub: 0.6,
+      onUpdate(self) { progress = self.progress; },
+    });
+  } else {
+    // Fallback: read raw scroll against the section's original top.
+    const introTop = intro.offsetTop;
+    const onScroll = () => {
+      const pinDist = window.innerHeight * 2.2;
+      progress = Math.min(1, Math.max(0, (window.scrollY - introTop) / pinDist));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
   }
-  window.addEventListener('scroll', computeProgress, { passive: true });
-  computeProgress();
 
   // ── Helpers ────────────────────────────────────────────────
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -184,8 +191,11 @@ function initPipe3D() {
   let rafId = null;
 
   function tick() {
-    applyAssembly(progress);
-    applyCamera(progress);
+    // Remap scroll progress so assembly + camera move both finish at 0.85,
+    // leaving a hold window where the assembled corridor sits on-screen.
+    const remapped = Math.min(1, progress / 0.85);
+    applyAssembly(remapped);
+    applyCamera(remapped);
     renderer.render(scene, camera);
     rafId = requestAnimationFrame(tick);
   }
