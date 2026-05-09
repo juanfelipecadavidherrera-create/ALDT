@@ -3,14 +3,16 @@ import * as THREE from 'three';
 const canvas = document.getElementById('pipe-canvas');
 
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x0a0e14, 15, 90);
 
 const camera = new THREE.PerspectiveCamera(
-  50,
+  55,
   window.innerWidth / window.innerHeight,
   0.1,
-  1000
+  500
 );
-camera.position.set(0, 0, 12);
+camera.position.set(0, 1.5, 5);
+camera.lookAt(0, 0, -1);
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -27,6 +29,34 @@ scene.add(hemiLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
 dirLight.position.set(5, 8, 6);
 scene.add(dirLight);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(200, 200),
+  new THREE.MeshStandardMaterial({ color: 0x0d1219, roughness: 1.0, metalness: 0.0 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -1.5;
+scene.add(ground);
+
+const pipe = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.7, 0.7, 80, 32, 1, false),
+  new THREE.MeshStandardMaterial({ color: 0x00bfff, roughness: 0.4, metalness: 0.2 })
+);
+pipe.rotation.x = Math.PI / 2;
+pipe.position.set(0, -0.8, -40);
+scene.add(pipe);
+
+const manholeMat = new THREE.MeshStandardMaterial({
+  color: 0x2a3340,
+  roughness: 0.8,
+  metalness: 0.3,
+});
+const manholeGeo = new THREE.CylinderGeometry(1.1, 1.1, 1.6, 24);
+[-20, -40, -60].forEach((z) => {
+  const m = new THREE.Mesh(manholeGeo, manholeMat);
+  m.position.set(0, -0.7, z);
+  scene.add(m);
+});
 
 function onResize() {
   const w = window.innerWidth;
