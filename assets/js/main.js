@@ -63,6 +63,7 @@
         end: '+=220%',
         pin: true,
         scrub: 1.4,
+        onUpdate(self) { window.__pipe3dProgress = self.progress; },
         onLeave() {
           // Fade nav in when the intro unpins
           gsap.to('.nav', { opacity: 1, y: 0, duration: 0.55, pointerEvents: 'auto' });
