@@ -3,6 +3,16 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 
 const canvas = document.getElementById('pipe-canvas');
 
+// Reduced motion: bail out and leave the existing 2D view as-is.
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (prefersReducedMotion) {
+  if (canvas) canvas.style.display = 'none';
+} else {
+  initPipe3D();
+}
+
+function initPipe3D() {
+
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x0a0e14, 15, 110);
 
@@ -23,6 +33,10 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight, false);
 renderer.setClearColor(0x000000, 0);
+
+// Belt-and-braces: canvas already has pointer-events:none inline, but
+// re-apply in JS so existing buttons/links underneath always receive clicks.
+canvas.style.pointerEvents = 'none';
 
 const labelRenderer = new CSS2DRenderer();
 labelRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -223,6 +237,8 @@ function getScrollProgress() {
 const DAMP = 0.08;
 const DAMP_SLOW = 0.05;
 
+let rafId = null;
+
 function tick() {
   const progress = getScrollProgress();
   const targetZ = CAMERA_Z_START + (CAMERA_Z_END - CAMERA_Z_START) * progress;
@@ -244,6 +260,24 @@ function tick() {
 
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
-  requestAnimationFrame(tick);
+  rafId = requestAnimationFrame(tick);
 }
-requestAnimationFrame(tick);
+
+function startLoop() {
+  if (rafId == null) rafId = requestAnimationFrame(tick);
+}
+function stopLoop() {
+  if (rafId != null) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopLoop();
+  else startLoop();
+});
+
+startLoop();
+
+} // /initPipe3D
