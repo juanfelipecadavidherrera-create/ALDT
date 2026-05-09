@@ -60,9 +60,9 @@
       scrollTrigger: {
         trigger: '#pipeIntro',
         start: 'top top',
-        end: '+=220%',
+        end: '+=380%',
         pin: true,
-        scrub: 1.4,
+        scrub: 1.2,
         onUpdate(self) { window.__pipe3dProgress = self.progress; },
         onLeave() {
           // Fade nav in when the intro unpins
