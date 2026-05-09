@@ -8,9 +8,6 @@
   --bg-primary:   #080B10;
   --bg-secondary: #0E1320;
   --bg-card:      #111827;
-  --bg-primary-t:   rgba(8,  11, 16,  0.82);
-  --bg-secondary-t: rgba(14, 19, 32,  0.84);
-  --bg-card-t:      rgba(17, 24, 39,  0.88);
   --accent:       #00BFFF;
   --accent-glow:  rgba(0, 191, 255, 0.18);
   --accent-warm:  #FF6B2B;
@@ -34,11 +31,11 @@
 html {
   scroll-behavior: auto; /* Lenis handles smooth scroll */
   font-size: 16px;
-  background: var(--bg-primary); /* fallback behind the 3D canvas */
+  background: var(--bg-primary);
 }
 
 body {
-  background: transparent;
+  background: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-body);
   line-height: 1.6;
@@ -107,7 +104,7 @@ img, svg { display: block; max-width: 100%; }
 }
 
 .btn--outline {
-  background: transparent;
+  background: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
 }
@@ -136,7 +133,7 @@ img, svg { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-primary-t);
+  background: var(--bg-primary);
   overflow: hidden;
   z-index: 200; /* above fixed nav during pin */
 }
@@ -388,8 +385,7 @@ img, svg { display: block; max-width: 100%; }
 /* ── Tools Section ──────────────────────────────────────────── */
 .tools {
   padding: 6rem 0;
-  background: var(--bg-secondary-t);
-  backdrop-filter: blur(8px);
+  background: var(--bg-secondary);
   overflow: hidden;
 }
 
@@ -421,7 +417,7 @@ img, svg { display: block; max-width: 100%; }
 }
 
 .tool-card {
-  background: var(--bg-card-t);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 2rem;
@@ -488,8 +484,7 @@ img, svg { display: block; max-width: 100%; }
 /* ── Workflow Section ───────────────────────────────────────── */
 .workflow {
   padding: 7rem 0;
-  background: var(--bg-primary-t);
-  backdrop-filter: blur(8px);
+  background: var(--bg-primary);
 }
 
 .workflow__header {
@@ -551,7 +546,7 @@ img, svg { display: block; max-width: 100%; }
   align-items: center;
   justify-content: center;
   margin: 0 auto 1.2rem;
-  background: var(--bg-card-t);
+  background: var(--bg-card);
 }
 
 .workflow__step h3 {
@@ -570,7 +565,7 @@ img, svg { display: block; max-width: 100%; }
 /* ── Stats ──────────────────────────────────────────────────── */
 .stats {
   padding: 5rem 0;
-  background: var(--bg-secondary-t);
+  background: var(--bg-secondary);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
@@ -606,7 +601,7 @@ img, svg { display: block; max-width: 100%; }
 /* ── Pricing ─────────────────────────────────────────────────── */
 .pricing {
   padding: 7rem 0;
-  background: var(--bg-secondary-t);
+  background: var(--bg-secondary);
   border-top: 1px solid var(--border);
   text-align: center;
 }
@@ -625,7 +620,7 @@ img, svg { display: block; max-width: 100%; }
 
 .pricing__card {
   position: relative;
-  background: var(--bg-card-t);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 2.8rem 3rem 2.4rem;
@@ -731,8 +726,7 @@ img, svg { display: block; max-width: 100%; }
 /* ── About ──────────────────────────────────────────────────── */
 .about {
   padding: 7rem 0;
-  background: var(--bg-primary-t);
-  backdrop-filter: blur(8px);
+  background: var(--bg-primary);
 }
 
 .about__inner {
@@ -781,8 +775,7 @@ img, svg { display: block; max-width: 100%; }
 /* ── Download CTA ───────────────────────────────────────────── */
 .download {
   padding: 7rem 0;
-  background: var(--bg-secondary-t);
-  backdrop-filter: blur(8px);
+  background: var(--bg-secondary);
   position: relative;
   overflow: hidden;
   text-align: center;
@@ -857,7 +850,7 @@ img, svg { display: block; max-width: 100%; }
 
 /* ── Footer ─────────────────────────────────────────────────── */
 .footer {
-  background: var(--bg-primary-t);
+  background: var(--bg-primary);
   border-top: 1px solid var(--border);
   padding: 3rem 0 2rem;
 }
@@ -1009,7 +1002,7 @@ img, svg { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-card-t);
+  background: var(--bg-card);
   box-shadow: 0 0 50px rgba(0,191,255,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
   transition: box-shadow 0.4s;
 }
@@ -1069,7 +1062,7 @@ img, svg { display: block; max-width: 100%; }
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: var(--bg-card-t);
+  background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--text-primary);
   cursor: pointer;
