@@ -4,7 +4,6 @@ if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   const c = document.getElementById('pipe-canvas');
   if (c) c.style.display = 'none';
 } else {
-  // Wait for first paint so clientWidth/clientHeight are non-zero.
   requestAnimationFrame(initPipe3D);
 }
 
@@ -15,36 +14,37 @@ function initPipe3D() {
   const w = intro.clientWidth  || window.innerWidth;
   const h = intro.clientHeight || window.innerHeight;
 
-  // Scene
+  // ── Scene ──────────────────────────────────────────────────
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x080b10);
-  scene.fog = new THREE.FogExp2(0x080b10, 0.018);
+  scene.fog = new THREE.FogExp2(0x080b10, 0.014);
 
-  // Camera
+  // ── Camera ─────────────────────────────────────────────────
   const camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 500);
-  camera.position.set(3.5, 2.5, 8);
-  camera.lookAt(0, -0.5, -10);
+  // Two camera presets: wide intro view (scattered) → cinematic 3/4 (assembled)
+  const camStart = { x: 5.5, y: 4.0, z: 14, lookY: 0,    lookZ: -20 };
+  const camEnd   = { x: 3.0, y: 2.2, z: 7,  lookY: -0.5, lookZ: -12 };
+  camera.position.set(camStart.x, camStart.y, camStart.z);
+  camera.lookAt(0, camStart.lookY, camStart.lookZ);
 
-  // Renderer
+  // ── Renderer ───────────────────────────────────────────────
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(w, h, false);
 
-  // Lights
-  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-
-  const hemi = new THREE.HemisphereLight(0x88c8ff, 0x1a2030, 0.8);
-  scene.add(hemi);
+  // ── Lights ─────────────────────────────────────────────────
+  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+  scene.add(new THREE.HemisphereLight(0x88c8ff, 0x1a2030, 0.85));
 
   const dir = new THREE.DirectionalLight(0xffffff, 1.4);
   dir.position.set(6, 10, 5);
   scene.add(dir);
 
-  const fill = new THREE.DirectionalLight(0x00bfff, 0.4);
+  const fill = new THREE.DirectionalLight(0x00bfff, 0.5);
   fill.position.set(-8, 2, -5);
   scene.add(fill);
 
-  // Ground
+  // ── Ground ─────────────────────────────────────────────────
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(200, 200),
     new THREE.MeshStandardMaterial({ color: 0x0a0f16, roughness: 1 })
@@ -53,35 +53,123 @@ function initPipe3D() {
   ground.position.y = -1.5;
   scene.add(ground);
 
-  // Main pipe (80 units along -Z, centred at z=-40)
-  const pipe = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.7, 0.7, 80, 32),
-    new THREE.MeshStandardMaterial({ color: 0x00bfff, roughness: 0.35, metalness: 0.25 })
-  );
-  pipe.rotation.x = Math.PI / 2;
-  pipe.position.set(0, -0.8, -40);
-  scene.add(pipe);
+  // ── Materials ──────────────────────────────────────────────
+  const pipeMat    = new THREE.MeshStandardMaterial({ color: 0x00bfff, roughness: 0.35, metalness: 0.25 });
+  const manholeMat = new THREE.MeshStandardMaterial({ color: 0x1e2a3a, roughness: 0.8,  metalness: 0.4  });
+  const ringMat    = new THREE.MeshStandardMaterial({ color: 0xff6b2b, roughness: 0.4,  metalness: 0.6  });
 
-  // Manholes
-  const manholeMat = new THREE.MeshStandardMaterial({ color: 0x1e2a3a, roughness: 0.8, metalness: 0.4 });
+  // ── Pieces: each has scattered start + assembled end + stagger window ─────
+  // 4 pipe segments × 20u, 3 manholes, 3 coupling rings = 10 pieces total
+  const pieces = [];
+
+  function makePiece(mesh, scatter, assembled, startT, endT) {
+    pieces.push({ mesh, scatter, assembled, startT, endT });
+    mesh.position.set(scatter.pos.x, scatter.pos.y, scatter.pos.z);
+    mesh.rotation.set(scatter.rot.x, scatter.rot.y, scatter.rot.z);
+    scene.add(mesh);
+  }
+
+  const pipeSegGeo = new THREE.CylinderGeometry(0.7, 0.7, 20, 32);
+  const segCenters = [-10, -30, -50, -70];
+  const segScatter = [
+    { pos: { x: -8,  y:  2.5, z: -4  }, rot: { x: 0.6, y: 0.3, z: 1.2 } },
+    { pos: { x:  9,  y: -1,   z: -22 }, rot: { x: 1.4, y: 0.8, z: 0.4 } },
+    { pos: { x: -10, y:  4,   z: -42 }, rot: { x: 0.2, y: 1.1, z: -0.6 } },
+    { pos: { x:  7,  y: -2,   z: -68 }, rot: { x: 1.0, y: 0.4, z: 1.5 } },
+  ];
+  segCenters.forEach((z, i) => {
+    const seg = new THREE.Mesh(pipeSegGeo, pipeMat);
+    makePiece(
+      seg,
+      segScatter[i],
+      { pos: { x: 0, y: -0.8, z }, rot: { x: Math.PI / 2, y: 0, z: 0 } },
+      i * 0.08,
+      i * 0.08 + 0.55
+    );
+  });
+
   const manholeGeo = new THREE.CylinderGeometry(1.1, 1.1, 1.6, 24);
-  [-20, -40, -60].forEach((z) => {
+  const manholeData = [
+    { z: -20, scatter: { pos: { x:  10, y:  4,   z: -12 }, rot: { x: 0.3,  y: 1.2, z: 0.5 } } },
+    { z: -40, scatter: { pos: { x: -11, y:  5,   z: -38 }, rot: { x: -0.4, y: 0.6, z: 1.0 } } },
+    { z: -60, scatter: { pos: { x:  12, y:  3,   z: -58 }, rot: { x: 0.8,  y: 1.5, z: -0.3 } } },
+  ];
+  manholeData.forEach(({ z, scatter }, i) => {
     const m = new THREE.Mesh(manholeGeo, manholeMat);
-    m.position.set(0, -0.7, z);
-    scene.add(m);
+    makePiece(
+      m,
+      scatter,
+      { pos: { x: 0, y: -0.7, z }, rot: { x: 0, y: 0, z: 0 } },
+      0.22 + i * 0.07,
+      0.22 + i * 0.07 + 0.50
+    );
   });
 
-  // Orange coupling rings
-  const ringMat = new THREE.MeshStandardMaterial({ color: 0xff6b2b, roughness: 0.4, metalness: 0.6 });
   const ringGeo = new THREE.TorusGeometry(0.85, 0.14, 12, 32);
-  [-20, -40, -60].forEach((z) => {
+  const ringData = [
+    { z: -20, scatter: { pos: { x: -12, y: -2, z: -8  }, rot: { x: 1.5, y: 0.2, z: 0.6 } } },
+    { z: -40, scatter: { pos: { x:  13, y:  4, z: -45 }, rot: { x: 0.4, y: 1.0, z: 1.2 } } },
+    { z: -60, scatter: { pos: { x: -14, y: -1, z: -64 }, rot: { x: 1.2, y: 0.7, z: 0.3 } } },
+  ];
+  ringData.forEach(({ z, scatter }, i) => {
     const r = new THREE.Mesh(ringGeo, ringMat);
-    r.rotation.y = Math.PI / 2;
-    r.position.set(0, -0.8, z);
-    scene.add(r);
+    makePiece(
+      r,
+      scatter,
+      { pos: { x: 0, y: -0.8, z }, rot: { x: 0, y: Math.PI / 2, z: 0 } },
+      0.45 + i * 0.06,
+      0.45 + i * 0.06 + 0.45
+    );
   });
 
-  // Resize
+  // ── Scroll progress driver ─────────────────────────────────
+  // Use the same trigger as main.js's GSAP pin (#pipeIntro, top top, +=220%).
+  // We don't need GSAP — compute progress from the intro's bounding box
+  // against the pinned scroll distance.
+  let progress = 0;
+  function computeProgress() {
+    const rect = intro.getBoundingClientRect();
+    // intro height is 100vh; pin extends scroll by 220% of viewport.
+    const pinDist = window.innerHeight * 2.2;
+    // -rect.top is how far past intro's top we've scrolled
+    const scrolled = -rect.top;
+    const t = scrolled / pinDist;
+    progress = Math.min(1, Math.max(0, t));
+  }
+  window.addEventListener('scroll', computeProgress, { passive: true });
+  computeProgress();
+
+  // ── Helpers ────────────────────────────────────────────────
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = (t) => t * t * (3 - 2 * t); // smoothstep
+
+  function applyAssembly(p) {
+    pieces.forEach(({ mesh, scatter, assembled, startT, endT }) => {
+      let local = (p - startT) / (endT - startT);
+      local = Math.min(1, Math.max(0, local));
+      const e = smooth(local);
+
+      mesh.position.x = lerp(scatter.pos.x, assembled.pos.x, e);
+      mesh.position.y = lerp(scatter.pos.y, assembled.pos.y, e);
+      mesh.position.z = lerp(scatter.pos.z, assembled.pos.z, e);
+
+      mesh.rotation.x = lerp(scatter.rot.x, assembled.rot.x, e);
+      mesh.rotation.y = lerp(scatter.rot.y, assembled.rot.y, e);
+      mesh.rotation.z = lerp(scatter.rot.z, assembled.rot.z, e);
+    });
+  }
+
+  function applyCamera(p) {
+    const e = smooth(p);
+    camera.position.x = lerp(camStart.x, camEnd.x, e);
+    camera.position.y = lerp(camStart.y, camEnd.y, e);
+    camera.position.z = lerp(camStart.z, camEnd.z, e);
+    const lookY = lerp(camStart.lookY, camEnd.lookY, e);
+    const lookZ = lerp(camStart.lookZ, camEnd.lookZ, e);
+    camera.lookAt(0, lookY, lookZ);
+  }
+
+  // ── Resize ─────────────────────────────────────────────────
   const ro = new ResizeObserver(() => {
     const nw = intro.clientWidth;
     const nh = intro.clientHeight;
@@ -92,22 +180,18 @@ function initPipe3D() {
   });
   ro.observe(intro);
 
-  // Render loop with gentle camera drift
+  // ── Render loop ────────────────────────────────────────────
   let rafId = null;
-  const clock = new THREE.Clock();
 
   function tick() {
-    const t = clock.getElapsedTime();
-    camera.position.x = 3.5 + Math.sin(t * 0.18) * 1.2;
-    camera.position.y = 2.5 + Math.sin(t * 0.11) * 0.4;
-    camera.lookAt(0, -0.5, -10);
+    applyAssembly(progress);
+    applyCamera(progress);
     renderer.render(scene, camera);
     rafId = requestAnimationFrame(tick);
   }
 
   function start() { if (!rafId) rafId = requestAnimationFrame(tick); }
   function stop()  { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
-
   document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
   start();
 }
