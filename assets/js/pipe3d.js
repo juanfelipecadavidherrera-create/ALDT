@@ -67,7 +67,24 @@ function onResize() {
 }
 window.addEventListener('resize', onResize);
 
+const CAMERA_Z_START = 5;
+const CAMERA_Z_END = -65;
+let currentZ = CAMERA_Z_START;
+
+function getScrollProgress() {
+  const max = document.body.scrollHeight - window.innerHeight;
+  if (max <= 0) return 0;
+  return Math.min(1, Math.max(0, window.scrollY / max));
+}
+
 function tick() {
+  const progress = getScrollProgress();
+  const targetZ = CAMERA_Z_START + (CAMERA_Z_END - CAMERA_Z_START) * progress;
+  currentZ += (targetZ - currentZ) * 0.08;
+
+  camera.position.z = currentZ;
+  camera.lookAt(0, -0.5, currentZ - 10);
+
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
