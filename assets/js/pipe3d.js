@@ -60,7 +60,7 @@ function initPipe3D() {
 
   [-20, -40, -60].forEach(z => {
     const pt = new THREE.PointLight(0x00bfff, 1.4, 18, 1.5);
-    pt.position.set(0, 1.6, z);
+    pt.position.set(0, 2.2, z);
     scene.add(pt);
   });
 
@@ -227,7 +227,7 @@ function initPipe3D() {
   [-20, -40, -60].forEach((z, i) => {
     makePiece(
       makeManhole(),
-      { pos: { x: 0, y: -0.7, z }, rot: { x: 0, y: 0, z: 0 } },
+      { pos: { x: 0, y: 0, z }, rot: { x: 0, y: 0, z: 0 } },
       APPROACH.manhole, PHASE.manhole,
       i * 0.18, i * 0.18 + 0.55
     );
@@ -238,7 +238,7 @@ function initPipe3D() {
   [-10, -30, -50, -70].forEach((z, i) => {
     makePiece(
       new THREE.Mesh(segGeo, pipeMat),
-      { pos: { x: 0, y: -0.8, z }, rot: { x: Math.PI / 2, y: 0, z: 0 } },
+      { pos: { x: 0, y: 0, z }, rot: { x: Math.PI / 2, y: 0, z: 0 } },
       APPROACH.pipeSeg, PHASE.pipeSeg,
       i * 0.14, i * 0.14 + 0.50
     );
@@ -248,7 +248,7 @@ function initPipe3D() {
   [-20, -40, -60].forEach((z, i) => {
     makePiece(
       makeFlange(),
-      { pos: { x: 0, y: -0.8, z }, rot: { x: 0, y: Math.PI / 2, z: 0 } },
+      { pos: { x: 0, y: 0, z }, rot: { x: 0, y: Math.PI / 2, z: 0 } },
       APPROACH.flange, PHASE.flange,
       i * 0.18, i * 0.18 + 0.55
     );
@@ -261,7 +261,7 @@ function initPipe3D() {
   ].forEach(({ z, approach, ry }, i) => {
     makePiece(
       makeEndCap(),
-      { pos: { x: 0, y: -0.8, z }, rot: { x: 0, y: ry, z: 0 } },
+      { pos: { x: 0, y: 0, z }, rot: { x: 0, y: ry, z: 0 } },
       approach, PHASE.endCap,
       i * 0.30, i * 0.30 + 0.65
     );
