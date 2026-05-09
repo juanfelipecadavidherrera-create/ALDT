@@ -1,55 +1,63 @@
 import * as THREE from 'three';
 
-const canvas = document.getElementById('pipe-canvas');
-
-// Reduced motion: leave the section empty (bg-primary fills it via CSS).
 if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-  if (canvas) canvas.style.display = 'none';
+  const c = document.getElementById('pipe-canvas');
+  if (c) c.style.display = 'none';
 } else {
-  initPipe3D();
+  // Wait for first paint so clientWidth/clientHeight are non-zero.
+  requestAnimationFrame(initPipe3D);
 }
 
 function initPipe3D() {
-  const intro = document.getElementById('pipeIntro');
-  const w = intro.clientWidth;
-  const h = intro.clientHeight;
+  const canvas = document.getElementById('pipe-canvas');
+  const intro  = document.getElementById('pipeIntro');
 
+  const w = intro.clientWidth  || window.innerWidth;
+  const h = intro.clientHeight || window.innerHeight;
+
+  // Scene
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x080b10, 18, 80);
   scene.background = new THREE.Color(0x080b10);
+  scene.fog = new THREE.FogExp2(0x080b10, 0.018);
 
+  // Camera
   const camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 500);
-  camera.position.set(3.5, 3, 8);
-  camera.lookAt(0, -0.5, -12);
+  camera.position.set(3.5, 2.5, 8);
+  camera.lookAt(0, -0.5, -10);
 
-  const renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias: true,
-  });
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(w, h, false);
 
-  // Lighting
-  scene.add(new THREE.HemisphereLight(0x88c8ff, 0x1a2030, 0.7));
-  const dir = new THREE.DirectionalLight(0xffffff, 1.2);
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+  const hemi = new THREE.HemisphereLight(0x88c8ff, 0x1a2030, 0.8);
+  scene.add(hemi);
+
+  const dir = new THREE.DirectionalLight(0xffffff, 1.4);
   dir.position.set(6, 10, 5);
   scene.add(dir);
-  const fill = new THREE.DirectionalLight(0x00bfff, 0.3);
-  fill.position.set(-8, 2, -10);
+
+  const fill = new THREE.DirectionalLight(0x00bfff, 0.4);
+  fill.position.set(-8, 2, -5);
   scene.add(fill);
 
   // Ground
-  scene.add(Object.assign(
-    new THREE.Mesh(
-      new THREE.PlaneGeometry(200, 200),
-      new THREE.MeshStandardMaterial({ color: 0x0a0f16, roughness: 1 })
-    ),
-    { rotation: { x: -Math.PI / 2, y: 0, z: 0 }, position: { x: 0, y: -1.5, z: 0 } }
-  ));
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(200, 200),
+    new THREE.MeshStandardMaterial({ color: 0x0a0f16, roughness: 1 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -1.5;
+  scene.add(ground);
 
-  // Main pipe (80 units along -Z)
-  const pipeMat = new THREE.MeshStandardMaterial({ color: 0x00bfff, roughness: 0.35, metalness: 0.25 });
-  const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 80, 32), pipeMat);
+  // Main pipe (80 units along -Z, centred at z=-40)
+  const pipe = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.7, 0.7, 80, 32),
+    new THREE.MeshStandardMaterial({ color: 0x00bfff, roughness: 0.35, metalness: 0.25 })
+  );
   pipe.rotation.x = Math.PI / 2;
   pipe.position.set(0, -0.8, -40);
   scene.add(pipe);
@@ -63,7 +71,7 @@ function initPipe3D() {
     scene.add(m);
   });
 
-  // Orange coupling rings at manhole joints
+  // Orange coupling rings
   const ringMat = new THREE.MeshStandardMaterial({ color: 0xff6b2b, roughness: 0.4, metalness: 0.6 });
   const ringGeo = new THREE.TorusGeometry(0.85, 0.14, 12, 32);
   [-20, -40, -60].forEach((z) => {
@@ -74,37 +82,32 @@ function initPipe3D() {
   });
 
   // Resize
-  function onResize() {
+  const ro = new ResizeObserver(() => {
     const nw = intro.clientWidth;
     const nh = intro.clientHeight;
+    if (!nw || !nh) return;
     camera.aspect = nw / nh;
     camera.updateProjectionMatrix();
     renderer.setSize(nw, nh, false);
-  }
-  window.addEventListener('resize', onResize);
+  });
+  ro.observe(intro);
 
-  // Slow camera orbit around the corridor entrance
+  // Render loop with gentle camera drift
   let rafId = null;
   const clock = new THREE.Clock();
 
   function tick() {
     const t = clock.getElapsedTime();
-
-    // Gentle drift: small lateral + vertical oscillation
     camera.position.x = 3.5 + Math.sin(t * 0.18) * 1.2;
-    camera.position.y = 3.0 + Math.sin(t * 0.11) * 0.5;
-    camera.lookAt(0, -0.5, -12);
-
+    camera.position.y = 2.5 + Math.sin(t * 0.11) * 0.4;
+    camera.lookAt(0, -0.5, -10);
     renderer.render(scene, camera);
     rafId = requestAnimationFrame(tick);
   }
 
-  function startLoop() { if (rafId == null) rafId = requestAnimationFrame(tick); }
-  function stopLoop()  { if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } }
+  function start() { if (!rafId) rafId = requestAnimationFrame(tick); }
+  function stop()  { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } }
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) stopLoop(); else startLoop();
-  });
-
-  startLoop();
+  document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+  start();
 }
