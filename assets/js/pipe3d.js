@@ -244,11 +244,11 @@ function initPipe3D() {
     );
   });
 
-  // ── Phase 4: 3 flanges at junctions ────────────────────────
+  // ── Phase 4: 3 top-mounted access flanges at junctions ────
   [-20, -40, -60].forEach((z, i) => {
     makePiece(
-      makeFlange(),
-      { pos: { x: 0, y: 0, z }, rot: { x: 0, y: 0, z: 0 } },
+      makeFlange(0.95),
+      { pos: { x: 0, y: 1.1, z }, rot: { x: -Math.PI / 2, y: 0, z: 0 } },
       APPROACH.flange, PHASE.flange,
       i * 0.18, i * 0.18 + 0.55
     );
