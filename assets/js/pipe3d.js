@@ -101,16 +101,14 @@ function initPipe3D() {
 
   // ── Phase windows ──────────────────────────────────────────
   const PHASE = {
-    cradle:  { s: 0.05, e: 0.22 },
-    manhole: { s: 0.20, e: 0.40 },
-    pipeSeg: { s: 0.38, e: 0.60 },
-    flange:  { s: 0.58, e: 0.74 },
+    manhole: { s: 0.05, e: 0.32 },
+    pipeSeg: { s: 0.30, e: 0.58 },
+    flange:  { s: 0.56, e: 0.74 },
     endCap:  { s: 0.72, e: 0.86 },
   };
 
   // ── Approach offsets (delta from assembled position) ──────
   const APPROACH = {
-    cradle:  { dx: 0, dy: 6,   dz: 0   },
     manhole: { dx: 0, dy: 9,   dz: 0   },
     pipeSeg: { dx: 0, dy: 1,   dz: 18  },
     flange:  { dx: 0, dy: 4.5, dz: 0   },
@@ -165,17 +163,6 @@ function initPipe3D() {
     return g;
   }
 
-  function makeCradle() {
-    const g = new THREE.Group();
-    const collar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.78, 0.09, 10, 32),
-      ringMat
-    );
-    collar.rotation.y = Math.PI / 2;
-    g.add(collar);
-    return g;
-  }
-
   function makeManhole() {
     const g = new THREE.Group();
     const body = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 1.6, 32), manholeMat);
@@ -200,17 +187,7 @@ function initPipe3D() {
     return g;
   }
 
-  // ── Phase 1: 3 cradles ─────────────────────────────────────
-  [-15, -35, -55].forEach((z, i) => {
-    makePiece(
-      makeCradle(),
-      { pos: { x: 0, y: 0, z }, rot: { x: 0, y: 0, z: 0 } },
-      APPROACH.cradle, PHASE.cradle,
-      i * 0.18, i * 0.18 + 0.55
-    );
-  });
-
-  // ── Phase 2: 3 manholes ────────────────────────────────────
+  // ── Phase 1: 3 manholes ────────────────────────────────────
   [-20, -40, -60].forEach((z, i) => {
     makePiece(
       makeManhole(),
@@ -220,7 +197,7 @@ function initPipe3D() {
     );
   });
 
-  // ── Phase 3: 4 pipe segments ──────────────────────────────
+  // ── Phase 2: 4 pipe segments ──────────────────────────────
   const segGeo = new THREE.CylinderGeometry(0.7, 0.7, 20, 36);
   [-10, -30, -50, -70].forEach((z, i) => {
     makePiece(
@@ -231,7 +208,7 @@ function initPipe3D() {
     );
   });
 
-  // ── Phase 4: 3 top-mounted access flanges at junctions ────
+  // ── Phase 3: 3 top-mounted access flanges at junctions ────
   [-20, -40, -60].forEach((z, i) => {
     makePiece(
       makeFlange(0.95),
@@ -241,7 +218,7 @@ function initPipe3D() {
     );
   });
 
-  // ── Phase 5: 2 end caps ────────────────────────────────────
+  // ── Phase 4: 2 end caps ────────────────────────────────────
   [
     { z:  0,  approach: APPROACH.endCapL, ry: 0       },
     { z: -80, approach: APPROACH.endCapR, ry: Math.PI },
