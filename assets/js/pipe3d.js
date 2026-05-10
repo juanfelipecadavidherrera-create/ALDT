@@ -248,7 +248,7 @@ function initPipe3D() {
   [-20, -40, -60].forEach((z, i) => {
     makePiece(
       makeFlange(),
-      { pos: { x: 0, y: 0, z }, rot: { x: 0, y: Math.PI / 2, z: 0 } },
+      { pos: { x: 0, y: 0, z }, rot: { x: 0, y: 0, z: 0 } },
       APPROACH.flange, PHASE.flange,
       i * 0.18, i * 0.18 + 0.55
     );
