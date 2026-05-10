@@ -167,25 +167,12 @@ function initPipe3D() {
 
   function makeCradle() {
     const g = new THREE.Group();
-    const base = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.2, 0.5), steelMat);
-    base.position.y = -1.4;
-    g.add(base);
-    [-1.2, 1.2].forEach(side => {
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.3, 0.4), steelMat);
-      arm.position.set(side, -0.85, 0);
-      g.add(arm);
-    });
-    const saddle = new THREE.Mesh(
-      new THREE.TorusGeometry(0.85, 0.12, 8, 16, Math.PI),
+    const collar = new THREE.Mesh(
+      new THREE.TorusGeometry(0.78, 0.09, 10, 32),
       ringMat
     );
-    saddle.rotation.set(0, Math.PI / 2, Math.PI);
-    saddle.position.y = -0.8;
-    g.add(saddle);
-    const xBolt = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.5, 8), ringMat);
-    xBolt.rotation.z = Math.PI / 2;
-    xBolt.position.y = -0.25;
-    g.add(xBolt);
+    collar.rotation.y = Math.PI / 2;
+    g.add(collar);
     return g;
   }
 
