@@ -2,13 +2,20 @@ import * as THREE from 'three';
 
 /* ============================================================
    ALDT — Buried trench intro
-   Scroll-driven storm/sanitary installation:
+   Autoplaying storm/sanitary installation:
    open trench → bedding stone → manholes → RCP → covers → backfill.
-   Progress comes from window.__pipe3dProgress (set by ScrollTrigger).
+   This file owns its own clock and publishes progress via
+   'aldt:intro-progress' / 'aldt:intro-complete' events on document —
+   it no longer reads scroll position from anywhere.
    ============================================================ */
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 requestAnimationFrame(() => initPipe3D(REDUCED));
+
+// Full assembly runtime, in ms. The 0.92 rescale below (unchanged from the
+// scroll-driven version) makes assembly finish at 92% of this and hold for
+// the rest, so all downstream phase windows stay tuned exactly as before.
+const RUNTIME_MS = 14000;
 
 /* ── Site dimensions (world units ≈ feet) ──────────────────── */
 const GRADE       = 0;      // finished grade
@@ -736,23 +743,94 @@ function initPipe3D(reduced) {
   });
   ro.observe(intro);
 
-  if (reduced) { renderStill(); return; }
+  if (reduced) {
+    renderStill();
+    // Reduced-motion visitors never see the 14s build sequence, so the page
+    // integration still needs its completion signal to reveal the nav etc.
+    document.dispatchEvent(new CustomEvent('aldt:intro-complete'));
+    window.ALDTIntro = { play() {}, pause() {}, restart() {}, isReducedMotion: true };
+    return;
+  }
 
   /* ── Loop ──────────────────────────────────────────────── */
   applyProgress(0);
   applyCam(0);
 
-  let rafId = null;
-  function tick() {
-    const raw = window.__pipe3dProgress || 0;
+  // Elapsed time is a delta sum accumulated only while playing — NOT
+  // now() - startTime. That's what lets a pause of any length (tab
+  // backgrounded, scrolled off-screen) resume exactly where it left off
+  // instead of the clock jumping forward by the paused duration.
+  let elapsedMs   = 0;
+  let lastFrameMs = null; // null means "not currently advancing"
+  let userPaused  = false;
+  let onscreen    = false;
+  let tabVisible  = !document.hidden;
+  let completed   = false;
+  let rafId       = null;
+
+  // Autoplay follows what's actually on screen: play at ≥50% visible, pause
+  // below that. Combined with tab visibility so a background tab never
+  // burns the clock on an animation nobody can see.
+  const io = new IntersectionObserver(
+    entries => {
+      onscreen = entries[entries.length - 1].intersectionRatio >= 0.5;
+      sync();
+    },
+    { threshold: [0, 0.5, 1] }
+  );
+  io.observe(intro);
+
+  document.addEventListener('visibilitychange', () => { tabVisible = !document.hidden; sync(); });
+
+  // Render only while the canvas can actually be seen. Left running, this
+  // loop keeps drawing a shadow-mapped scene and firing 60 events/sec for
+  // the whole time the visitor is reading the rest of the page.
+  function sync() {
+    const shouldRun = onscreen && tabVisible;
+    if (shouldRun && rafId === null) {
+      lastFrameMs = null;          // no delta credit for the gap
+      rafId = requestAnimationFrame(tick);
+    } else if (!shouldRun && rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+      lastFrameMs = null;
+    }
+  }
+
+  function tick(now) {
+    // Clock advances only when playing; the loop itself also runs while
+    // merely paused-on-screen so the canvas never holds a stale frame.
+    if (!userPaused) {
+      // lastFrameMs resets to null on every pause, so the first frame back
+      // contributes zero delta rather than the entire paused interval.
+      if (lastFrameMs !== null) elapsedMs = Math.min(RUNTIME_MS, elapsedMs + (now - lastFrameMs));
+      lastFrameMs = now;
+    } else {
+      lastFrameMs = null;
+    }
+
+    const raw = elapsedMs / RUNTIME_MS;
     const p = Math.min(1, raw / 0.92); // last 8% of the pin is pure hold
     applyProgress(p);
     applyCam(p);
     renderer.render(scene, camera);
+
+    // Publish rather than read: main.js listens for these instead of
+    // driving us via ScrollTrigger.
+    document.dispatchEvent(new CustomEvent('aldt:intro-progress', { detail: { p } }));
+    if (p >= 1 && !completed) {
+      completed = true;
+      document.dispatchEvent(new CustomEvent('aldt:intro-complete'));
+    }
+
     rafId = requestAnimationFrame(tick);
   }
-  const start = () => { if (!rafId) rafId = requestAnimationFrame(tick); };
-  const stop  = () => { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } };
-  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
-  start();
+  sync();
+
+  window.ALDTIntro = {
+    play()    { userPaused = false; sync(); },
+    pause()   { userPaused = true; },
+    restart() { elapsedMs = 0; lastFrameMs = null; completed = false; sync(); },
+    isReducedMotion: false,
+  };
 }

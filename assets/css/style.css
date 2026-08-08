@@ -135,7 +135,7 @@ img, svg { display: block; max-width: 100%; }
   justify-content: center;
   background: var(--bg-primary);
   overflow: hidden;
-  z-index: 200; /* above fixed nav during pin */
+  z-index: 1; /* below fixed nav (100) — intro no longer pins over it */
 }
 
 /* Text overlay */
