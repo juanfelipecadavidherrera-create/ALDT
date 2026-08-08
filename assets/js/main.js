@@ -26,41 +26,23 @@
   /* ── 2. Register ScrollTrigger ──────────────────────────── */
   gsap.registerPlugin(ScrollTrigger);
 
-  /* ── 3. Pipe Assembly Intro ──────────────────────────────── */
+  /* ── 3. Trench Intro ─────────────────────────────────────
+     The scene itself is built in pipe3d.js (WebGL). This timeline
+     only pins the section, publishes scroll progress to the 3D
+     scene, and drives the DOM overlays on top of it.
+     ───────────────────────────────────────────────────────── */
   (function initPipeAssembly() {
     const intro = document.getElementById('pipeIntro');
     if (!intro) return;
 
-    // Hide nav initially (pipe intro covers full viewport)
+    // Hide nav initially (intro covers full viewport)
     gsap.set('.nav', { opacity: 0, y: -10, pointerEvents: 'none' });
 
-    // Each piece: id, SVG-space transform origin, scatter offset from assembled pos
-    const pieces = [
-      // Pipes & elbows (drawn in assembled positions; scatter them outward)
-      { id: '#pa-elbow-b',  origin: '195 305', sx: -80,  sy: -72,  sr: 42  },
-      { id: '#pa-pipe-b',   origin: '130 405', sx: 150,  sy: -328, sr: 0   },
-      { id: '#pa-pipe-d',   origin: '441 213', sx: 116,  sy: 18,   sr: 6   },
-      { id: '#pa-elbow-t',  origin: '655 165', sx: 122,  sy: 62,   sr: -32 },
-      { id: '#pa-pipe-r',   origin: '809 155', sx: -310, sy: 232,  sr: 0   },
-      // Flanges (fly in from corners / top)
-      { id: '#pa-flange-l', origin: '130 490', sx: -44,  sy: -412, sr: -12 },
-      { id: '#pa-flange-r', origin: '877 155', sx: -48,  sy: -78,  sr: 12  },
-      { id: '#pa-flange-m', origin: '310 248', sx: 68,   sy: -170, sr: 18  },
-      // Gauge last (attaches to center flange)
-      { id: '#pa-gauge',    origin: '310 350', sx: 308,  sy: -272, sr: -26 },
-    ];
-
-    // Set each piece to its scattered start position
-    pieces.forEach(({ id, origin, sx, sy, sr }) => {
-      gsap.set(id, { x: sx, y: sy, rotation: sr, svgOrigin: origin, opacity: 1 });
-    });
-
-    // Build the scroll-driven assembly timeline
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: '#pipeIntro',
         start: 'top top',
-        end: '+=380%',
+        end: '+=150%',
         pin: true,
         scrub: 1.2,
         onUpdate(self) { window.__pipe3dProgress = self.progress; },
@@ -74,35 +56,14 @@
       },
     });
 
-    // Phase 1 — Assemble pipes first, then flanges, then gauge
-    // Each piece animates from its scattered position back to (0,0,0)
-    const assembleOrder = [
-      '#pa-pipe-b', '#pa-pipe-r',   // straight sections
-      '#pa-elbow-b', '#pa-elbow-t', // elbows
-      '#pa-pipe-d',                  // diagonal connector
-      '#pa-flange-l', '#pa-flange-r', '#pa-flange-m', // flanges click into place
-      '#pa-gauge',                   // gauge attaches last
-    ];
+    // Scroll hint clears once the dig is underway
+    tl.to('#pipeScrollHint', { opacity: 0, duration: 0.08 }, 0.04);
 
-    assembleOrder.forEach((id, i) => {
-      tl.to(id, {
-        x: 0, y: 0, rotation: 0,
-        duration: 0.55,
-        ease: 'power3.out',
-      }, i * 0.07); // stagger each piece by 0.07 timeline units
-    });
+    // Tagline lands as the trench is backfilled
+    tl.to('#pipeIntroText', { opacity: 1, duration: 0.16, ease: 'power2.out' }, 0.78);
 
-    // Phase 2 — Wires drop down
-    tl.to('#pa-wires', { opacity: 1, duration: 0.25, ease: 'power2.out' }, 0.72);
-
-    // Phase 3 — Text overlay fades in
-    tl.to('#pipeIntroText', { opacity: 1, duration: 0.3, ease: 'power2.out' }, 0.82);
-
-    // Phase 4 — Hide scroll hint once assembly is well underway
-    tl.to('#pipeScrollHint', { opacity: 0, duration: 0.2 }, 0.05);
-
-    // Hold assembled state (buffer before unpin)
-    tl.to({}, { duration: 0.35 });
+    // Hold the finished condition before unpinning
+    tl.to({}, { duration: 0.12 });
   })();
 
   /* ── 4. Navigation Scroll Behavior ─────────────────────── */
