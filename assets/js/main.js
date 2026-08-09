@@ -13,18 +13,22 @@
     smoothWheel: true,
   });
 
-  function raf(time) {
-    lenis.raf(time);
-    requestAnimationFrame(raf);
-  }
-  requestAnimationFrame(raf);
-
-  // Hook Lenis into GSAP ticker
+  // Single driver: GSAP's ticker steps Lenis every frame (time converted to
+  // ms). A second, independent requestAnimationFrame loop used to also call
+  // lenis.raf() here — two clocks stepping the same scroll instance with
+  // different time bases produced jitter, which surfaces badly once a
+  // pinned ScrollTrigger section (see Tools, below) is scrubbing against it.
+  // Keep exactly one driver.
   gsap.ticker.add((time) => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
 
   /* ── 2. Register ScrollTrigger ──────────────────────────── */
   gsap.registerPlugin(ScrollTrigger);
+
+  // Lenis intercepts wheel/touch and animates scroll itself, so the native
+  // scrollTop ScrollTrigger reads doesn't move in step with it. Without this,
+  // pinned/scrubbed triggers drift or stutter against Lenis's smoothing.
+  lenis.on('scroll', ScrollTrigger.update);
 
   /* ── 3. Trench Intro ─────────────────────────────────────
      The scene itself is built in pipe3d.js (WebGL) and owns its own
@@ -80,6 +84,20 @@
     const setHint = scrollHint ? gsap.quickSetter(scrollHint, 'opacity') : null;
     const setText = introText  ? gsap.quickSetter(introText, 'opacity') : null;
 
+    // Tagline rises into place as it fades, driven off the same p as opacity.
+    // .pipe-intro__text is horizontally centred via `transform:
+    // translateX(-50%)` in CSS — a plain gsap y-setter would overwrite that
+    // transform outright and the text would jump to the left edge, so the
+    // -50% has to be composed into every write here rather than left to CSS.
+    // Direct style write (not a CSS transition): this listener fires every
+    // frame off pipe3d.js's own clock, and a transition would fight it the
+    // same way a second easing layer would.
+    const RISE_PX = 22;
+    function setTextY(p) {
+      if (!introText) return;
+      introText.style.transform = `translate(-50%, ${(1 - p) * RISE_PX}px)`;
+    }
+
     document.addEventListener('aldt:intro-progress', (e) => {
       const p = (e.detail && typeof e.detail.p === 'number') ? e.detail.p : 0;
 
@@ -89,8 +107,10 @@
       // means 0.8s, which flashes the hint away before it can be read.
       if (setHint) setHint(1 - Math.max(0, Math.min(1, (p - 0.60) / 0.14)));
 
-      // Tagline fades in late, as the trench is backfilled (was position 0.78)
-      if (setText) setText(Math.max(0, Math.min(1, (p - 0.78) / 0.16)));
+      // Tagline fades + rises in late, as the trench is backfilled (was position 0.78)
+      const textP = Math.max(0, Math.min(1, (p - 0.78) / 0.16));
+      if (setText) setText(textP);
+      setTextY(textP);
     });
   })();
 
@@ -125,7 +145,7 @@
     { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.7)', stagger: 0.08, delay: 0.9 }
   );
 
-  /* ── 5. Hero Content Entrance ───────────────────────────── */
+  /* ── 6. Hero Content Entrance ───────────────────────────── */
   const heroTl = gsap.timeline({ delay: 0.15 });
   heroTl
     .fromTo('.hero__eyebrow',
@@ -144,7 +164,7 @@
       { opacity: 0 },
       { opacity: 1, duration: 0.6 }, '-=0.2');
 
-  /* ── 6. Generic Scroll Reveal ───────────────────────────── */
+  /* ── 7. Generic Scroll Reveal ───────────────────────────── */
   gsap.utils.toArray('.reveal').forEach((el) => {
     gsap.fromTo(
       el,
@@ -162,7 +182,12 @@
     );
   });
 
-  /* ── 7. Tool Cards Stagger ──────────────────────────────── */
+  /* ── 8. Tool Cards Stagger ───────────────────────────────
+     Dead at present — no .tool-card / .tools__grid elements exist in the
+     DOM (the Tools section is the horizontal-scroll showcase below), but
+     the hook is kept intact and harmless (0 matches) for any future grid
+     layout that reuses these classes.
+     ───────────────────────────────────────────────────────── */
   const toolCards = gsap.utils.toArray('.tool-card');
   if (toolCards.length) {
     gsap.fromTo(
@@ -182,7 +207,7 @@
     );
   }
 
-  /* ── 8. Workflow Steps Stagger ──────────────────────────── */
+  /* ── 9. Workflow Steps Stagger ──────────────────────────── */
   const workflowSteps = gsap.utils.toArray('.workflow__step');
   if (workflowSteps.length) {
     gsap.fromTo(
@@ -202,7 +227,7 @@
     );
   }
 
-  /* ── 9. Animated Counters ───────────────────────────────── */
+  /* ── 10. Animated Counters ──────────────────────────────── */
   document.querySelectorAll('[data-count]').forEach((el) => {
     const target = parseFloat(el.dataset.count);
     const isInt  = Number.isInteger(target);
@@ -227,7 +252,7 @@
     });
   });
 
-  /* ── 10. About Diagram Draw ─────────────────────────────── */
+  /* ── 11. About Diagram Draw ─────────────────────────────── */
   const aboutPaths = document.querySelectorAll('#about-diagram path, #about-diagram line');
   aboutPaths.forEach((p) => {
     let len = 200;
@@ -254,7 +279,7 @@
     },
   });
 
-  /* ── 11. Smooth Anchor Scroll ───────────────────────────── */
+  /* ── 12. Smooth Anchor Scroll ───────────────────────────── */
   document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
     anchor.addEventListener('click', (e) => {
       e.preventDefault();
@@ -263,178 +288,56 @@
     });
   });
 
-  /* ── 12. Tool Carousel ──────────────────────────────────── */
-  (function initCarousel() {
-    const carousel  = document.getElementById('toolsCarousel');
-    if (!carousel) return;
+  /* ── 13. Horizontal Tools Section ────────────────────────
+     Vertical scroll drives horizontal translation of #toolsTrack while
+     #toolsScroll is pinned — the standard GSAP ScrollTrigger idiom for
+     https://scroll-driven-animations.style/demos/horizontal-section/.
+     CSS `view-timeline` was ruled out: Firefox still ships it behind a
+     flag, GSAP (already loaded) produces the same effect everywhere.
 
-    const slides    = [...carousel.querySelectorAll('.carousel__slide')];
-    const dots      = [...carousel.querySelectorAll('.carousel__dot')];
-    const timerBar  = document.getElementById('carouselTimerBar');
-    const btnPrev   = carousel.querySelector('.carousel__btn--prev');
-    const btnNext   = carousel.querySelector('.carousel__btn--next');
-    const DURATION  = 5000; // ms per slide
+     Scoped to desktop widths with gsap.matchMedia() — a full-viewport
+     horizontal pin is poor UX on a phone, and users with
+     prefers-reduced-motion get a static layout with no pin, no scrub.
+     Both non-desktop cases are handled by ordinary CSS in style.css
+     (.tools-scroll): a swipeable snap strip on mobile, a vertical stack
+     under reduced motion. matchMedia also means the pin is created and
+     *cleanly reverted* as the viewport crosses the breakpoint (e.g.
+     rotating a tablet), which a plain window-resize check wouldn't give
+     us for free.
+     ───────────────────────────────────────────────────────── */
+  const toolsMM = gsap.matchMedia();
 
-    let current     = 0;
-    let intervalId  = null;
-    let timerTween  = null;
-    let paused      = false;
+  toolsMM.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
+    const section = document.getElementById('toolsScroll');
+    const track   = document.getElementById('toolsTrack');
+    if (!section || !track) return;
 
-    /* ── Navigate to slide index ──────────────────────────── */
-    function goTo(index, direction) {
-      const next = ((index % slides.length) + slides.length) % slides.length;
-      if (next === current) return;
+    // A function, not a stored number — re-evaluated on every refresh
+    // (invalidateOnRefresh) so resize and web-font load (both change
+    // track.scrollWidth) don't leave the scrub travelling the wrong
+    // distance and cutting the last card off.
+    const distance = () => track.scrollWidth - window.innerWidth;
 
-      const outgoing = slides[current];
-      const incoming = slides[next];
-      const dir      = direction ?? (next > current ? 1 : -1);
-
-      // Outgoing: slide out to the left/right
-      gsap.to(outgoing, {
-        opacity: 0,
-        x: dir * -50,
-        duration: 0.45,
-        ease: 'power2.in',
-        onComplete() {
-          outgoing.classList.remove('active');
-          gsap.set(outgoing, { x: 0 });
-        },
-      });
-
-      // Incoming: slide in from the right/left
-      gsap.fromTo(
-        incoming,
-        { opacity: 0, x: dir * 60 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 0.55,
-          ease: 'power3.out',
-          delay: 0.1,
-          onStart() { incoming.classList.add('active'); },
-        }
-      );
-
-      // Update dots
-      dots[current].classList.remove('active');
-      dots[current].setAttribute('aria-selected', 'false');
-      dots[next].classList.add('active');
-      dots[next].setAttribute('aria-selected', 'true');
-
-      current = next;
-      resetProgressBar();
-    }
-
-    /* ── Progress bar animation ───────────────────────────── */
-    function resetProgressBar() {
-      if (timerTween) timerTween.kill();
-      if (!timerBar) return;
-      gsap.set(timerBar, { width: '0%' });
-      timerTween = gsap.to(timerBar, {
-        width: '100%',
-        duration: DURATION / 1000,
-        ease: 'none',
-      });
-    }
-
-    /* ── Auto-advance timer ───────────────────────────────── */
-    function startTimer() {
-      intervalId = setInterval(() => {
-        if (!paused) goTo(current + 1, 1);
-      }, DURATION);
-    }
-
-    function stopTimer() {
-      clearInterval(intervalId);
-      if (timerTween) timerTween.pause();
-    }
-
-    function resumeTimer() {
-      if (timerTween) timerTween.resume();
-    }
-
-    /* ── Button listeners ─────────────────────────────────── */
-    if (btnPrev) {
-      btnPrev.addEventListener('click', () => {
-        stopTimer(); goTo(current - 1, -1); startTimer();
-      });
-    }
-    if (btnNext) {
-      btnNext.addEventListener('click', () => {
-        stopTimer(); goTo(current + 1, 1); startTimer();
-      });
-    }
-
-    /* ── Dot listeners ────────────────────────────────────── */
-    dots.forEach((dot, i) => {
-      dot.addEventListener('click', () => {
-        const dir = i > current ? 1 : -1;
-        stopTimer(); goTo(i, dir); startTimer();
-      });
+    gsap.to(track, {
+      x: () => -distance(),
+      ease: 'none',
+      scrollTrigger: {
+        trigger: section,
+        start: 'top top',
+        end: () => '+=' + distance(),
+        pin: true,
+        scrub: 1,
+        invalidateOnRefresh: true,
+      },
     });
+  });
 
-    /* ── Pause on hover ───────────────────────────────────── */
-    carousel.addEventListener('mouseenter', () => { paused = true;  resumeTimer(); });
-    carousel.addEventListener('mouseleave', () => { paused = false; });
-
-    /* ── Touch / swipe ────────────────────────────────────── */
-    let touchStartX = 0;
-    carousel.addEventListener('touchstart', (e) => {
-      touchStartX = e.touches[0].clientX;
-    }, { passive: true });
-
-    carousel.addEventListener('touchend', (e) => {
-      const diff = touchStartX - e.changedTouches[0].clientX;
-      if (Math.abs(diff) > 45) {
-        const dir = diff > 0 ? 1 : -1;
-        stopTimer(); goTo(current + dir, dir); startTimer();
-      }
-    }, { passive: true });
-
-    /* ── Keyboard navigation ──────────────────────────────── */
-    carousel.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft')  { stopTimer(); goTo(current - 1, -1); startTimer(); }
-      if (e.key === 'ArrowRight') { stopTimer(); goTo(current + 1,  1); startTimer(); }
-    });
-
-    /* ── Lock track height to tallest slide ──────────────── */
-    function lockTrackHeight() {
-      const track = document.getElementById('carouselTrack');
-      if (!track) return;
-      // Temporarily make all slides visible to measure natural heights
-      slides.forEach((s) => {
-        s.style.position = 'relative';
-        s.style.opacity  = '1';
-        s.style.visibility = 'hidden';
-      });
-      const maxH = Math.max(...slides.map((s) => s.offsetHeight));
-      slides.forEach((s) => {
-        s.style.position   = '';
-        s.style.opacity    = '';
-        s.style.visibility = '';
-      });
-      track.style.height = maxH + 'px';
-    }
-
-    lockTrackHeight();
-
-    // Re-lock on resize (layout reflows can change card heights)
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(lockTrackHeight, 120);
-    });
-
-    /* ── Init ─────────────────────────────────────────────── */
-    resetProgressBar();
-    startTimer();
-  })();
-
-  /* ── 13. Refresh ScrollTrigger Positions ────────────────
-     The intro no longer pins the page, so total document height is
-     different from before; re-measure trigger start/end points now
-     that layout (including the carousel's locked track height) has
-     settled.
+  /* ── 14. Refresh ScrollTrigger Positions ────────────────
+     The intro no longer pins the page, and the Tools section above adds
+     a pin of its own that changes total document height — re-measure
+     trigger start/end points now that layout has settled so the reveal /
+     stagger / counter triggers further down the page still fire at
+     sensible scroll positions.
      ───────────────────────────────────────────────────────── */
   ScrollTrigger.refresh();
 

@@ -4,17 +4,33 @@
    ============================================================ */
 
 /* ── Custom Properties ─────────────────────────────────────── */
+/* Light theme. Accent blues/oranges are deliberately darker than the old
+   dark-theme brand colors (#00BFFF / #FF6B2B) — those sit at ~2.1:1 and
+   ~2.8:1 on white, well under WCAG AA. --accent / --accent-warm below are
+   the same hue family pulled down in lightness until they clear 4.5:1 for
+   text, links, small icons and thin strokes. --accent-bright /
+   --accent-warm-bright keep more of the original vividness for large
+   display graphics and thick strokes only (they clear ~3.6–4:1, "visible,
+   not washed out" rather than AA-for-text). See report for measured ratios. */
 :root {
-  --bg-primary:   #080B10;
-  --bg-secondary: #0E1320;
-  --bg-card:      #111827;
-  --accent:       #00BFFF;
-  --accent-glow:  rgba(0, 191, 255, 0.18);
-  --accent-warm:  #FF6B2B;
-  --text-primary: #F0F4F8;
-  --text-muted:   #6B7A99;
-  --border:       rgba(0, 191, 255, 0.14);
-  --border-warm:  rgba(255, 107, 43, 0.25);
+  --bg-primary:   #FFFFFF;
+  --bg-secondary: #F5F7FA;
+  --bg-card:      #FFFFFF;
+
+  --accent:             #007AA3;  /* 4.87:1 on white — text/links/icons/thin strokes */
+  --accent-dark:        #005974;  /* 7.83:1 — hover/active state */
+  --accent-bright:      #0091C2;  /* 3.60:1 — large graphics / thick strokes only */
+  --accent-glow:        rgba(0, 122, 163, 0.10);
+
+  --accent-warm:        #CC3E00;  /* 4.93:1 on white */
+  --accent-warm-dark:   #A83300;  /* 6.69:1 — hover/active state */
+  --accent-warm-bright: #E64500;  /* 4.03:1 — large graphics / thick strokes only */
+
+  --text-primary: #14181F;  /* 17.8:1 on white — deep neutral, not pure black */
+  --text-muted:   #56606D;  /* 6.38:1 on white */
+
+  --border:       rgba(15, 23, 42, 0.12);
+  --border-warm:  rgba(204, 62, 0, 0.28);
 
   --font-display: 'Space Grotesk', sans-serif;
   --font-body:    'Inter', sans-serif;
@@ -98,9 +114,9 @@ img, svg { display: block; max-width: 100%; }
   color: var(--bg-primary);
 }
 .btn--primary:hover {
-  background: #29ccff;
+  background: var(--accent-dark);
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,191,255,0.35);
+  box-shadow: 0 8px 28px rgba(0,122,163,0.28);
 }
 
 .btn--outline {
@@ -119,9 +135,9 @@ img, svg { display: block; max-width: 100%; }
   color: #fff;
 }
 .btn--warm:hover {
-  background: #ff824a;
+  background: var(--accent-warm-dark);
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(255,107,43,0.35);
+  box-shadow: 0 8px 28px rgba(204,62,0,0.28);
 }
 
 /* ── Pipe Assembly Intro ────────────────────────────────────── */
@@ -133,7 +149,12 @@ img, svg { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-primary);
+  /* Intentionally NOT var(--bg-primary) — the rest of the site is now a
+     light theme, but this fallback only shows before the WebGL canvas has
+     painted its first (dark, pre-dawn) frame. A white background here would
+     flash white for a moment on load; keep it dark/neutral regardless of
+     the light theme everywhere else. */
+  background: #05070C;
   overflow: hidden;
   z-index: 1; /* below fixed nav (100) — intro no longer pins over it */
 }
@@ -150,21 +171,17 @@ img, svg { display: block; max-width: 100%; }
   white-space: nowrap;
 }
 
-.pipe-intro__eyebrow {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 0.55rem;
-}
-
+/* Tagline and scroll hint sit on top of the WebGL scene, not the page
+   background, and that scene starts dark (pre-dawn) — so like .pipe-intro
+   above these are intentionally NOT tied to the global light-theme text
+   tokens (which are dark-on-light). A soft shadow keeps them readable
+   across the animation's brightness range. */
 .pipe-intro__tagline {
   font-family: var(--font-display);
   font-size: clamp(1.1rem, 2.8vw, 1.9rem);
   font-weight: 700;
-  color: var(--text-primary);
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
   letter-spacing: -0.01em;
 }
 
@@ -182,7 +199,8 @@ img, svg { display: block; max-width: 100%; }
   font-size: 0.68rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
   transition: opacity 0.4s;
 }
 
@@ -193,6 +211,13 @@ img, svg { display: block; max-width: 100%; }
 }
 
 /* ── Navigation ─────────────────────────────────────────────── */
+/* The nav is fixed and JS-revealed (opacity 0 → 1) while whatever sits
+   behind it is still in flux — the dark pipe-intro fallback, the WebGL
+   sunrise scene mid-animation, or the light page once scrolled past it.
+   Rather than guessing, it carries its own translucent light backdrop at
+   all times so its (dark) text stays legible regardless of what's behind
+   — this doesn't fight the JS opacity fade, it's just what's rendered once
+   that opacity resolves to 1. .scrolled strengthens the same backdrop. */
 .nav {
   position: fixed;
   top: 0;
@@ -200,13 +225,17 @@ img, svg { display: block; max-width: 100%; }
   right: 0;
   z-index: 100;
   padding: 1.4rem 0;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: var(--transition);
 }
 
 .nav.scrolled {
   padding: 0.8rem 0;
-  background: rgba(8, 11, 16, 0.88);
-  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border-bottom: 1px solid var(--border);
 }
 
@@ -241,7 +270,10 @@ img, svg { display: block; max-width: 100%; }
 .nav__links a {
   font-size: 0.88rem;
   font-weight: 500;
-  color: var(--text-muted);
+  /* Slightly darker than the page's --text-muted on purpose: the nav
+     backdrop is translucent, so link text needs extra contrast margin to
+     stay >=4.5:1 even when whatever's behind the blur is dark. */
+  color: #3D4552;
   transition: color 0.2s;
 }
 .nav__links a:hover { color: var(--text-primary); }
@@ -268,7 +300,9 @@ img, svg { display: block; max-width: 100%; }
 #hero-pipes {
   width: 100%;
   height: 100%;
-  opacity: 0.18;
+  /* Was tuned at 0.18 for glow-on-dark; on white the same alpha reads as
+     washed out, so it's raised to stay a visible (still subtle) backdrop. */
+  opacity: 0.4;
 }
 
 .hero__glow {
@@ -276,7 +310,7 @@ img, svg { display: block; max-width: 100%; }
   width: 600px;
   height: 600px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,191,255,0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0,122,163,0.08) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -305,8 +339,8 @@ img, svg { display: block; max-width: 100%; }
 }
 
 @keyframes pulse-dot {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(0,191,255,0.6); }
-  50%       { box-shadow: 0 0 0 8px rgba(0,191,255,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0,122,163,0.55); }
+  50%       { box-shadow: 0 0 0 8px rgba(0,122,163,0); }
 }
 
 .hero__eyebrow-text {
@@ -427,7 +461,7 @@ img, svg { display: block; max-width: 100%; }
 .tool-card:hover {
   border-color: var(--accent);
   transform: translateY(-4px);
-  box-shadow: 0 20px 60px rgba(0,191,255,0.1);
+  box-shadow: 0 20px 48px rgba(15,23,42,0.10);
 }
 
 .tool-card:hover::before { opacity: 1; }
@@ -441,7 +475,9 @@ img, svg { display: block; max-width: 100%; }
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
-  background: rgba(0,191,255,0.04);
+  /* was rgba(255,255,255-adjacent blue at 0.04 alpha — invisible on white;
+     the off-white section token reads as an actual visible tint instead */
+  background: var(--bg-secondary);
   position: relative;
 }
 
@@ -509,7 +545,10 @@ img, svg { display: block; max-width: 100%; }
 }
 
 .workflow__connector svg {
-  color: var(--border);
+  /* var(--border) is a near-invisible 0.12-alpha hairline by design — too
+     faint to read as a connecting line on its own, so this uses a
+     dedicated light-but-visible neutral instead of the border token. */
+  color: #CBD2DA;
 }
 
 .workflow__step {
@@ -622,18 +661,19 @@ img, svg { display: block; max-width: 100%; }
 
 .pricing__card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 48px rgba(0,191,255,0.1);
+  box-shadow: 0 12px 40px rgba(15,23,42,0.10);
 }
 
 .pricing__card--featured {
   border-color: var(--accent);
-  box-shadow: 0 0 60px rgba(0,191,255,0.12),
-              inset 0 1px 0 rgba(255,255,255,0.04);
+  /* dropped the old inset rgba(255,255,255,0.04) "glossy edge" highlight —
+     it simulated a light catching a dark card and is invisible/meaningless
+     on a white one */
+  box-shadow: 0 0 40px rgba(0,122,163,0.12);
 }
 
 .pricing__card--featured:hover {
-  box-shadow: 0 12px 64px rgba(0,191,255,0.22),
-              inset 0 1px 0 rgba(255,255,255,0.04);
+  box-shadow: 0 12px 48px rgba(0,122,163,0.20);
 }
 
 .pricing__badge {
@@ -774,7 +814,7 @@ img, svg { display: block; max-width: 100%; }
   width: 700px;
   height: 400px;
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(0,191,255,0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(0,122,163,0.07) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -919,59 +959,53 @@ img, svg { display: block; max-width: 100%; }
 }
 .footer__social a:hover { color: var(--accent); }
 
-/* ── Carousel ───────────────────────────────────────────────── */
-.carousel {
-  position: relative;
+/* ── Horizontal Tools Scroll ────────────────────────────────
+   Base rules here are the mobile-first / reduced-motion fallback: a
+   natively swipeable, scroll-snapped strip — no JS involved. At desktop
+   widths (min-width 768px) the media query below hands the horizontal
+   motion to GSAP ScrollTrigger instead (see main.js §13), which pins
+   this element and scrubs the track's transform as the page scrolls.
+   The prefers-reduced-motion query, deliberately unconditional on
+   width, always wins last in the cascade and collapses everything back
+   to a plain static vertical stack — no pin, no scrub, no snap. ─────── */
+.tools-scroll {
   margin-top: 3rem;
-  padding-bottom: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.tools-scroll::-webkit-scrollbar { display: none; }
+
+.tools-scroll__track {
+  display: flex;
+  width: max-content;
+  gap: 1.25rem;
+  padding: 0.5rem 6vw 1.5rem;
 }
 
-.carousel__track {
-  position: relative;
-  /* height is set by JS to the tallest slide — never changes on transition */
+.tools-scroll__card {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: min(86vw, 420px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
 }
 
-.carousel__slide {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-  transform: translateX(48px);
-}
-
-.carousel__slide.active {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(0);
-  z-index: 1;
-}
-
-.carousel__slide.exit-left {
-  transform: translateX(-48px);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.carousel__card {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4rem;
-  align-items: center;
-  padding: 3rem 0 2rem;
-}
-
-.carousel__card-visual {
+.tools-scroll__visual {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.2rem;
 }
 
-.carousel__card-badge {
+.tools-scroll__badge {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.1em;
@@ -979,60 +1013,55 @@ img, svg { display: block; max-width: 100%; }
   border: 1px solid var(--border);
   padding: 0.35em 1em;
   border-radius: 100px;
-  background: rgba(0,191,255,0.06);
+  background: rgba(0,122,163,0.08);
 }
 
-.carousel__card-icon {
-  width: 160px;
-  height: 160px;
+.tools-scroll__icon {
+  width: 120px;
+  height: 120px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-card);
-  box-shadow: 0 0 50px rgba(0,191,255,0.1), inset 0 1px 0 rgba(255,255,255,0.04);
-  transition: box-shadow 0.4s;
+  background: var(--bg-secondary);
+  box-shadow: 0 0 40px rgba(0,122,163,0.10), inset 0 1px 0 rgba(15,23,42,0.05);
+  flex-shrink: 0;
 }
 
-.carousel__slide.active .carousel__card-icon {
-  box-shadow: 0 0 70px rgba(0,191,255,0.18), inset 0 1px 0 rgba(255,255,255,0.04);
-}
-
-.carousel__card-title {
+.tools-scroll__title {
   font-family: var(--font-display);
-  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
   font-weight: 700;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
-  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 0.75rem;
 }
 
-.carousel__card-desc {
+.tools-scroll__desc {
   color: var(--text-muted);
-  font-size: 1.05rem;
-  line-height: 1.72;
-  max-width: 540px;
-  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.68;
+  margin-bottom: 1.25rem;
 }
 
-.carousel__card-features {
+.tools-scroll__features {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.6rem;
 }
 
-.carousel__card-features li {
+.tools-scroll__features li {
   display: flex;
   align-items: center;
   gap: 0.7rem;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   line-height: 1.5;
 }
 
-.carousel__card-features li::before {
+.tools-scroll__features li::before {
   content: '';
   flex-shrink: 0;
   width: 6px;
@@ -1041,93 +1070,73 @@ img, svg { display: block; max-width: 100%; }
   background: var(--accent);
 }
 
-/* Prev / Next buttons */
-.carousel__btn {
-  position: absolute;
-  top: calc(50% - 40px); /* offset above nav row */
-  transform: translateY(-50%);
-  z-index: 10;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text-primary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-  flex-shrink: 0;
+/* Desktop: GSAP owns the horizontal motion (main.js §13, gsap.matchMedia
+   scoped to this same breakpoint) — the section becomes a full-height pin
+   target and native scroll/snap is switched off so the two systems don't
+   fight each other. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .tools-scroll {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    scroll-snap-type: none;
+  }
+
+  .tools-scroll__track {
+    gap: 4rem;
+    padding: 0 8vw;
+  }
+
+  .tools-scroll__card {
+    scroll-snap-align: none;
+    flex-direction: row;
+    align-items: center;
+    gap: 3rem;
+    width: min(72vw, 860px);
+    padding: 3rem;
+  }
+
+  .tools-scroll__visual {
+    flex-shrink: 0;
+  }
+
+  .tools-scroll__icon {
+    width: 160px;
+    height: 160px;
+  }
+
+  .tools-scroll__desc {
+    max-width: 480px;
+  }
 }
 
-.carousel__btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  box-shadow: 0 0 20px rgba(0,191,255,0.2);
-  transform: translateY(calc(-50% - 2px));
-}
+/* Reduced motion: static, readable, no pin/scrub/snap regardless of width.
+   Declared after the desktop block so it wins on source order at any
+   viewport size the two queries overlap at. */
+@media (prefers-reduced-motion: reduce) {
+  .tools-scroll {
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
 
-.carousel__btn--prev { left: 1rem; }
-.carousel__btn--next { right: 1rem; }
+  .tools-scroll__track {
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    padding: 0;
+    gap: 1.5rem;
+  }
 
-/* Dots + timer row */
-.carousel__nav {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1.5rem 0 0.5rem;
-  flex-wrap: wrap;
-}
+  .tools-scroll__card {
+    width: 100%;
+    flex-direction: column;
+  }
 
-.carousel__dots {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.carousel__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 0;
-  opacity: 0.5;
-}
-
-.carousel__dot.active {
-  width: 28px;
-  border-radius: 4px;
-  background: var(--accent);
-  opacity: 1;
-  box-shadow: 0 0 12px rgba(0,191,255,0.5);
-}
-
-.carousel__timer {
-  flex: 1;
-  max-width: 180px;
-  height: 2px;
-  background: var(--border);
-  border-radius: 1px;
-  overflow: hidden;
-}
-
-.carousel__timer-bar {
-  height: 100%;
-  width: 0%;
-  background: var(--accent);
-  border-radius: 1px;
-}
-
-.carousel__hint {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  margin-left: auto;
-  white-space: nowrap;
+  .tools-scroll__desc {
+    max-width: none;
+  }
 }
 
 /* Autodesk App Store button */
@@ -1146,59 +1155,7 @@ img, svg { display: block; max-width: 100%; }
   background: #222240;
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,191,255,0.2);
-}
-
-/* Responsive carousel */
-@media (max-width: 820px) {
-  .carousel__card {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-    text-align: center;
-  }
-
-  .carousel__card-visual {
-    flex-direction: row;
-    justify-content: center;
-    gap: 1.5rem;
-  }
-
-  .carousel__card-icon {
-    width: 100px;
-    height: 100px;
-  }
-
-  .carousel__card-features {
-    text-align: left;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-
-  /*
-   * Snap buttons to the icon row, not the full-track vertical centre.
-   * At row layout: icon centre = card padding-top (3rem) + half icon height (50px).
-   * transform: translateY(-50%) centres the button on that point.
-   */
-  .carousel__btn {
-    top: calc(3rem + 50px);
-  }
-  .carousel__btn--prev { left: 0.3rem; }
-  .carousel__btn--next { right: 0.3rem; }
-
-  /* track height is managed by JS */
-
-  .carousel__hint { display: none; }
-}
-
-@media (max-width: 500px) {
-  /*
-   * Column layout: badge stacks above the icon.
-   * Icon centre ≈ padding-top (3rem) + badge (~1.8rem) + gap (1.2rem) + half icon (50px).
-   */
-  .carousel__btn {
-    top: calc(3rem + 1.8rem + 1.2rem + 50px);
-  }
-  .carousel__card-visual { flex-direction: column; align-items: center; }
+  box-shadow: 0 8px 28px rgba(0,122,163,0.22);
 }
 
 /* ── Reveal Animations ──────────────────────────────────────── */
@@ -1242,8 +1199,11 @@ img, svg { display: block; max-width: 100%; }
 /* ── Scrollbar ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-primary); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+/* var(--border) is a faint 0.12-alpha hairline — not visible enough to
+   read as a scrollbar thumb on a white track, so this uses a solid,
+   visible light-neutral instead */
+::-webkit-scrollbar-thumb { background: #D6DAE1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 /* ── Selection ──────────────────────────────────────────────── */
-::selection { background: rgba(0,191,255,0.25); color: var(--text-primary); }
+::selection { background: rgba(0,122,163,0.22); color: var(--text-primary); }

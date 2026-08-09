@@ -173,17 +173,18 @@ function spoilCanvas() {
   return c;
 }
 
-/* Dusk sky — dark and on-brand, but not flat black. */
-function skyCanvas() {
-  const c = makeCanvas(4, 256), x = c.getContext('2d');
-  const g = x.createLinearGradient(0, 0, 0, 256);
-  g.addColorStop(0.00, '#04070c');
-  g.addColorStop(0.45, '#0a1018');
-  g.addColorStop(0.74, '#152030');
-  g.addColorStop(0.90, '#2a2a2c');
-  g.addColorStop(1.00, '#33251a');
-  x.fillStyle = g; x.fillRect(0, 0, 4, 256);
-  return c;
+/* Sky gradient — repainted every frame as the sun climbs from pre-dawn to
+   full daylight (see applyLighting). The canvas is 4×256, so redrawing it
+   at 60fps is negligible; a shader or skydome would be overkill here. */
+function paintSky(ctx, stops) {
+  const g = ctx.createLinearGradient(0, 0, 0, 256);
+  g.addColorStop(0.00, stops[0]);
+  g.addColorStop(0.45, stops[1]);
+  g.addColorStop(0.74, stops[2]);
+  g.addColorStop(0.90, stops[3]);
+  g.addColorStop(1.00, stops[4]);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 4, 256);
 }
 
 /* Soft round sprite for dust. */
@@ -282,8 +283,11 @@ function initPipe3D(reduced) {
 
   /* ── Scene ─────────────────────────────────────────────── */
   const scene = new THREE.Scene();
-  scene.background = toTexture(skyCanvas(), 1, 1, true);
-  scene.fog = new THREE.Fog(0x121a24, 45, 135);
+  const skyCvs = makeCanvas(4, 256);
+  const skyCtx = skyCvs.getContext('2d');
+  const skyTex = toTexture(skyCvs, 1, 1, true);
+  scene.background = skyTex;
+  scene.fog = new THREE.Fog(0x0d131f, 45, 135); // overwritten per-frame by applyLighting
 
   const camera = new THREE.PerspectiveCamera(35, w / h, 0.1, 400);
 
@@ -299,13 +303,26 @@ function initPipe3D(reduced) {
   }
   fitFov();
   /* Arc: establish from grade → descend into the trench → travel at pipe
-     level for the placement → rise back out as the backfill sweeps in. */
+     level for the placement → rise back out as the backfill sweeps in.
+
+     Both grade-crossing legs (descent AND exit) get the same treatment:
+     never lerp straight from "well above grade" to "well inside the
+     trench" in one hop, because that line cuts across the battered wall
+     face (x=2.2 at the floor, leaning out to x≈2.398 at grade) while y is
+     still crossing zero. The exit leg (0.76→0.92, via 0.86) was fixed
+     first; the descent leg (0.26→0.52) had the same defect — straight-line
+     tightest clearance was +0.007 units at p=0.414, near enough to zero to
+     call it a coincidence, not a margin. Fixed the same way, via 0.40:
+     pull x in low while still above grade, THEN descend with x already
+     safely inside the wall's envelope at every height on the way down. */
   const camPath = [
     { t: 0.00, pos: [3.4,  3.2, 11], look: [0.2, -3.2,   1] }, // look into the empty cut
     { t: 0.26, pos: [2.8,  1.4, 11], look: [0.1, -2.8,  -4] }, // descending
+    { t: 0.40, pos: [1.85, 0.45, 10.5], look: [0.05, -2.65, -7] }, // pulled inward before crossing grade
     { t: 0.52, pos: [2.0, -0.8, 10], look: [0,   -2.5, -10] }, // over the rim
     { t: 0.76, pos: [1.5, -1.7,  8], look: [0,   -2.6, -15] }, // at pipe level
-    { t: 0.92, pos: [2.6,  0.2,  9], look: [-0.2, -2.5, -14] }, // rising with the backfill
+    { t: 0.86, pos: [1.7,  0.55, 8.6], look: [-0.1, -2.55, -14.5] }, // rise straight up, still inside the walls
+    { t: 0.92, pos: [2.6,  0.6,  9], look: [-0.2, -2.5, -14] }, // clear of grade, now moving outward
     { t: 1.00, pos: [4.4,  1.8,  9], look: [-0.3, -2.2, -12] }, // out at grade
   ];
 
@@ -317,12 +334,16 @@ function initPipe3D(reduced) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
-  /* ── Light: low dusk sun, cool sky bounce ──────────────── */
-  scene.add(new THREE.HemisphereLight(0x6f92bd, 0x3a2e22, 1.05));
-  scene.add(new THREE.AmbientLight(0x2b3c50, 0.45));
+  /* ── Light: pre-dawn rig, relit every frame as the sun climbs ──
+     The values below are just the p=0 starting point; applyLighting
+     (defined below, after the sunrise timeline) drives all of it from p. */
+  const hemi = new THREE.HemisphereLight(0x24344a, 0x2a2118, 0.55);
+  scene.add(hemi);
+  const ambient = new THREE.AmbientLight(0x18202e, 0.30);
+  scene.add(ambient);
 
-  const sun = new THREE.DirectionalLight(0xffdcba, 1.85);
-  sun.position.set(48, 33, 24); // far out so the shadow frustum clears falling pieces
+  const sun = new THREE.DirectionalLight(0xff6a3c, 0.05);
+  sun.position.set(48, -6, 24); // azimuth fixed; elevation animates the arc
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.near = 1;
@@ -341,11 +362,342 @@ function initPipe3D(reduced) {
   // Work lights down in the trench, including one near the open end so the
   // subgrade reads instead of going to pure black in the opening frames.
   // Intensity is in candela (physical lights): single digits are invisible.
-  [4, ...MH_Z].forEach(z => {
+  // The crew kills them once the sun is up — applyLighting fades these to 0.
+  const workLights = [4, ...MH_Z].map(z => {
     const pt = new THREE.PointLight(0xffc79a, 26, 20, 2);
     pt.position.set(0, -1.6, z);
     scene.add(pt);
+    return pt;
   });
+
+  /* ── Sunrise timeline ───────────────────────────────────────
+     Five hand-placed keyframes; applyLighting interpolates between whichever
+     pair straddles the current p, the same piecewise scheme camPath above
+     uses for the camera. Elevation is degrees off the horizon, converted to
+     a light position that keeps the sun's azimuth fixed — the horizontal
+     distance/direction match the original static dusk rig, so full daylight
+     (p≈1) puts the sun back where that rig sat. */
+  const col = hex => new THREE.Color(hex);
+  const SUN_AZ_X = 48, SUN_AZ_Z = 24;
+  const SUN_R  = Math.hypot(SUN_AZ_X, SUN_AZ_Z);
+  const SUN_UX = SUN_AZ_X / SUN_R, SUN_UZ = SUN_AZ_Z / SUN_R;
+
+  const DAY = [
+    { // pre-dawn / blue hour — crew still working under the lights
+      p: 0.00, elev: -6,
+      sky: ['#03060c', '#060b16', '#0d1626', '#16223a', '#1b2a44'],
+      sun: col('#ff6a3c'), sunI: 0.05,
+      fill: col('#87b0e0'), fillI: 1.25,
+      hemiSky: col('#24344a'), hemiGround: col('#2a2118'), hemiI: 0.55,
+      amb: col('#18202e'), ambI: 0.30,
+      work: 26,
+    },
+    { // sun breaks the horizon
+      p: 0.18, elev: 1,
+      sky: ['#0a1830', '#173257', '#3a4f74', '#d9793f', '#ffb15f'],
+      sun: col('#ff7a3a'), sunI: 1.1,
+      fill: col('#93b8e0'), fillI: 1.1,
+      hemiSky: col('#4a6a94'), hemiGround: col('#35291c'), hemiI: 0.85,
+      amb: col('#24304a'), ambI: 0.38,
+      work: 24,
+    },
+    { // risen and warming fast — lights going off
+      p: 0.35, elev: 15,
+      sky: ['#2c5da3', '#5588c4', '#9ab8dc', '#dfd0ad', '#ffdca0'],
+      sun: col('#ffb479'), sunI: 1.7,
+      fill: col('#bcd4ec'), fillI: 0.9,
+      hemiSky: col('#9ac0e6'), hemiGround: col('#4a3f2e'), hemiI: 1.05,
+      amb: col('#445468'), ambI: 0.44,
+      work: 3,
+    },
+    { // full daylight
+      p: 0.55, elev: 31.6,
+      sky: ['#4f93d8', '#7fb2e2', '#bcd9ef', '#e7f1f8', '#f5f9fc'],
+      sun: col('#fff2e2'), sunI: 2.1,
+      fill: col('#dce8f4'), fillI: 0.7,
+      hemiSky: col('#bfe0f7'), hemiGround: col('#7a6f5c'), hemiI: 1.25,
+      amb: col('#6b7d92'), ambI: 0.55,
+      work: 0,
+    },
+    { // hold — bright enough to hand off into a white page
+      p: 1.00, elev: 31.6,
+      sky: ['#5b9bdc', '#8fbbe8', '#c7e0f4', '#e9f3fa', '#f7fbfe'],
+      sun: col('#fff6ec'), sunI: 2.15,
+      fill: col('#e8f0f8'), fillI: 0.6,
+      hemiSky: col('#c8e6fa'), hemiGround: col('#8a806c'), hemiI: 1.3,
+      amb: col('#738496'), ambI: 0.58,
+      work: 0,
+    },
+  ];
+  for (const k of DAY) k.skyC = k.sky.map(col); // pre-parse once, not per-frame
+
+  function sampleDay(p) {
+    let i = 0;
+    while (i < DAY.length - 1 && p > DAY[i + 1].p) i++;
+    const a = DAY[i], b = DAY[Math.min(i + 1, DAY.length - 1)];
+    const span = b.p - a.p;
+    const u = span <= 0 ? 0 : smooth(clamp01((p - a.p) / span));
+    return { a, b, u };
+  }
+
+  /* ── ALDT mark — the payoff, not the establishing shot ────────
+     Rises late (0.70→0.95): the sun comes up, the crew installs the run,
+     and the brand rises as the reveal once the trench is backfilled — two
+     separate beats, not one. That also means it rises against a bright
+     pale-daylight sky rather than a dark/amber one, so an additive glow
+     (right for a dusk reveal) would wash out here — flipped to a solid
+     dark plaque, which reads at full contrast against any sky brightness
+     the same way the header's logo badge does against the page.
+     Still a real object beyond the grade plane's far edge (it ends at
+     Z_FAR - 12), occluded by the terrain until it clears that edge. */
+  const MARK_Z          = -70;
+  const MARK_RISE_S     = 0.70;
+  const MARK_RISE_E     = 0.95;
+  const MARK_RISE_DROP  = 20; // world units the hidden start sits below rest
+  // Flat, wide "banner" proportions rather than a tall badge — see the
+  // vertical-budget comment in fitMark() below for why: the rest camera
+  // sits low and tilted, so the safe vertical band between the ground
+  // horizon and the nav band is thin, and a wide-short shape makes better
+  // use of it than a tall-narrow one would.
+  const MARK_W = 1024, MARK_H = 150;
+  const MARK_FONT = "'Space Grotesk', 'Helvetica Neue', Arial, sans-serif";
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function paintMark(ctx, w, h, font) {
+    ctx.clearRect(0, 0, w, h);
+    const bx = w * 0.06, by = h * 0.14, bw = w - bx * 2, bh = h - by * 2;
+    const r = bh * 0.22;
+
+    // Contact shadow grounds the plaque against the sky instead of glowing
+    // into it — the thing that made the mid-animation glow wash out.
+    ctx.save();
+    ctx.shadowColor = 'rgba(8,12,18,0.5)';
+    ctx.shadowBlur = h * 0.09;
+    ctx.shadowOffsetY = h * 0.03;
+    ctx.fillStyle = '#12161f'; // ≈ --text-primary, the site's own deep neutral
+    roundRectPath(ctx, bx, by, bw, bh, r);
+    ctx.fill();
+    ctx.restore();
+
+    // Faint top sheen — dimension, not gloss.
+    const sheen = ctx.createLinearGradient(0, by, 0, by + bh);
+    sheen.addColorStop(0.00, 'rgba(255,255,255,0.10)');
+    sheen.addColorStop(0.40, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen;
+    roundRectPath(ctx, bx, by, bw, bh, r);
+    ctx.fill();
+
+    // Brand accent dot, echoing the header mark.
+    ctx.fillStyle = '#E64500'; // --accent-warm-bright
+    ctx.beginPath();
+    ctx.arc(bx + bw * 0.90, by + bh * 0.22, bh * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `700 ${bh * 0.56}px ${font}`;
+    ctx.fillStyle = '#F7F9FB';
+    ctx.fillText('ALDT', w / 2, by + bh / 2 + bh * 0.02);
+  }
+
+  const markCvs = makeCanvas(MARK_W, MARK_H);
+  const markCtx = markCvs.getContext('2d');
+  paintMark(markCtx, MARK_W, MARK_H, MARK_FONT);
+  const markTex = toTexture(markCvs, 1, 1, true);
+
+  // `font` strings fail silently to a fallback face when the webfont isn't
+  // loaded yet — the paint above may not be Space Grotesk. Repaint once it's
+  // confirmed ready instead of gambling on load order.
+  document.fonts?.ready?.then(() => {
+    paintMark(markCtx, MARK_W, MARK_H, MARK_FONT);
+    markTex.needsUpdate = true;
+  }).catch(() => {});
+
+  const markMat = new THREE.MeshBasicMaterial({
+    map: markTex, transparent: true, depthWrite: false, fog: false,
+  });
+  // Unit-square geometry — actual on-screen width AND height come entirely
+  // from mark.scale (set directly in world units by fitMark() below), never
+  // from a hardcoded size. The aspect ratio lives in fitMark's w/h math, not
+  // in this geometry, so scale.set(w, h, 1) isn't double-applying it.
+  const mark = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), markMat);
+  mark.position.z = MARK_Z; // fixed depth; fitMark() below only ever touches x/y
+  scene.add(mark);
+
+  /* ── Mark fit: size and rest position from the ACTUAL visible frustum ──
+     fitFov() clamps vertical FOV to 70°. The camera is framed by
+     HORIZONTAL fov (58° intended), so when that clamp binds — which it
+     does on any tall/narrow viewport — horizontal FOV silently shrinks to
+     compensate (down to ~36° on a phone portrait instead of 58°). A plane
+     sized to look right at 58° overflows at 36°. So both the mark's size
+     and its rest position are solved against the camera's real frustum,
+     evaluated at the REST pose specifically (camPath's last keyframe) —
+     a resize can land mid-animation, but what has to fit on screen is
+     where the mark ends up, not wherever the camera happens to be at that
+     instant. Re-solved on every resize (see the ResizeObserver below).
+
+     The vertical fit has a second constraint the first pass here missed:
+     it isn't enough to keep the TOP edge below the nav band — the BOTTOM
+     edge also has to clear the terrain, or the lower half of the plaque
+     sinks behind the ground and reads as a clipped sliver. At the rest
+     pose the camera sits low and tilted (it's "out at grade"), so the
+     safe band between "ray to the ground's far edge stays above y=0" and
+     "top edge stays below the nav" is thin — solved for on BOTH edges,
+     not assumed from one. */
+  const MARK_GROUND_MARGIN = 1.0;  // world units of clearance above the horizon line
+  const MARK_TOP_GAP       = 0.15; // fraction of frame height reserved above it (nav + air)
+  const MARK_FIT_W         = 0.55; // fallback cap: fraction of visible width
+  const MARK_FIT_H         = 0.50; // fallback cap: fraction of visible height
+  const GROUND_EDGE_Z      = Z_FAR - 12; // far edge of the grade plane — see gradePlane() above
+  const restCam = new THREE.PerspectiveCamera();
+  const _mv = new THREE.Vector3();
+
+  function markNdc(x, y) {
+    _mv.set(x, y, MARK_Z);
+    _mv.project(restCam);
+    return _mv;
+  }
+
+  // Bisection rather than a closed form — the camera is tilted, so world
+  // position doesn't map to screen position by simple proportion, and a
+  // dozen iterations is nothing next to "once per resize".
+  function solve(lo, hi, f) {
+    let flo = f(lo);
+    for (let i = 0; i < 34; i++) {
+      const mid = (lo + hi) / 2, fm = f(mid);
+      if ((fm < 0) === (flo < 0)) { lo = mid; flo = fm; } else { hi = mid; }
+    }
+    return (lo + hi) / 2;
+  }
+
+  let markRestY = 6, markHiddenY = markRestY - MARK_RISE_DROP; // overwritten below; only matter before the first fitMark()
+
+  function fitMark() {
+    const rest = camPath[camPath.length - 1];
+    restCam.position.set(rest.pos[0], rest.pos[1], rest.pos[2]);
+    restCam.up.set(0, 1, 0);
+    restCam.lookAt(rest.look[0], rest.look[1], rest.look[2]);
+    restCam.aspect = camera.aspect;
+    restCam.fov = camera.fov;
+    restCam.near = camera.near;
+    restCam.far = camera.far;
+    restCam.updateProjectionMatrix();
+    restCam.updateMatrixWorld(true);
+
+    // Visible half-width/height in world units at the mark's depth.
+    _mv.set(0, 0, MARK_Z).applyMatrix4(restCam.matrixWorldInverse);
+    const depth = -_mv.z;
+    const halfH = depth * Math.tan(THREE.MathUtils.degToRad(restCam.fov) / 2);
+    const halfW = halfH * restCam.aspect;
+
+    // Lower bound: the world Y at which a ray from the camera to (0, Y,
+    // MARK_Z) is still above y = 0 by the time it crosses the ground
+    // plane's far edge — below this, the ground occludes the point before
+    // the ray ever gets past it, same mechanism that hides the mark during
+    // its rise.
+    const groundClearY = solve(-20, 20, Y => {
+      const t = (restCam.position.z - GROUND_EDGE_Z) / (restCam.position.z - MARK_Z);
+      return restCam.position.y + t * (Y - restCam.position.y);
+    });
+    const bottomMin = groundClearY + MARK_GROUND_MARGIN;
+
+    // Upper bound: the world Y at which a point projects to the reserved
+    // top-of-frame line (nav + air).
+    const targetTopNdc = 1 - 2 * MARK_TOP_GAP;
+    const topMax = solve(-20, 40, Y => markNdc(0, Y).y - targetTopNdc);
+
+    // Fit within whichever is tighter: the ground↔nav vertical band, or
+    // the fallback width/height fractions of the full frustum.
+    const markAspect = MARK_H / MARK_W;
+    const availH = Math.max(0.5, topMax - bottomMin); // floor so a degenerate band doesn't invert the sizing below
+    let h = Math.min(availH, halfH * 2 * MARK_FIT_H);
+    let w = h / markAspect;
+    const capW = halfW * 2 * MARK_FIT_W;
+    if (w > capW) { w = capW; h = w * markAspect; }
+    mark.scale.set(w, h, 1);
+
+    // Sit just above the ground-clear line — using whatever headroom is
+    // left toward the nav rather than centring, so it reads as "risen out
+    // of the trench" rather than floating arbitrarily high in the sky.
+    const centerY = bottomMin + h / 2;
+
+    // Horizontal: solve world X so the centre lands at screen-centre — the
+    // rest pose looks slightly off-axis from the trench centreline, so
+    // x = 0 isn't automatically centred.
+    const centerX = solve(-20, 20, x => markNdc(x, centerY).x);
+
+    markRestY = centerY;
+    markHiddenY = markRestY - MARK_RISE_DROP;
+    mark.position.x = centerX;
+    mark.position.y = markHiddenY; // applyLighting drives it from here each frame
+  }
+  fitMark();
+
+  /* ── Per-frame relight ─────────────────────────────────────
+     Sky, fog, sun/fill/hemi/ambient, work lights, and the rising mark are
+     all driven from the single sunrise timeline above. */
+  const _skyC = [new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color()];
+  const _sunC = new THREE.Color(), _fillC = new THREE.Color();
+  const _hemiSkyC = new THREE.Color(), _hemiGroundC = new THREE.Color(), _ambC = new THREE.Color(), _fogC = new THREE.Color();
+  const _skyStops = ['#000000', '#000000', '#000000', '#000000', '#000000'];
+
+  function applyLighting(p) {
+    const { a, b, u } = sampleDay(p);
+
+    for (let i = 0; i < 5; i++) {
+      _skyC[i].lerpColors(a.skyC[i], b.skyC[i], u);
+      _skyStops[i] = '#' + _skyC[i].getHexString();
+    }
+    paintSky(skyCtx, _skyStops);
+    skyTex.needsUpdate = true;
+
+    // Fog tracks the horizon band so distant geometry never disagrees with the sky.
+    _fogC.lerpColors(_skyC[2], _skyC[3], 0.6);
+    scene.fog.color.copy(_fogC);
+
+    // The sun's climbing position is what actually sells the sunrise — the
+    // shadows visibly swinging reads as dawn far more than a colour fade does.
+    const elevRad = THREE.MathUtils.degToRad(lerp(a.elev, b.elev, u));
+    sun.position.set(SUN_UX * SUN_R, Math.tan(elevRad) * SUN_R, SUN_UZ * SUN_R);
+    _sunC.lerpColors(a.sun, b.sun, u);
+    sun.color.copy(_sunC);
+    sun.intensity = lerp(a.sunI, b.sunI, u);
+
+    _fillC.lerpColors(a.fill, b.fill, u);
+    fill.color.copy(_fillC);
+    fill.intensity = lerp(a.fillI, b.fillI, u);
+
+    _hemiSkyC.lerpColors(a.hemiSky, b.hemiSky, u);
+    _hemiGroundC.lerpColors(a.hemiGround, b.hemiGround, u);
+    hemi.color.copy(_hemiSkyC);
+    hemi.groundColor.copy(_hemiGroundC);
+    hemi.intensity = lerp(a.hemiI, b.hemiI, u);
+
+    _ambC.lerpColors(a.amb, b.amb, u);
+    ambient.color.copy(_ambC);
+    ambient.intensity = lerp(a.ambI, b.ambI, u);
+
+    // Crew kills the work lights once the sun is up.
+    const workI = lerp(a.work, b.work, u);
+    for (const wl of workLights) wl.intensity = workI;
+
+    // ALDT mark rises late, after backfill — the reveal, not the establishing
+    // shot. Its plaque colour is baked into the texture (paintMark), not
+    // tinted per-frame: by 0.70 the sky has been at full daylight for a
+    // while, so a sun-colour tint would just sit at a constant near-white
+    // and buys nothing.
+    const rp = smooth(clamp01((p - MARK_RISE_S) / (MARK_RISE_E - MARK_RISE_S)));
+    mark.position.y = lerp(markHiddenY, markRestY, rp);
+  }
 
   /* ── Materials ─────────────────────────────────────────── */
   const dirtTex = dirtCanvas();
@@ -728,6 +1080,7 @@ function initPipe3D(reduced) {
   function renderStill() {
     applyProgress(1);
     applyCam(1);
+    applyLighting(1);
     renderer.render(scene, camera);
   }
 
@@ -737,6 +1090,7 @@ function initPipe3D(reduced) {
     if (!nw || !nh) return;
     camera.aspect = nw / nh;
     fitFov();
+    fitMark();
     renderer.setSize(nw, nh, false);
     // Nothing is looping in reduced mode, so redraw or the frame goes stale.
     if (reduced) renderStill();
@@ -755,6 +1109,7 @@ function initPipe3D(reduced) {
   /* ── Loop ──────────────────────────────────────────────── */
   applyProgress(0);
   applyCam(0);
+  applyLighting(0);
 
   // Elapsed time is a delta sum accumulated only while playing — NOT
   // now() - startTime. That's what lets a pause of any length (tab
@@ -813,6 +1168,7 @@ function initPipe3D(reduced) {
     const p = Math.min(1, raw / 0.92); // last 8% of the pin is pure hold
     applyProgress(p);
     applyCam(p);
+    applyLighting(p);
     renderer.render(scene, camera);
 
     // Publish rather than read: main.js listens for these instead of
@@ -832,5 +1188,15 @@ function initPipe3D(reduced) {
     pause()   { userPaused = true; },
     restart() { elapsedMs = 0; lastFrameMs = null; completed = false; sync(); },
     isReducedMotion: false,
+    __debug() {
+      return {
+        markPos: mark.position.toArray(),
+        markScale: mark.scale.toArray(),
+        camFov: camera.fov, camAspect: camera.aspect,
+        camPos: camera.position.toArray(),
+        markRestY, markHiddenY,
+        introW: intro.clientWidth, introH: intro.clientHeight,
+      };
+    },
   };
 }
