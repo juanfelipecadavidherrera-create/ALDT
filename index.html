@@ -169,9 +169,9 @@
   <section class="tools" id="tools" aria-label="Tools">
     <div class="container">
       <div class="tools__header">
-        <p class="section-label reveal">20-Command Suite</p>
-        <h2 class="reveal">Flagship tools.<br><span>Four that change everything.</span></h2>
-        <p class="reveal">Part of a comprehensive 20-command Civil 3D suite. These four core tools tackle the highest-impact bottlenecks in any land development workflow.</p>
+        <p class="section-label reveal">53-Command Suite</p>
+        <h2 class="reveal">One plugin.<br><span>Twelve toolsets, fifty-three commands.</span></h2>
+        <p class="reveal">Every command below ships in a single install. Browse the full suite, organized the way you'd reach for it in the field — from pressure-pipe math to live GIS lookups to swept-path analysis.</p>
       </div>
     </div>
 
@@ -180,129 +180,188 @@
          scroll drives horizontal translation of #toolsTrack.
          Mobile / reduced-motion: CSS-only, natively swipeable /
          vertically stacked — no JS pin exists at all at these widths,
-         see .tools-scroll in style.css. ────────────────────────── -->
-    <div class="tools-scroll" id="toolsScroll" aria-label="Tool showcase">
+         see .tools-scroll in style.css.
+
+         Each card is one catalogue category (see aldt-commands.json):
+         a name, a blurb, and its full list of commands as cmd-token +
+         title pairs. Summaries/bullets are intentionally not rendered
+         here — at 53 commands across 12 cards, per-command prose would
+         make the cards unreadable, and the cmd token is what an
+         engineer actually recognizes and searches by. ────────────── -->
+    <div class="tools-scroll" id="toolsScroll" aria-label="Tool category showcase">
       <div class="tools-scroll__track" id="toolsTrack">
 
-        <!-- PIPEMAGIC -->
-        <article class="tools-scroll__card" aria-label="Pipe Magic">
-          <div class="tools-scroll__visual">
-            <span class="tools-scroll__badge">PIPEMAGIC</span>
-            <div class="tools-scroll__icon" aria-hidden="true">
-              <svg width="90" height="90" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="2" y="2" width="32" height="32" rx="3" stroke="#007AA3" stroke-width="1" stroke-dasharray="3,2" fill="none"/>
-                <rect x="4" y="15" width="28" height="6" rx="3" stroke="#007AA3" stroke-width="1.5" fill="none"/>
-                <line x1="14" y1="4"  x2="22" y2="32" stroke="#CC3E00" stroke-width="2.5" stroke-linecap="round"/>
-                <ellipse cx="18" cy="18" rx="4" ry="2.5" stroke="#CC3E00" stroke-width="1.2" fill="rgba(204,62,0,0.12)"/>
-                <line x1="14" y1="15" x2="14" y2="4" stroke="#007AA3" stroke-width="0.8" stroke-dasharray="2,2"/>
-                <line x1="22" y1="21" x2="22" y2="32" stroke="#007AA3" stroke-width="0.8" stroke-dasharray="2,2"/>
-              </svg>
-            </div>
+        <article class="tools-scroll__card" aria-label="Pipes &amp; Pressure Networks">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">8 commands</span>
+            <h3 class="tools-scroll__cat-name">Pipes &amp; Pressure Networks</h3>
+            <p class="tools-scroll__cat-blurb">Elevation, slope, sizing, and pressure-network math for gravity and pressure pipe design, done inline in the drawing instead of in a separate spreadsheet.</p>
           </div>
-          <div class="tools-scroll__body">
-            <h3 class="tools-scroll__title">Pipe Magic</h3>
-            <p class="tools-scroll__desc">Automatically detects crossing pipe networks and projects them into profile views. No more manually hunting for pipe conflicts — PIPEMAGIC handles the spatial analysis and annotation instantly.</p>
-            <ul class="tools-scroll__features">
-              <li>Automatic detection of all pipe network crossings</li>
-              <li>Projects crossing pipes directly into profile views</li>
-              <li>Works across multiple network types simultaneously</li>
-            </ul>
-          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">PIPESIZING</span><span class="tools-scroll__cmd-title">Pipe Sizing Calculator</span></li>
+            <li><span class="tools-scroll__cmd-token">PIPESLOPER</span><span class="tools-scroll__cmd-title">Pipe Sloper</span></li>
+            <li><span class="tools-scroll__cmd-token">CHANGEELEVATION</span><span class="tools-scroll__cmd-title">Pipe Elevation Leveler</span></li>
+            <li><span class="tools-scroll__cmd-token">EEEBEND</span><span class="tools-scroll__cmd-title">Pressure Duck Placer</span></li>
+            <li><span class="tools-scroll__cmd-token">COVERADJUST</span><span class="tools-scroll__cmd-title">Pressure Duck Cover Adjuster</span></li>
+            <li><span class="tools-scroll__cmd-token">PRESSCOUNT</span><span class="tools-scroll__cmd-title">Pressure Network Counter</span></li>
+            <li><span class="tools-scroll__cmd-token">LOWRIM</span><span class="tools-scroll__cmd-title">Lowest Rim Finder</span></li>
+            <li><span class="tools-scroll__cmd-token">INVERTPULLUP</span><span class="tools-scroll__cmd-title">Invert Pull-Up</span></li>
+          </ul>
         </article>
 
-        <!-- BULKSUR -->
-        <article class="tools-scroll__card" aria-label="Bulk Surface Profile Creator">
-          <div class="tools-scroll__visual">
-            <span class="tools-scroll__badge">BULKSUR</span>
-            <div class="tools-scroll__icon" aria-hidden="true">
-              <svg width="90" height="90" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <polyline points="4,28 10,16 18,22 26,10 32,18" stroke="#007AA3" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
-                <polyline points="4,28 18,22 32,18" stroke="#007AA3" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
-                <polyline points="10,16 26,10" stroke="#007AA3" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
-                <line x1="10" y1="16" x2="18" y2="22" stroke="#007AA3" stroke-width="0.8" stroke-dasharray="2,2"/>
-                <line x1="18" y1="22" x2="26" y2="10" stroke="#007AA3" stroke-width="0.8" stroke-dasharray="2,2"/>
-                <rect x="4" y="30" width="28" height="4" rx="1" stroke="#CC3E00" stroke-width="1" fill="none"/>
-                <line x1="12" y1="30" x2="12" y2="34" stroke="#CC3E00" stroke-width="0.8"/>
-                <line x1="20" y1="30" x2="20" y2="34" stroke="#CC3E00" stroke-width="0.8"/>
-                <line x1="28" y1="30" x2="28" y2="34" stroke="#CC3E00" stroke-width="0.8"/>
-                <circle cx="4"  cy="28" r="2" fill="#007AA3"/>
-                <circle cx="10" cy="16" r="2" fill="#007AA3"/>
-                <circle cx="18" cy="22" r="2" fill="#007AA3"/>
-                <circle cx="26" cy="10" r="2" fill="#007AA3"/>
-                <circle cx="32" cy="18" r="2" fill="#007AA3"/>
-              </svg>
-            </div>
+        <article class="tools-scroll__card" aria-label="Profile Views">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">10 commands</span>
+            <h3 class="tools-scroll__cat-name">Profile Views</h3>
+            <p class="tools-scroll__cat-blurb">Automates the repetitive parts of building, populating, styling, and cleaning up Civil 3D profile views across large pipe networks.</p>
           </div>
-          <div class="tools-scroll__body">
-            <h3 class="tools-scroll__title">Bulk Surface Profile Creator</h3>
-            <p class="tools-scroll__desc">Batch-creates surface profiles and profile views for multiple alignments simultaneously. Eliminate the repetitive one-by-one workflow and process entire project corridors in seconds.</p>
-            <ul class="tools-scroll__features">
-              <li>Select all alignments at once — profiles created in batch</li>
-              <li>Consistent profile view formatting across the project</li>
-              <li>Saves hours on multi-alignment corridor projects</li>
-            </ul>
-          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">BULKSUR</span><span class="tools-scroll__cmd-title">Bulk Surface Profile Creator</span></li>
+            <li><span class="tools-scroll__cmd-token">PIPEMAGIC</span><span class="tools-scroll__cmd-title">Pipe Crossing Projector</span></li>
+            <li><span class="tools-scroll__cmd-token">CHOPCHOP</span><span class="tools-scroll__cmd-title">Profile View Subdivider</span></li>
+            <li><span class="tools-scroll__cmd-token">OFFPV</span><span class="tools-scroll__cmd-title">Network Part Isolator</span></li>
+            <li><span class="tools-scroll__cmd-token">PROFOFF</span><span class="tools-scroll__cmd-title">Single-Part Remover</span></li>
+            <li><span class="tools-scroll__cmd-token">PVSTYLE</span><span class="tools-scroll__cmd-title">Profile View Style Override</span></li>
+            <li><span class="tools-scroll__cmd-token">PVIFIX</span><span class="tools-scroll__cmd-title">Pressure Bend Re-Sync</span></li>
+            <li><span class="tools-scroll__cmd-token">PVIFIXDIAG</span><span class="tools-scroll__cmd-title">PVIFIX Diagnostic</span></li>
+            <li><span class="tools-scroll__cmd-token">RRNETWORKCHECK</span><span class="tools-scroll__cmd-title">Pressure Network Clearance Check</span></li>
+            <li><span class="tools-scroll__cmd-token">GETPARENT</span><span class="tools-scroll__cmd-title">Get Parent Alignment</span></li>
+          </ul>
         </article>
 
-        <!-- ALIGNDEPLOY -->
-        <article class="tools-scroll__card" aria-label="Align Deploy">
-          <div class="tools-scroll__visual">
-            <span class="tools-scroll__badge">ALIGNDEPLOY</span>
-            <div class="tools-scroll__icon" aria-hidden="true">
-              <svg width="90" height="90" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 28 Q12 20 18 18 Q24 16 32 8" stroke="#007AA3" stroke-width="2" stroke-linecap="round" fill="none"/>
-                <line x1="8"  y1="23" x2="11" y2="26" stroke="#CC3E00" stroke-width="1.5" stroke-linecap="round"/>
-                <line x1="13" y1="19" x2="16" y2="22" stroke="#CC3E00" stroke-width="1.5" stroke-linecap="round"/>
-                <line x1="18" y1="15" x2="21" y2="18" stroke="#CC3E00" stroke-width="1.5" stroke-linecap="round"/>
-                <line x1="23" y1="12" x2="26" y2="15" stroke="#CC3E00" stroke-width="1.5" stroke-linecap="round"/>
-                <line x1="28" y1="9"  x2="31" y2="12" stroke="#CC3E00" stroke-width="1.5" stroke-linecap="round"/>
-                <circle cx="8"  cy="24" r="2" fill="#007AA3"/>
-                <circle cx="13" cy="20" r="2" fill="#007AA3"/>
-                <circle cx="18" cy="17" r="2" fill="#007AA3"/>
-                <circle cx="23" cy="13" r="2" fill="#007AA3"/>
-                <circle cx="28" cy="10" r="2" fill="#007AA3"/>
-              </svg>
-            </div>
+        <article class="tools-scroll__card" aria-label="Profile-View Labeling">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">4 commands</span>
+            <h3 class="tools-scroll__cat-name">Profile-View Labeling</h3>
+            <p class="tools-scroll__cat-blurb">Places crossing and pressure-pipe elevation labels and markers inside profile views automatically, instead of one label at a time.</p>
           </div>
-          <div class="tools-scroll__body">
-            <h3 class="tools-scroll__title">Align Deploy</h3>
-            <p class="tools-scroll__desc">Deploys copies of a cross alignment along a main alignment at defined intervals. Perfect for road corridors, utility easements, and subdivision layouts that require repeated cross-section geometry.</p>
-            <ul class="tools-scroll__features">
-              <li>Set interval spacing and deploy all copies at once</li>
-              <li>Works on curved and straight main alignments</li>
-              <li>Ideal for road cross-sections and utility corridor layouts</li>
-            </ul>
-          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">LLABELGEN</span><span class="tools-scroll__cmd-title">Crossing Invert Label Generator</span></li>
+            <li><span class="tools-scroll__cmd-token">PIPEPVLABEL</span><span class="tools-scroll__cmd-title">Pressure Pipe End Labels</span></li>
+            <li><span class="tools-scroll__cmd-token">MARKFITTINGS</span><span class="tools-scroll__cmd-title">Pressure Fitting Marker</span></li>
+            <li><span class="tools-scroll__cmd-token">MARKLINES</span><span class="tools-scroll__cmd-title">Crossing Line Marker</span></li>
+          </ul>
         </article>
 
-        <!-- INVERTPULLUP -->
-        <article class="tools-scroll__card" aria-label="Invert Pull Up">
-          <div class="tools-scroll__visual">
-            <span class="tools-scroll__badge">INVERTPULLUP</span>
-            <div class="tools-scroll__icon" aria-hidden="true">
-              <svg width="90" height="90" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="18" cy="24" r="8" stroke="#007AA3" stroke-width="1.5" fill="none"/>
-                <circle cx="18" cy="24" r="4" stroke="#007AA3" stroke-width="0.8" stroke-dasharray="2,2" fill="none"/>
-                <circle cx="18" cy="32" r="2.5" fill="#CC3E00"/>
-                <line x1="18" y1="30" x2="18" y2="20" stroke="#CC3E00" stroke-width="1.2" stroke-dasharray="2,2"/>
-                <line x1="18" y1="20" x2="28" y2="12" stroke="#CC3E00" stroke-width="1.2"/>
-                <rect x="26" y="8" width="8" height="7" rx="1.5" fill="rgba(204,62,0,0.15)" stroke="#CC3E00" stroke-width="1"/>
-                <line x1="27.5" y1="10.5" x2="32.5" y2="10.5" stroke="#CC3E00" stroke-width="0.8"/>
-                <line x1="27.5" y1="12.5" x2="31"   y2="12.5" stroke="#CC3E00" stroke-width="0.8"/>
-                <line x1="18" y1="16" x2="18" y2="12" stroke="#007AA3" stroke-width="1.2" stroke-linecap="round"/>
-                <line x1="15" y1="12" x2="21" y2="12" stroke="#007AA3" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-            </div>
+        <article class="tools-scroll__card" aria-label="Vehicle Tracking &amp; Swept Path">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">5 commands</span>
+            <h3 class="tools-scroll__cat-name">Vehicle Tracking &amp; Swept Path</h3>
+            <p class="tools-scroll__cat-blurb">A full swept-path and parking-layout suite for checking turning movements, driveway and intersection access, and stall layouts against a vehicle library.</p>
           </div>
-          <div class="tools-scroll__body">
-            <h3 class="tools-scroll__title">Invert Pull Up</h3>
-            <p class="tools-scroll__desc">Calculates invert elevation at any point along a pipe and labels it directly in the drawing. Eliminates manual math and drafting errors when documenting pipe inverts for construction documents.</p>
-            <ul class="tools-scroll__features">
-              <li>Pick any station point — invert calculated instantly</li>
-              <li>Label placed automatically with correct elevation</li>
-              <li>Eliminates manual station math and drafting errors</li>
-            </ul>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">VTPANEL</span><span class="tools-scroll__cmd-title">Vehicle Tracking Panel</span></li>
+            <li><span class="tools-scroll__cmd-token">VTSWEEP</span><span class="tools-scroll__cmd-title">Swept Path Analysis</span></li>
+            <li><span class="tools-scroll__cmd-token">VTDRIVE</span><span class="tools-scroll__cmd-title">Interactive Drive Mode</span></li>
+            <li><span class="tools-scroll__cmd-token">VTEDIT</span><span class="tools-scroll__cmd-title">Vehicle Path Editor</span></li>
+            <li><span class="tools-scroll__cmd-token">VTPARK</span><span class="tools-scroll__cmd-title">Parking Layout Generator</span></li>
+          </ul>
+        </article>
+
+        <article class="tools-scroll__card" aria-label="Laterals">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">2 commands</span>
+            <h3 class="tools-scroll__cat-name">Laterals</h3>
+            <p class="tools-scroll__cat-blurb">Captures and replays 2D sewer lateral crossing data across profile views, and auto-drafts lateral geometry from pipe inverts.</p>
           </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">LATERALBEAST</span><span class="tools-scroll__cmd-title">Lateral Auto-Drafter</span></li>
+            <li><span class="tools-scroll__cmd-token">LATMANAGER</span><span class="tools-scroll__cmd-title">Lateral Crossing Manager</span></li>
+          </ul>
+        </article>
+
+        <article class="tools-scroll__card" aria-label="GIS &amp; Property Lookups">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">6 commands</span>
+            <h3 class="tools-scroll__cat-name">GIS &amp; Property Lookups</h3>
+            <p class="tools-scroll__cat-blurb">One-click FEMA, county, groundwater, and PLSS lookups at any picked point, pulled live from the source GIS services.</p>
+          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">FLOODZONE</span><span class="tools-scroll__cmd-title">FEMA Flood Zone Lookup</span></li>
+            <li><span class="tools-scroll__cmd-token">FOLIO</span><span class="tools-scroll__cmd-title">Property Appraiser Lookup</span></li>
+            <li><span class="tools-scroll__cmd-token">FLOODCRITERIA</span><span class="tools-scroll__cmd-title">County Flood Criteria Lookup</span></li>
+            <li><span class="tools-scroll__cmd-token">SECTIONLOOKUP</span><span class="tools-scroll__cmd-title">PLSS Section Lookup</span></li>
+            <li><span class="tools-scroll__cmd-token">GWMAY</span><span class="tools-scroll__cmd-title">Groundwater Elevation (May Average)</span></li>
+            <li><span class="tools-scroll__cmd-token">GWOCT</span><span class="tools-scroll__cmd-title">Groundwater Elevation (2040 Projection)</span></li>
+          </ul>
+        </article>
+
+        <article class="tools-scroll__card" aria-label="Utility Network Imports">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">2 commands</span>
+            <h3 class="tools-scroll__cat-name">Utility Network Imports</h3>
+            <p class="tools-scroll__cat-blurb">Pulls Miami-Dade Water &amp; Sewer utility line data from local GIS exports directly into the drawing as labeled, grouped geometry.</p>
+          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">MDWASDSEWER</span><span class="tools-scroll__cmd-title">MWASD Sewer-Line Import</span></li>
+            <li><span class="tools-scroll__cmd-token">MWASDWATER</span><span class="tools-scroll__cmd-title">MWASD Water-Main Import</span></li>
+          </ul>
+        </article>
+
+        <article class="tools-scroll__card" aria-label="Cross Sections &amp; Tables">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">2 commands</span>
+            <h3 class="tools-scroll__cat-name">Cross Sections &amp; Tables</h3>
+            <p class="tools-scroll__cat-blurb">Builds typical road cross-sections and live-linked data tables that stay in sync with the drawing.</p>
+          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">SECDRAW</span><span class="tools-scroll__cmd-title">Road Cross-Section Drawer</span></li>
+            <li><span class="tools-scroll__cmd-token">TABLEDRAW</span><span class="tools-scroll__cmd-title">Live-Linked Table Drawer</span></li>
+          </ul>
+        </article>
+
+        <article class="tools-scroll__card" aria-label="Surfaces">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">4 commands</span>
+            <h3 class="tools-scroll__cat-name">Surfaces</h3>
+            <p class="tools-scroll__cat-blurb">Moves elevation data between TIN surfaces and drawing annotation, blocks, text, and MLeaders, in both directions.</p>
+          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">BLOCKTOSURFACE</span><span class="tools-scroll__cmd-title">Block-to-Surface Importer</span></li>
+            <li><span class="tools-scroll__cmd-token">TEXTTOSURFACE</span><span class="tools-scroll__cmd-title">Text-to-Surface Importer</span></li>
+            <li><span class="tools-scroll__cmd-token">SUR2MT</span><span class="tools-scroll__cmd-title">Surface-to-MText Labeler</span></li>
+            <li><span class="tools-scroll__cmd-token">ELEVSLOPE</span><span class="tools-scroll__cmd-title">Elevation Sloper</span></li>
+          </ul>
+        </article>
+
+        <article class="tools-scroll__card" aria-label="Areas &amp; Excavation">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">2 commands</span>
+            <h3 class="tools-scroll__cat-name">Areas &amp; Excavation</h3>
+            <p class="tools-scroll__cat-blurb">Project-based palettes for tracking area and trench-length takeoffs through to CSV export.</p>
+          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">AREAMANAGER</span><span class="tools-scroll__cmd-title">Area Takeoff Manager</span></li>
+            <li><span class="tools-scroll__cmd-token">EXF</span><span class="tools-scroll__cmd-title">Trench Manager</span></li>
+          </ul>
+        </article>
+
+        <article class="tools-scroll__card" aria-label="Drafting &amp; Layout">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">4 commands</span>
+            <h3 class="tools-scroll__cat-name">Drafting &amp; Layout</h3>
+            <p class="tools-scroll__cat-blurb">Viewport clipping, crossing-aware dimensioning, alignment repetition, and a live sewer as-built import for finishing drawings.</p>
+          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">CORALASBUILT</span><span class="tools-scroll__cmd-title">Coral Gables Sewer As-Built Importer</span></li>
+            <li><span class="tools-scroll__cmd-token">CAD</span><span class="tools-scroll__cmd-title">Crossing-Aware Dimension Tool</span></li>
+            <li><span class="tools-scroll__cmd-token">ALIGNDEPLOY</span><span class="tools-scroll__cmd-title">Alignment Deploy</span></li>
+            <li><span class="tools-scroll__cmd-token">VPCUT</span><span class="tools-scroll__cmd-title">Viewport Clipper</span></li>
+          </ul>
+        </article>
+
+        <article class="tools-scroll__card" aria-label="App Shell &amp; Utilities">
+          <div class="tools-scroll__cat-header">
+            <span class="tools-scroll__cat-count">4 commands</span>
+            <h3 class="tools-scroll__cat-name">App Shell &amp; Utilities</h3>
+            <p class="tools-scroll__cat-blurb">The ribbon, mini toolbar, help, licensing, and one embedded third-party pump-selection tool that tie the suite together.</p>
+          </div>
+          <ul class="tools-scroll__cmd-list">
+            <li><span class="tools-scroll__cmd-token">XYLEMSOLVER</span><span class="tools-scroll__cmd-title">Xylem Pump Selection Solver</span></li>
+            <li><span class="tools-scroll__cmd-token">ALDTTOOLBAR</span><span class="tools-scroll__cmd-title">Mini Toolbar</span></li>
+            <li><span class="tools-scroll__cmd-token">ALDTHELP</span><span class="tools-scroll__cmd-title">In-App Help</span></li>
+            <li><span class="tools-scroll__cmd-token">ALDTLICENSE</span><span class="tools-scroll__cmd-title">License Diagnostic</span></li>
+          </ul>
         </article>
 
       </div><!-- /tools-scroll__track -->
@@ -317,7 +376,7 @@
       <div class="workflow__header">
         <p class="section-label reveal">Getting Started</p>
         <h2 class="reveal">Up and running in minutes</h2>
-        <p class="reveal">Install once — all four tools load automatically into Civil 3D's ribbon.</p>
+        <p class="reveal">Install once — the full 53-command suite loads automatically into Civil 3D's ribbon.</p>
       </div>
 
       <div class="workflow__steps">
@@ -389,7 +448,7 @@
     <div class="container">
       <div class="stats__grid">
         <div class="stat">
-          <div class="stat__value"><span data-count="20">0</span><span class="stat__suffix">+</span></div>
+          <div class="stat__value"><span data-count="53">0</span></div>
           <p class="stat__label">Commands in Suite</p>
         </div>
         <div class="stat">
@@ -503,7 +562,7 @@
   <section class="pricing" id="pricing" aria-label="Pricing">
     <div class="container">
       <p class="section-label reveal">Simple Pricing</p>
-      <h2 class="reveal">One plugin.<br><span>All 20+ commands.</span></h2>
+      <h2 class="reveal">One plugin.<br><span>All 53 commands.</span></h2>
 
       <div class="pricing__grid reveal">
 

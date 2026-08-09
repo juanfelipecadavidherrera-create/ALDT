@@ -967,7 +967,13 @@ img, svg { display: block; max-width: 100%; }
    this element and scrubs the track's transform as the page scrolls.
    The prefers-reduced-motion query, deliberately unconditional on
    width, always wins last in the cascade and collapses everything back
-   to a plain static vertical stack — no pin, no scrub, no snap. ─────── */
+   to a plain static vertical stack — no pin, no scrub, no snap.
+
+   Cards are now category cards (12 of them, one per catalogue group)
+   rather than single-tool cards (previously 4) — see main.js §13 for
+   the pin-length math this shape enables. Each card holds a compact
+   two-column grid of command tokens instead of prose, which is what
+   keeps 12 cards at a narrower per-card width than the old 4. ───────── */
 .tools-scroll {
   margin-top: 3rem;
   overflow-x: auto;
@@ -988,92 +994,92 @@ img, svg { display: block; max-width: 100%; }
 .tools-scroll__card {
   scroll-snap-align: start;
   flex: 0 0 auto;
-  width: min(86vw, 420px);
+  width: min(86vw, 380px);
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 2rem;
+  padding: 1.75rem;
 }
 
-.tools-scroll__visual {
+.tools-scroll__cat-header {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 1.2rem;
+  gap: 0.5rem;
 }
 
-.tools-scroll__badge {
+.tools-scroll__cat-count {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  color: var(--accent);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  align-self: flex-start;
   border: 1px solid var(--border);
-  padding: 0.35em 1em;
+  padding: 0.3em 0.85em;
   border-radius: 100px;
   background: rgba(0,122,163,0.08);
 }
 
-.tools-scroll__icon {
-  width: 120px;
-  height: 120px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-secondary);
-  box-shadow: 0 0 40px rgba(0,122,163,0.10), inset 0 1px 0 rgba(15,23,42,0.05);
-  flex-shrink: 0;
-}
-
-.tools-scroll__title {
+.tools-scroll__cat-name {
   font-family: var(--font-display);
-  font-size: clamp(1.4rem, 2.4vw, 1.8rem);
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
   font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
-.tools-scroll__desc {
+.tools-scroll__cat-blurb {
   color: var(--text-muted);
-  font-size: 0.95rem;
-  line-height: 1.68;
-  margin-bottom: 1.25rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
 }
 
-.tools-scroll__features {
+.tools-scroll__cmd-list {
   list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.tools-scroll__cmd-list li {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.3rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55em 0.7em;
 }
 
-.tools-scroll__features li {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  color: var(--text-muted);
-  font-size: 0.86rem;
-  line-height: 1.5;
+.tools-scroll__cmd-token {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--accent-dark);
+  word-break: break-word;
 }
 
-.tools-scroll__features li::before {
-  content: '';
-  flex-shrink: 0;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent);
+.tools-scroll__cmd-title {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--text-primary);
 }
 
 /* Desktop: GSAP owns the horizontal motion (main.js §13, gsap.matchMedia
    scoped to this same breakpoint) — the section becomes a full-height pin
    target and native scroll/snap is switched off so the two systems don't
-   fight each other. */
+   fight each other.
+
+   Card width is deliberately narrow (min(33vw, 420px), capped well below
+   the old single-tool card's 860px) — at 12 cards, keeping the old pitch
+   would push pinned scroll to ~12.8 viewports. Narrower cards plus the
+   PIN_SPEED multiplier in main.js (which decouples pin-scroll length from
+   raw pixel travel — see main.js §13) bring that to ~4 viewports. */
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
   .tools-scroll {
     height: 100vh;
@@ -1084,30 +1090,20 @@ img, svg { display: block; max-width: 100%; }
   }
 
   .tools-scroll__track {
-    gap: 4rem;
-    padding: 0 8vw;
+    gap: 1.5rem;
+    padding: 0 6vw;
+    align-items: stretch;
   }
 
   .tools-scroll__card {
     scroll-snap-align: none;
-    flex-direction: row;
-    align-items: center;
-    gap: 3rem;
-    width: min(72vw, 860px);
-    padding: 3rem;
+    width: min(33vw, 420px);
+    padding: 2rem;
+    justify-content: flex-start;
   }
 
-  .tools-scroll__visual {
-    flex-shrink: 0;
-  }
-
-  .tools-scroll__icon {
-    width: 160px;
-    height: 160px;
-  }
-
-  .tools-scroll__desc {
-    max-width: 480px;
+  .tools-scroll__cat-blurb {
+    font-size: 0.85rem;
   }
 }
 
@@ -1131,11 +1127,16 @@ img, svg { display: block; max-width: 100%; }
 
   .tools-scroll__card {
     width: 100%;
-    flex-direction: column;
   }
 
-  .tools-scroll__desc {
-    max-width: none;
+  .tools-scroll__cmd-list {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .tools-scroll__cmd-list {
+    grid-template-columns: 1fr;
   }
 }
 

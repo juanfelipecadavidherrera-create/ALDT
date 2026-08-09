@@ -318,13 +318,25 @@
     // distance and cutting the last card off.
     const distance = () => track.scrollWidth - window.innerWidth;
 
+    // With 12 category cards the raw pixel travel is long enough that a
+    // 1:1 vertical-to-horizontal pin (end === distance()) would pin the
+    // page for ~12+ viewports of scrolling. PIN_SPEED decouples the two:
+    // the tween still translates the track the *full* -distance() so the
+    // last card is always fully reachable, but the pin only occupies
+    // PIN_SPEED × distance() px of actual vertical scroll to get there —
+    // i.e. horizontal motion runs 1/PIN_SPEED times faster than vertical
+    // scroll. 0.78 keeps the section at ~4 viewports of pinned scroll
+    // (down from the ~5.8 viewports narrower cards alone would still cost
+    // at a 1:1 ratio) while staying gentle enough not to feel twitchy.
+    const PIN_SPEED = 0.78;
+
     gsap.to(track, {
       x: () => -distance(),
       ease: 'none',
       scrollTrigger: {
         trigger: section,
         start: 'top top',
-        end: () => '+=' + distance(),
+        end: () => '+=' + (distance() * PIN_SPEED),
         pin: true,
         scrub: 1,
         invalidateOnRefresh: true,
