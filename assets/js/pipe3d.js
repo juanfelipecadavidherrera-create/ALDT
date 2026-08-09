@@ -253,6 +253,22 @@ function roughen(geo, amt, axis) {
   return geo;
 }
 
+/* Cheap baked AO: no SSAO pass available (no new dependencies), so contact
+   darkening is painted straight into per-vertex colour instead. fn(x,y,z)
+   returns an AO multiplier in [0,1]; paired with vertexColors:true on a
+   MeshStandardMaterial it multiplies straight into the diffuse term
+   (map texel × vertex colour), same cost either way at render time. */
+function bakeAO(geo, fn) {
+  const p = geo.attributes.position;
+  const col = new Float32Array(p.count * 3);
+  for (let i = 0; i < p.count; i++) {
+    const v = fn(p.getX(i), p.getY(i), p.getZ(i));
+    col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = v;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  return geo;
+}
+
 /* ── Easing ────────────────────────────────────────────────── */
 const clamp01 = t => Math.min(1, Math.max(0, t));
 const lerp    = (a, b, t) => a + (b - a) * t;
@@ -346,10 +362,25 @@ function initPipe3D(reduced) {
   sun.position.set(48, -6, 24); // azimuth fixed; elevation animates the arc
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.near = 1;
-  sun.shadow.camera.far  = 160;
-  sun.shadow.camera.left = -30; sun.shadow.camera.right = 30;
-  sun.shadow.camera.top  =  58; sun.shadow.camera.bottom = -58;
+  // These bounds are NOT world-space X/Y — the shadow camera's local axes
+  // are whatever DirectionalLight.lookAt(target) produces for this light's
+  // position/azimuth, and with the sun sitting far out along (48, ·, 24)
+  // looking at a fixed (0,0,0) target, its "right" axis ends up nearly
+  // aligned with world -Z (the trench's long axis) rather than world X.
+  // Solved by projecting the scene's actual AABB — trench walls/floor,
+  // spoil pile, and every piece's fall envelope (Y up to the manhole
+  // drop-in height, ~11) — through that rotated basis across the sunrise's
+  // full elevation range (-6°..31.6°, azimuth fixed so only elevation
+  // moves it), then padding for margin. Left/right stayed symmetric-looking
+  // before at ±30 but actually needed roughly (-24, +51): the "+" side
+  // corresponds to the far end of the trench, which was quietly under-
+  // covered previously. Top/bottom was the real waste — needed only
+  // roughly (-11, +28) against the old ±58, since the sun's elevation
+  // contributes far less spread than the trench's length does.
+  sun.shadow.camera.near = 30;
+  sun.shadow.camera.far  = 100;
+  sun.shadow.camera.left = -27; sun.shadow.camera.right = 54;
+  sun.shadow.camera.top  =  31; sun.shadow.camera.bottom = -14;
   sun.shadow.bias = -0.0009;
   sun.shadow.normalBias = 0.02;
   scene.add(sun);
@@ -705,21 +736,24 @@ function initPipe3D(reduced) {
   /* soilCanvas is a single top-to-bottom strata column: it must map ONCE down
      the wall (repeatY = 1) and tile only along the trench length. */
   const soilTex  = soilCanvas();
+  // vertexColors:true on these three lets bakeAO() (applied per-geometry
+  // below, where each surface's own local coordinates are known) darken
+  // corners/invert without a real occlusion pass — see the AO comment there.
   const soilMat  = new THREE.MeshStandardMaterial({
     map: toTexture(soilTex, 18, 1, true),
     bumpMap: toTexture(soilTex, 18, 1, false), bumpScale: 0.5,
-    roughness: 1.0, metalness: 0,
+    roughness: 1.0, metalness: 0, vertexColors: true,
   });
   const endMat = new THREE.MeshStandardMaterial({
     map: toTexture(soilTex, 1.2, 1, true),
     bumpMap: toTexture(soilTex, 1.2, 1, false), bumpScale: 0.5,
-    roughness: 1.0, metalness: 0,
+    roughness: 1.0, metalness: 0, vertexColors: true,
   });
   // Trench bottom: exposed subgrade, no strata banding.
   const floorMat = new THREE.MeshStandardMaterial({
     map: toTexture(dirtTex, 3, 44, true), color: 0xb4a992,
     bumpMap: toTexture(dirtTex, 3, 44, false), bumpScale: 0.3,
-    roughness: 1.0, metalness: 0,
+    roughness: 1.0, metalness: 0, vertexColors: true,
   });
   const dirtMat = new THREE.MeshStandardMaterial({
     map: toTexture(dirtTex, 10, 22, true),
@@ -764,6 +798,13 @@ function initPipe3D(reduced) {
   });
 
   /* ── Earth: grade surfaces, trench walls, floor ────────── */
+  // Cheap baked AO (no SSAO — no new dependencies): darkest at the invert
+  // and in the wall/floor corners, fading to unshadowed near grade/centre.
+  // This is the single biggest fix for pipe/manholes reading as if they're
+  // hovering in a lit box instead of sitting in cut ground.
+  const wallAO  = y => lerp(0.42, 1.0, clamp01((y + TRENCH_D / 2) / TRENCH_D) ** 2);
+  const floorAO = x => lerp(0.55, 1.0, clamp01((TRENCH_HW - Math.abs(x)) / 0.9));
+
   function gradePlane(x0, x1, z0, z1) {
     const g = new THREE.PlaneGeometry(x1 - x0, z0 - z1, 40, 100);
     roughen(g, 0.09, 'Z'); // pre-rotation Z is world Y
@@ -787,6 +828,7 @@ function initPipe3D(reduced) {
       p.setZ(i, p.getZ(i) - (p.getY(i) + TRENCH_D / 2) * 0.055);
     }
     p.needsUpdate = true; g.computeVertexNormals();
+    bakeAO(g, (x, y) => wallAO(y)); // local Y is height here — see wallAO above
 
     const m = new THREE.Mesh(g, soilMat);
     m.rotation.y = -side * Math.PI / 2; // face the trench centreline, not away from it
@@ -797,17 +839,17 @@ function initPipe3D(reduced) {
   trenchWall(1);   // wall at +x, facing in
   trenchWall(-1);  // wall at -x, facing in
 
-  const trenchFloor = new THREE.Mesh(
-    roughen(new THREE.PlaneGeometry(TRENCH_HW * 2, Z_NEAR - Z_FAR, 16, 180), 0.06, 'Z'),
-    floorMat
-  );
+  const trenchFloorGeo = roughen(new THREE.PlaneGeometry(TRENCH_HW * 2, Z_NEAR - Z_FAR, 16, 180), 0.06, 'Z');
+  bakeAO(trenchFloorGeo, x => floorAO(x)); // local X is across the trench here — see floorAO above
+  const trenchFloor = new THREE.Mesh(trenchFloorGeo, floorMat);
   trenchFloor.rotation.x = -Math.PI / 2;
   trenchFloor.position.set(0, FLOOR, (Z_NEAR + Z_FAR) / 2);
   trenchFloor.receiveShadow = true;
   scene.add(trenchFloor);
 
-  // far end wall closes the trench
-  const endWall = new THREE.Mesh(new THREE.PlaneGeometry(TRENCH_HW * 2, TRENCH_D, 8, 8), endMat);
+  // far end wall closes the trench — same height convention as trenchWall
+  const endWallGeo = bakeAO(new THREE.PlaneGeometry(TRENCH_HW * 2, TRENCH_D, 8, 8), (x, y) => wallAO(y));
+  const endWall = new THREE.Mesh(endWallGeo, endMat);
   endWall.position.set(0, GRADE - TRENCH_D / 2, Z_FAR);
   endWall.receiveShadow = true;
   scene.add(endWall);
@@ -866,10 +908,49 @@ function initPipe3D(reduced) {
     return d;
   }
 
+  /* ── Contact AO blobs (cheap grounding for seated pieces) ──
+     A baked soft-shadow disc under each manhole/pipe — cheaper and far less
+     angle-dependent than waiting on the sun's shadow map, which goes soft
+     and faint at the low sun angles this scene spends most of its time at.
+     One shared texture/geometry/material for every instance; each blob is
+     just a scaled, positioned Mesh, so N pieces cost one extra draw call
+     each and zero extra textures/geometries. Parented directly to the piece
+     it belongs to, so it falls and settles with zero extra tick() work —
+     it's always present at a fixed offset under the piece rather than
+     fading in on impact, which is the deliberate cheap/simple trade-off. */
+  function contactShadowCanvas() {
+    const S = 128, c = makeCanvas(S, S), x = c.getContext('2d');
+    const g = x.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+    g.addColorStop(0.00, 'rgba(0,0,0,0.55)');
+    g.addColorStop(0.55, 'rgba(0,0,0,0.28)');
+    g.addColorStop(1.00, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(0, 0, S, S);
+    return c;
+  }
+  const contactTex = new THREE.CanvasTexture(contactShadowCanvas());
+  const contactGeo = new THREE.PlaneGeometry(1, 1);
+  const contactMat = new THREE.MeshBasicMaterial({
+    map: contactTex, transparent: true, depthWrite: false,
+  });
+  // w/l land along the parent's local X/Z once laid flat (rotation.x=-90°
+  // keeps local X as-is and turns local Y into Z — same convention as the
+  // ground planes elsewhere in this file).
+  function addContactShadow(parent, w, l, x, y, z) {
+    const m = new THREE.Mesh(contactGeo, contactMat);
+    m.rotation.x = -Math.PI / 2;
+    m.scale.set(w, l, 1);
+    m.position.set(x, y, z);
+    m.userData.noCastShadow = true; // a fake shadow shouldn't cast a real one
+    parent.add(m);
+    return m;
+  }
+
   function addPiece(obj, to, rotTo, approach, s, e, dust) {
     obj.position.set(to.x + approach.dx, to.y + approach.dy, to.z + approach.dz);
     obj.rotation.set(rotTo.x + (approach.rx || 0), rotTo.y + (approach.ry || 0), rotTo.z + (approach.rz || 0));
-    obj.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+    // userData.noCastShadow opts a mesh out — used by the contact-AO blobs
+    // below, which are fake shadows themselves and shouldn't cast real ones.
+    obj.traverse(c => { if (c.isMesh) { c.castShadow = !c.userData.noCastShadow; c.receiveShadow = true; } });
     scene.add(obj);
     pieces.push({
       obj,
@@ -891,6 +972,11 @@ function initPipe3D(reduced) {
   const BED_FROM = Z_FAR + 1, BED_TO = Z_NEAR;
 
   /* ── Manholes ──────────────────────────────────────────── */
+  // Step rungs: one shared box geometry, reused per rung per manhole rather
+  // than allocated fresh each time (same pattern as barrelGeo/collarGeo below).
+  const STEP_W = 0.34, STEP_D = 0.16, STEP_H = 0.05, STEP_EMBED = 0.03;
+  const stepGeo = new THREE.BoxGeometry(STEP_D, STEP_H, STEP_W);
+
   function makeManhole() {
     const g = new THREE.Group();
 
@@ -911,13 +997,18 @@ function initPipe3D(reduced) {
       g.add(band);
     }
 
-    // eccentric cone: sheared so the opening sits off-centre, as cast
-    const coneLen = 0.72, SHEAR = 0.42;
+    // Cone: SHEAR=0 is concentric (opening centred over the barrel — what
+    // was actually reported broken: at the old 0.42 neither wall was
+    // vertical, so it read as an off-centre casting rather than a true
+    // eccentric cone). A true eccentric cone needs ONE wall dead vertical,
+    // which takes SHEAR = (MH_OUT - rOutTop) / coneLen = (1.50 - 0.66) /
+    // 0.72 = 1.167 — that's one constant away if this is ever revisited.
+    const coneLen = 0.72, SHEAR = 0;
     const cone = new THREE.Mesh(shearX(coneGeo(MH_IN, MH_OUT, 0.50, 0.66, coneLen), SHEAR, 0), mhMat);
     cone.position.y = MH_TOP;
     g.add(cone);
 
-    const coneOffset = SHEAR * coneLen;
+    const coneOffset = SHEAR * coneLen; // 0 while concentric; rings/frame/cover/ribs below follow automatically
 
     // grade adjustment rings
     const rings = new THREE.Mesh(tubeGeo(0.50, 0.66, 0.30), mhMat);
@@ -939,6 +1030,20 @@ function initPipe3D(reduced) {
       rib.position.set(coneOffset, GRADE + 0.004, 0);
       g.add(rib);
     }
+
+    // Step rungs up the +x barrel wall — the side that stays vertical if
+    // SHEAR above is ever switched back to the eccentric 1.167. Visible
+    // through the open cone before the cover lands; their absence reads as
+    // wrong to anyone who has actually climbed one of these.
+    for (let y = FLOOR + 0.65; y < MH_TOP - 0.15; y += 0.33) {
+      const step = new THREE.Mesh(stepGeo, ironMat);
+      step.position.set(MH_IN + STEP_EMBED - STEP_D / 2, y, 0);
+      g.add(step);
+    }
+
+    // Contact AO skirt around the base — a bit wider than the slab so it
+    // darkens the exposed floor just beyond it, not just the slab itself.
+    addContactShadow(g, (MH_OUT + 0.25) * 2.5, (MH_OUT + 0.25) * 2.5, 0, FLOOR + 0.006, 0);
     return g;
   }
 
@@ -963,16 +1068,29 @@ function initPipe3D(reduced) {
 
   function makePipe() {
     const g = new THREE.Group();
-    const barrel = new THREE.Mesh(barrelGeo, concMat);
+    // Clone per piece so six identical castings don't read as six clones of
+    // one mold — jitter goes through the shared rnd() so the scene stays
+    // byte-identical every load, same as everything else seeded from it.
+    // .clone() copies the texture references, not the textures themselves,
+    // so this doesn't cost any extra GPU memory, just one Material object.
+    const pieceMat = concMat.clone();
+    pieceMat.color.offsetHSL(rndRange(-0.02, 0.02), rndRange(0, 0.05), rndRange(-0.04, 0.04));
+    pieceMat.roughness = THREE.MathUtils.clamp(concMat.roughness + rndRange(-0.05, 0.05), 0, 1);
+    const barrel = new THREE.Mesh(barrelGeo, pieceMat);
     barrel.position.y = -RCP_LEN / 2;
     g.add(barrel);
-    // bell collar straddles the joint with the upstream section
-    const collar = new THREE.Mesh(collarGeo, concMat);
+    // bell collar straddles the joint with the upstream section — same
+    // casting as its barrel, so it shares the jittered material
+    const collar = new THREE.Mesh(collarGeo, pieceMat);
     collar.position.y = RCP_LEN / 2 - 0.28;
     g.add(collar);
     g.rotation.x = -Math.PI / 2; // lay the lathe axis down the trench
     const wrap = new THREE.Group();
     wrap.add(g);
+    // Contact AO strip where the barrel beds into the gravel — a sibling of
+    // g (not a child) so it isn't subject to g's lay-down rotation, and
+    // lands flat with w along the trench width, l along the pipe run.
+    addContactShadow(wrap, RCP_OUT * 1.7, RCP_LEN * 0.92, 0, -RCP_OUT + 0.006, 0);
     return wrap;
   }
 
