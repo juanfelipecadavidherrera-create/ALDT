@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createTimeline, spring, stagger, engine } from 'animejs';
 
 /* ============================================================
    ALDT — Buried trench intro
@@ -7,15 +8,29 @@ import * as THREE from 'three';
    This file owns its own clock and publishes progress via
    'aldt:intro-progress' / 'aldt:intro-complete' events on document —
    it no longer reads scroll position from anywhere.
+
+   Per-piece timing/easing (manhole and RCP "drops") is owned by an
+   anime.js Timeline with real spring physics — see the Timeline section
+   near the bottom. Everything that's a genuinely continuous function of
+   progress instead of a discrete drop — bedding growth, the backfill
+   sweep, the camera path, the sunrise lighting — stays exactly what it
+   was: a plain function of p, called every render frame. There's no
+   dedicated "three.js plugin" in anime.js v4; the integration is anime's
+   generic ability to tween any numeric property of any JS object, applied
+   directly to a THREE.Object3D's `.position`/`.rotation` (Vector3/Euler
+   are just plain {x,y,z} objects to it) — that IS the three.js adapter.
    ============================================================ */
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 requestAnimationFrame(() => initPipe3D(REDUCED));
 
-// Full assembly runtime, in ms. The 0.92 rescale below (unchanged from the
-// scroll-driven version) makes assembly finish at 92% of this and hold for
-// the rest, so all downstream phase windows stay tuned exactly as before.
+// Full nominal runtime, in ms — kept only as the documented source for
+// ASSEMBLY_MS below (the anime.js Timeline's actual duration). The old
+// hand-rolled clock rescaled a 0-1 progress value by dividing by 0.92 every
+// frame; the timeline instead just IS 0.92 * RUNTIME_MS long, so p = timeline
+// progress directly, no per-frame rescale needed.
 const RUNTIME_MS = 14000;
+const ASSEMBLY_MS = Math.round(RUNTIME_MS * 0.92); // 12880ms
 
 /* ── Site dimensions (world units ≈ feet) ──────────────────── */
 const GRADE       = 0;      // finished grade
@@ -275,7 +290,14 @@ const lerp    = (a, b, t) => a + (b - a) * t;
 const smooth  = t => t * t * (3 - 2 * t);
 
 /* Accelerating fall, then a small damped settle at contact.
-   Physical rather than the uniform ease-out everything used before. */
+   Only used for the reduced-motion / initial-setup still frame now (see
+   applyProgress + renderStill below) — during normal animated playback,
+   per-piece position/rotation is driven by real anime.js spring tweens
+   instead (see the Timeline section), which express this same shape
+   (fast fall, small settle) through actual mass/stiffness/damping rather
+   than this piecewise curve. HIT also still marks the dust burst's
+   "impact" instant either way, since that's a separate, purely
+   progress-driven effect. */
 const HIT = 0.74;
 function drop(t) {
   if (t <= 0) return 0;
@@ -952,14 +974,16 @@ function initPipe3D(reduced) {
     // below, which are fake shadows themselves and shouldn't cast real ones.
     obj.traverse(c => { if (c.isMesh) { c.castShadow = !c.userData.noCastShadow; c.receiveShadow = true; } });
     scene.add(obj);
-    pieces.push({
+    const record = {
       obj,
       from: obj.position.clone(),
       to: new THREE.Vector3(to.x, to.y, to.z),
       rotFrom: obj.rotation.clone(),
       rotTo: new THREE.Euler(rotTo.x, rotTo.y, rotTo.z),
       s, e, dust,
-    });
+    };
+    pieces.push(record);
+    return record; // captured by the manhole/RCP loops below to build the anime.js timeline
   }
 
   /* ── Bedding stone (grows far → near) ──────────────────── */
@@ -1048,11 +1072,15 @@ function initPipe3D(reduced) {
   }
 
   const [MH_S, MH_E] = [0.20, 0.50];
-  MH_Z.forEach((z, i) => {
+  // .map (not .forEach) so each record is captured into mhPieces — the
+  // Timeline section below builds the actual fall/settle tweens from these;
+  // s/e here still define the phase window (now converted to ms) and still
+  // drive this piece's dust-burst timing (see applyPieceDust).
+  const mhPieces = MH_Z.map((z, i) => {
     const span = (MH_E - MH_S);
     const s = MH_S + (i * 0.19) * span;
     const e = MH_S + (i * 0.19 + 0.60) * span;
-    addPiece(
+    return addPiece(
       makeManhole(),
       { x: 0, y: 0, z }, { x: 0, y: rndRange(-0.4, 0.4), z: 0 },
       { dx: 0, dy: 11, dz: 0, ry: rndRange(-0.5, 0.5) },
@@ -1095,11 +1123,11 @@ function initPipe3D(reduced) {
   }
 
   const [P_S, P_E] = [0.42, 0.74];
-  PIPE_Z.forEach((z, i) => {
+  const pipePieces = PIPE_Z.map((z, i) => {
     const span = (P_E - P_S);
     const s = P_S + (i * 0.105) * span;
     const e = P_S + (i * 0.105 + 0.46) * span;
-    addPiece(
+    return addPiece(
       makePipe(),
       { x: 0, y: PIPE_Y, z }, { x: 0, y: 0, z: 0 },
       { dx: rndRange(-0.5, 0.5), dy: 9.5, dz: 0, rz: rndRange(-0.16, 0.16), ry: rndRange(-0.1, 0.1) },
@@ -1131,9 +1159,23 @@ function initPipe3D(reduced) {
     );
   }
 
-  /* ── Per-frame state from progress ─────────────────────── */
-  function applyProgress(p) {
-    // bedding
+  /* ── Per-frame state from progress ─────────────────────────
+     applyBedding/applyBackfill/applyPieceDust are the genuinely-continuous
+     pieces — pure functions of p, unchanged in substance from before.
+     They're shared by two callers:
+       - applyProgress(p): the ORIGINAL full function (bedding + every
+         piece's position/rotation via lerp+drop() + backfill), kept
+         intact and used only by renderStill()'s reduced-motion frame and
+         the very first p=0 setup below. Byte-identical behavior to before
+         this port for that path.
+       - applyContinuous(p): the trimmed version used during normal
+         animated playback, once per rendered frame. It still handles
+         bedding/backfill/dust and per-piece visibility, but NOT per-piece
+         position/rotation — that's now owned by the anime.js Timeline
+         built further down, ticking on its own independent of our render
+         loop. Running both would just be two writers fighting over the
+         same transform every frame. */
+  function applyBedding(p) {
     const bp = smooth(clamp01((p - 0.06) / 0.20));
     const bz = lerp(BED_FROM, BED_TO, bp);
     const bLen = Math.max(0.001, bz - BED_FROM);
@@ -1142,8 +1184,46 @@ function initPipe3D(reduced) {
     bedding.visible = bp > 0.001;
     // scale UV repeat with length, or the stone smears as the bed extends
     gravelMap.repeat.y = gravelBump.repeat.y = Math.max(1, bLen * 1.1);
+  }
 
-    // pieces
+  function applyBackfill(p) {
+    const fp = smooth(clamp01((p - B_S) / (B_E - B_S)));
+    const fz = lerp(BACKFILL_FAR, BACKFILL_NEAR, fp);
+    const fLen = Math.max(0.001, fz - BACKFILL_FAR);
+    backfill.scale.z = fLen;
+    backfill.position.z = BACKFILL_FAR + fLen / 2;
+    backfill.visible = fp > 0.001;
+    patchMap.repeat.y = Math.max(1, fLen * 0.5);
+  }
+
+  // Dust burst keyed to this piece's own contact moment (t local to its own
+  // s..e window). Stays purely progress-driven regardless of what's driving
+  // the piece's actual transform (old lerp+drop, or the new spring tweens) —
+  // HIT is still a fine proxy for "roughly when this piece lands" either way.
+  function applyPieceDust(pc, t) {
+    if (!pc.dust) return;
+    const du = clamp01((t - HIT) / (1 - HIT));
+    const d0 = pc.dust;
+    if (du <= 0.001 || du >= 0.999) {
+      d0.pts.visible = false;
+    } else {
+      d0.pts.visible = true;
+      const grow = Math.pow(du, 0.55);
+      for (let i = 0; i < d0.dir.length; i++) {
+        const v = d0.dir[i];
+        d0.pos[i * 3]     = d0.at.x + v.x * d0.spread * grow;
+        d0.pos[i * 3 + 1] = d0.at.y + v.y * d0.rise * grow - du * du * 0.45;
+        d0.pos[i * 3 + 2] = d0.at.z + v.z * d0.spread * grow;
+      }
+      d0.pts.geometry.attributes.position.needsUpdate = true;
+      // Small + many + faint reads as granular dust; large + opaque reads as fog.
+      d0.mat.opacity = 0.30 * Math.sin(du * Math.PI);
+      d0.mat.size = 0.16 + grow * 0.62;
+    }
+  }
+
+  function applyProgress(p) {
+    applyBedding(p);
     for (const pc of pieces) {
       const t = clamp01((p - pc.s) / (pc.e - pc.s));
       const d = drop(t);
@@ -1158,38 +1238,19 @@ function initPipe3D(reduced) {
         lerp(pc.rotFrom.z, pc.rotTo.z, d)
       );
       pc.obj.visible = t > 0.0001;
-
-      // dust burst keyed to this piece's own contact moment
-      if (pc.dust) {
-        const du = clamp01((t - HIT) / (1 - HIT));
-        const d0 = pc.dust;
-        if (du <= 0.001 || du >= 0.999) {
-          d0.pts.visible = false;
-        } else {
-          d0.pts.visible = true;
-          const grow = Math.pow(du, 0.55);
-          for (let i = 0; i < d0.dir.length; i++) {
-            const v = d0.dir[i];
-            d0.pos[i * 3]     = d0.at.x + v.x * d0.spread * grow;
-            d0.pos[i * 3 + 1] = d0.at.y + v.y * d0.rise * grow - du * du * 0.45;
-            d0.pos[i * 3 + 2] = d0.at.z + v.z * d0.spread * grow;
-          }
-          d0.pts.geometry.attributes.position.needsUpdate = true;
-          // Small + many + faint reads as granular dust; large + opaque reads as fog.
-          d0.mat.opacity = 0.30 * Math.sin(du * Math.PI);
-          d0.mat.size = 0.16 + grow * 0.62;
-        }
-      }
+      applyPieceDust(pc, t);
     }
+    applyBackfill(p);
+  }
 
-    // backfill
-    const fp = smooth(clamp01((p - B_S) / (B_E - B_S)));
-    const fz = lerp(BACKFILL_FAR, BACKFILL_NEAR, fp);
-    const fLen = Math.max(0.001, fz - BACKFILL_FAR);
-    backfill.scale.z = fLen;
-    backfill.position.z = BACKFILL_FAR + fLen / 2;
-    backfill.visible = fp > 0.001;
-    patchMap.repeat.y = Math.max(1, fLen * 0.5);
+  function applyContinuous(p) {
+    applyBedding(p);
+    for (const pc of pieces) {
+      const t = clamp01((p - pc.s) / (pc.e - pc.s));
+      pc.obj.visible = t > 0.0001;
+      applyPieceDust(pc, t);
+    }
+    applyBackfill(p);
   }
 
   /* ── Reduced motion: hold the finished condition ────────
@@ -1224,22 +1285,87 @@ function initPipe3D(reduced) {
     return;
   }
 
-  /* ── Loop ──────────────────────────────────────────────── */
-  applyProgress(0);
+  /* ── Timeline: anime.js owns per-piece timing/easing ─────────
+     Real spring physics (mass/stiffness/damping, expressed here via the
+     {duration,bounce} "perceived duration" shorthand) replace the
+     hand-rolled drop() curve for the two things that are genuinely
+     discrete "drops": manholes and RCP sections. Both still start at the
+     same MH_S/P_S phase point and stagger the same way as before — just
+     computed in ms and spaced with anime's stagger() instead of `i * k` —
+     and each spring is tuned so its own settlingDuration lands close to
+     the old per-piece (e - s) window (manholes ~2.3s, RCP ~1.9s; see the
+     spring tuning notes in the project report). bounce is a small settle,
+     not a cartoon bounce — these are concrete castings, not rubber balls.
+
+     Bedding growth, the backfill sweep, the camera path (applyCam) and the
+     sunrise lighting (applyLighting) are already genuinely continuous
+     functions of progress with nothing to "drop" — they stay exactly what
+     they were, called every render frame from applyContinuous(p)/below
+     rather than becoming timeline children. */
+  applyContinuous(0);
   applyCam(0);
   applyLighting(0);
 
-  // Elapsed time is a delta sum accumulated only while playing — NOT
-  // now() - startTime. That's what lets a pause of any length (tab
-  // backgrounded, scrolled off-screen) resume exactly where it left off
-  // instead of the clock jumping forward by the paused duration.
-  let elapsedMs   = 0;
-  let lastFrameMs = null; // null means "not currently advancing"
-  let userPaused  = false;
-  let onscreen    = false;
-  let tabVisible  = !document.hidden;
-  let completed   = false;
-  let rafId       = null;
+  // This file already gates playback on its own onscreen/tabVisible flags
+  // (below) — the ONE thing that combination has to do is pause the
+  // TIMELINE itself while off-screen, not just skip rendering, or a long
+  // spell off-screen would make it silently jump ahead exactly like the
+  // old hand-rolled clock was built to prevent. anime.js's own pause()/
+  // resume() already re-anchors its internal start time on resume for
+  // precisely that reason (same fix, done by the library instead of by
+  // hand). engine.pauseOnDocumentHidden defaults to true and would ALSO
+  // auto-pause/resume on tab visibility — turned off here so there's a
+  // single source of truth instead of two independent gates fighting.
+  engine.pauseOnDocumentHidden = false;
+
+  // spring({duration, bounce}) is anime.js's SwiftUI-style "perceived
+  // duration" shorthand — easier to tune by feel than raw stiffness/
+  // damping. The actual settle (settlingDuration, what the JSAnimation
+  // uses as its real duration) runs longer than the perceived number by
+  // design, since the tail of the oscillation is imperceptible but not
+  // instant. mass/stiffness/damping is exposed the same way if the owner
+  // wants to tune this a different way later.
+  const mhSpring   = spring({ duration: 1400, bounce: 0.14 }); // settlingDuration ≈ 2300ms, ~ old 2318ms manhole window
+  const pipeSpring = spring({ duration: 1100, bounce: 0.13 }); // settlingDuration ≈ 1860ms, ~ old 1896ms pipe window
+
+  const timeline = createTimeline({ autoplay: false });
+
+  // records: mhPieces or pipePieces (each already carries .obj/.to/.rotTo
+  // from addPiece). startMs/staggerMs are the old s/(i*k) formulas rescaled
+  // from 0-1 progress into this timeline's own ms space.
+  function addDropTween(records, easeSpring, startMs, staggerMs) {
+    // Position and rotation live on two different object instances per
+    // piece (Vector3 vs Euler), so they're two separate staggered calls —
+    // same stagger anchor/spacing/spring on both keeps them landing in sync.
+    timeline.add(records.map(r => r.obj.position), {
+      x: (target, i) => records[i].to.x,
+      y: (target, i) => records[i].to.y,
+      z: (target, i) => records[i].to.z,
+      ease: easeSpring,
+    }, stagger(staggerMs, { start: startMs }));
+    timeline.add(records.map(r => r.obj.rotation), {
+      x: (target, i) => records[i].rotTo.x,
+      y: (target, i) => records[i].rotTo.y,
+      z: (target, i) => records[i].rotTo.z,
+      ease: easeSpring,
+    }, stagger(staggerMs, { start: startMs }));
+  }
+
+  addDropTween(mhPieces,   mhSpring,   MH_S * ASSEMBLY_MS, 0.19  * (MH_E - MH_S) * ASSEMBLY_MS);
+  addDropTween(pipePieces, pipeSpring, P_S  * ASSEMBLY_MS, 0.105 * (P_E  - P_S)  * ASSEMBLY_MS);
+
+  // A Timeline's own duration is derived from its children — it only grows to
+  // cover whatever was added, and the last spring settles (~9.4s) well short
+  // of ASSEMBLY_MS. Anchor a zero-duration no-op at the intended end so
+  // timeline.progress (and therefore p) actually spans the full ASSEMBLY_MS,
+  // matching the old clock's total runtime instead of finishing early.
+  timeline.call(() => {}, ASSEMBLY_MS);
+
+  let userPaused = false;
+  let onscreen   = false;
+  let tabVisible = !document.hidden;
+  let completed  = false;
+  let rafId      = null;
 
   // Autoplay follows what's actually on screen: play at ≥50% visible, pause
   // below that. Combined with tab visibility so a background tab never
@@ -1255,36 +1381,32 @@ function initPipe3D(reduced) {
 
   document.addEventListener('visibilitychange', () => { tabVisible = !document.hidden; sync(); });
 
-  // Render only while the canvas can actually be seen. Left running, this
-  // loop keeps drawing a shadow-mapped scene and firing 60 events/sec for
-  // the whole time the visitor is reading the rest of the page.
+  // Two independent gates, same split as before the port: the render loop
+  // (rendering + event dispatch) runs whenever the canvas can actually be
+  // seen, even while explicitly paused, so it never holds a stale frame;
+  // the TIMELINE only advances when also not paused. Left running, the
+  // render loop keeps drawing a shadow-mapped scene and firing 60 events/
+  // sec the whole time the visitor is reading the rest of the page.
   function sync() {
     const shouldRun = onscreen && tabVisible;
     if (shouldRun && rafId === null) {
-      lastFrameMs = null;          // no delta credit for the gap
       rafId = requestAnimationFrame(tick);
     } else if (!shouldRun && rafId !== null) {
       cancelAnimationFrame(rafId);
       rafId = null;
-      lastFrameMs = null;
+    }
+    if (shouldRun && !userPaused) {
+      // Guard avoids waking an already-completed timeline back up just to
+      // have it immediately re-pause itself once currentTime hits duration.
+      if (!timeline.completed) timeline.play();
+    } else {
+      timeline.pause();
     }
   }
 
-  function tick(now) {
-    // Clock advances only when playing; the loop itself also runs while
-    // merely paused-on-screen so the canvas never holds a stale frame.
-    if (!userPaused) {
-      // lastFrameMs resets to null on every pause, so the first frame back
-      // contributes zero delta rather than the entire paused interval.
-      if (lastFrameMs !== null) elapsedMs = Math.min(RUNTIME_MS, elapsedMs + (now - lastFrameMs));
-      lastFrameMs = now;
-    } else {
-      lastFrameMs = null;
-    }
-
-    const raw = elapsedMs / RUNTIME_MS;
-    const p = Math.min(1, raw / 0.92); // last 8% of the pin is pure hold
-    applyProgress(p);
+  function tick() {
+    const p = timeline.progress; // 0..1 — anime.js owns this clock entirely now
+    applyContinuous(p);
     applyCam(p);
     applyLighting(p);
     renderer.render(scene, camera);
@@ -1303,8 +1425,19 @@ function initPipe3D(reduced) {
 
   window.ALDTIntro = {
     play()    { userPaused = false; sync(); },
-    pause()   { userPaused = true; },
-    restart() { elapsedMs = 0; lastFrameMs = null; completed = false; sync(); },
+    pause()   { userPaused = true; sync(); },
+    restart() {
+      completed = false;
+      timeline.restart(); // Timer.reset() force-ticks children back to their
+                           // 'from' values synchronously, so this is already
+                           // reflected below with no stale-frame gap.
+      applyContinuous(timeline.progress);
+      applyCam(timeline.progress);
+      applyLighting(timeline.progress);
+      sync(); // reconcile play/pause state with the current gates — restart()
+              // resumes internally regardless of prior pause state, sync()
+              // re-pauses it immediately if userPaused/off-screen still hold.
+    },
     isReducedMotion: false,
     __debug() {
       return {
@@ -1314,6 +1447,7 @@ function initPipe3D(reduced) {
         camPos: camera.position.toArray(),
         markRestY, markHiddenY,
         introW: intro.clientWidth, introH: intro.clientHeight,
+        timelineProgress: timeline.progress,
       };
     },
   };
