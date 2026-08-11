@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createTimeline, spring, stagger, engine } from 'animejs';
 
 /* ============================================================
@@ -22,7 +23,15 @@ import { createTimeline, spring, stagger, engine } from 'animejs';
    ============================================================ */
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-requestAnimationFrame(() => initPipe3D(REDUCED));
+// requestAnimationFrame alone never fires while the document reports
+// hidden (some automated/prerendering contexts start a tab in that state
+// even though it's actually being painted) — race a short timeout so boot
+// isn't purely rAF-gated. _booted guards against running init twice; the
+// visibility-gated render LOOP below (sync/tick) is unaffected either way.
+let _booted = false;
+function _boot() { if (_booted) return; _booted = true; initPipe3D(REDUCED); }
+requestAnimationFrame(_boot);
+setTimeout(_boot, 50);
 
 // Full nominal runtime, in ms — kept only as the documented source for
 // ASSEMBLY_MS below (the anime.js Timeline's actual duration). The old
@@ -369,17 +378,37 @@ function initPipe3D(reduced) {
   renderer.setSize(w, h, false);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMapping = THREE.AgXToneMapping; // filmic, better shadow roll-off than ACES
   renderer.toneMappingExposure = 1.0;
+
+  /* ── Image-based lighting ─────────────────────────────────
+     The biggest realism lever available: every MeshStandardMaterial here
+     previously had nothing to reflect but a single sun specular dot. This
+     is why it read as "geometrical"/flat as much as the terrain seams did.
+     RoomEnvironment is a synthetic, self-contained room — no HDRI fetch,
+     no CDN dependency beyond three itself — baked once via PMREMGenerator
+     at startup; scene.environment lighting every PBR material afterward
+     is near-free per frame. scene.background stays the hand-painted sky
+     canvas set above; the room itself is never visible, only its light. */
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  pmrem.compileEquirectangularShader();
+  const envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+  scene.environment = envRT.texture;
+  pmrem.dispose();
 
   /* ── Light: pre-dawn rig, relit every frame as the sun climbs ──
      The values below are just the p=0 starting point; applyLighting
-     (defined below, after the sunrise timeline) drives all of it from p. */
-  const hemi = new THREE.HemisphereLight(0x24344a, 0x2a2118, 0.55);
-  scene.add(hemi);
-  const ambient = new THREE.AmbientLight(0x18202e, 0.30);
-  scene.add(ambient);
-
+     (defined below, after the sunrise timeline) drives all of it from p.
+     Cut back from five lights to one key light + the environment above:
+     with IBL in, the old HemisphereLight/AmbientLight/fill DirectionalLight
+     were pure redundant flat fill — they didn't add information, they
+     just washed out the shadow contrast that makes the trench read as a
+     cut in the ground rather than a diorama. The environment now carries
+     that ambient-fill job; the sun alone carries shadow direction/colour,
+     which is what actually sells the sunrise as the sun's elevation swings
+     (see applyLighting). Work lights stay: they're a narrative element
+     (job-site lighting before dawn, killed once the sun is up via the
+     DAY timeline's `work` field), not generic fill, and are cheap/local. */
   const sun = new THREE.DirectionalLight(0xff6a3c, 0.05);
   sun.position.set(48, -6, 24); // azimuth fixed; elevation animates the arc
   sun.castShadow = true;
@@ -406,11 +435,6 @@ function initPipe3D(reduced) {
   sun.shadow.bias = -0.0009;
   sun.shadow.normalBias = 0.02;
   scene.add(sun);
-
-  // The sun rakes one trench wall; this keeps the shaded wall from going black.
-  const fill = new THREE.DirectionalLight(0x87b0e0, 1.25);
-  fill.position.set(-12, 6, -10);
-  scene.add(fill);
 
   // Work lights down in the trench, including one near the open end so the
   // subgrade reads instead of going to pure black in the opening frames.
@@ -440,46 +464,31 @@ function initPipe3D(reduced) {
       p: 0.00, elev: -6,
       sky: ['#03060c', '#060b16', '#0d1626', '#16223a', '#1b2a44'],
       sun: col('#ff6a3c'), sunI: 0.05,
-      fill: col('#87b0e0'), fillI: 1.25,
-      hemiSky: col('#24344a'), hemiGround: col('#2a2118'), hemiI: 0.55,
-      amb: col('#18202e'), ambI: 0.30,
-      work: 26,
+      work: 26, envI: 0.10,
     },
     { // sun breaks the horizon
       p: 0.18, elev: 1,
       sky: ['#0a1830', '#173257', '#3a4f74', '#d9793f', '#ffb15f'],
       sun: col('#ff7a3a'), sunI: 1.1,
-      fill: col('#93b8e0'), fillI: 1.1,
-      hemiSky: col('#4a6a94'), hemiGround: col('#35291c'), hemiI: 0.85,
-      amb: col('#24304a'), ambI: 0.38,
-      work: 24,
+      work: 24, envI: 0.30,
     },
     { // risen and warming fast — lights going off
       p: 0.35, elev: 15,
       sky: ['#2c5da3', '#5588c4', '#9ab8dc', '#dfd0ad', '#ffdca0'],
       sun: col('#ffb479'), sunI: 1.7,
-      fill: col('#bcd4ec'), fillI: 0.9,
-      hemiSky: col('#9ac0e6'), hemiGround: col('#4a3f2e'), hemiI: 1.05,
-      amb: col('#445468'), ambI: 0.44,
-      work: 3,
+      work: 3, envI: 0.65,
     },
     { // full daylight
       p: 0.55, elev: 31.6,
       sky: ['#4f93d8', '#7fb2e2', '#bcd9ef', '#e7f1f8', '#f5f9fc'],
       sun: col('#fff2e2'), sunI: 2.1,
-      fill: col('#dce8f4'), fillI: 0.7,
-      hemiSky: col('#bfe0f7'), hemiGround: col('#7a6f5c'), hemiI: 1.25,
-      amb: col('#6b7d92'), ambI: 0.55,
-      work: 0,
+      work: 0, envI: 1.0,
     },
     { // hold — bright enough to hand off into a white page
       p: 1.00, elev: 31.6,
       sky: ['#5b9bdc', '#8fbbe8', '#c7e0f4', '#e9f3fa', '#f7fbfe'],
       sun: col('#fff6ec'), sunI: 2.15,
-      fill: col('#e8f0f8'), fillI: 0.6,
-      hemiSky: col('#c8e6fa'), hemiGround: col('#8a806c'), hemiI: 1.3,
-      amb: col('#738496'), ambI: 0.58,
-      work: 0,
+      work: 0, envI: 1.0,
     },
   ];
   for (const k of DAY) k.skyC = k.sky.map(col); // pre-parse once, not per-frame
@@ -610,7 +619,7 @@ function initPipe3D(reduced) {
   const MARK_TOP_GAP       = 0.15; // fraction of frame height reserved above it (nav + air)
   const MARK_FIT_W         = 0.55; // fallback cap: fraction of visible width
   const MARK_FIT_H         = 0.50; // fallback cap: fraction of visible height
-  const GROUND_EDGE_Z      = Z_FAR - 12; // far edge of the grade plane — see gradePlane() above
+  const GROUND_EDGE_Z      = Z_FAR - 12; // far edge of the terrain mesh — see TERRAIN_Z_MIN below
   const restCam = new THREE.PerspectiveCamera();
   const _mv = new THREE.Vector3();
 
@@ -696,11 +705,12 @@ function initPipe3D(reduced) {
   fitMark();
 
   /* ── Per-frame relight ─────────────────────────────────────
-     Sky, fog, sun/fill/hemi/ambient, work lights, and the rising mark are
-     all driven from the single sunrise timeline above. */
+     Sky, fog, the sun, work lights, and the rising mark are all driven
+     from the single sunrise timeline above. Ambient fill now comes from
+     the environment map set up earlier, so it isn't part of this list. */
   const _skyC = [new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color()];
-  const _sunC = new THREE.Color(), _fillC = new THREE.Color();
-  const _hemiSkyC = new THREE.Color(), _hemiGroundC = new THREE.Color(), _ambC = new THREE.Color(), _fogC = new THREE.Color();
+  const _sunC = new THREE.Color();
+  const _fogC = new THREE.Color();
   const _skyStops = ['#000000', '#000000', '#000000', '#000000', '#000000'];
 
   function applyLighting(p) {
@@ -725,23 +735,17 @@ function initPipe3D(reduced) {
     sun.color.copy(_sunC);
     sun.intensity = lerp(a.sunI, b.sunI, u);
 
-    _fillC.lerpColors(a.fill, b.fill, u);
-    fill.color.copy(_fillC);
-    fill.intensity = lerp(a.fillI, b.fillI, u);
-
-    _hemiSkyC.lerpColors(a.hemiSky, b.hemiSky, u);
-    _hemiGroundC.lerpColors(a.hemiGround, b.hemiGround, u);
-    hemi.color.copy(_hemiSkyC);
-    hemi.groundColor.copy(_hemiGroundC);
-    hemi.intensity = lerp(a.hemiI, b.hemiI, u);
-
-    _ambC.lerpColors(a.amb, b.amb, u);
-    ambient.color.copy(_ambC);
-    ambient.intensity = lerp(a.ambI, b.ambI, u);
-
     // Crew kills the work lights once the sun is up.
     const workI = lerp(a.work, b.work, u);
     for (const wl of workLights) wl.intensity = workI;
+
+    // Environment (IBL) contribution ramps in with the sunrise instead of
+    // sitting at a constant intensity — see the envMaterials comment above
+    // for why: without this, pre-dawn (work lights + near-black sky) reads
+    // as washed-out daylight instead of blue hour, because scene.environment
+    // has no notion of time of day on its own.
+    const envI = lerp(a.envI, b.envI, u);
+    for (const m of envMaterials) m.envMapIntensity = envI;
 
     // ALDT mark rises late, after backfill — the reveal, not the establishing
     // shot. Its plaque colour is baked into the texture (paintMark), not
@@ -753,40 +757,37 @@ function initPipe3D(reduced) {
   }
 
   /* ── Materials ─────────────────────────────────────────── */
+  /* soilCanvas is a single top-to-bottom strata column ("limestone/marl at
+     invert" → "topsoil", see soilCanvas above). The old per-mesh repeat
+     factors (18,1 for the long wall / 1.2,1 for the short end wall) are
+     gone: the merged terrain mesh built below supplies its own world-space
+     UV (see buildTerrain), so the tiling density lives in that formula
+     instead of in texture.repeat — these are created at repeat (1,1).
+     vertexColors:true lets the terrain's baked AO (terrainAO, below)
+     darken the invert/corners without a real occlusion pass. roughnessMap
+     reuses the same canvas noise already generated for map/bumpMap —
+     near-free variation, must stay linear (NoColorSpace), which
+     toTexture's srgb flag already handles. */
+  const soilTex = soilCanvas();
+  const soilMat = new THREE.MeshStandardMaterial({
+    map: toTexture(soilTex, 1, 1, true),
+    bumpMap: toTexture(soilTex, 1, 1, false), bumpScale: 0.5,
+    roughnessMap: toTexture(soilTex, 1, 1, false),
+    roughness: 1.0, metalness: 0, vertexColors: true,
+  });
   const dirtTex = dirtCanvas();
-
-  /* soilCanvas is a single top-to-bottom strata column: it must map ONCE down
-     the wall (repeatY = 1) and tile only along the trench length. */
-  const soilTex  = soilCanvas();
-  // vertexColors:true on these three lets bakeAO() (applied per-geometry
-  // below, where each surface's own local coordinates are known) darken
-  // corners/invert without a real occlusion pass — see the AO comment there.
-  const soilMat  = new THREE.MeshStandardMaterial({
-    map: toTexture(soilTex, 18, 1, true),
-    bumpMap: toTexture(soilTex, 18, 1, false), bumpScale: 0.5,
-    roughness: 1.0, metalness: 0, vertexColors: true,
-  });
-  const endMat = new THREE.MeshStandardMaterial({
-    map: toTexture(soilTex, 1.2, 1, true),
-    bumpMap: toTexture(soilTex, 1.2, 1, false), bumpScale: 0.5,
-    roughness: 1.0, metalness: 0, vertexColors: true,
-  });
-  // Trench bottom: exposed subgrade, no strata banding.
-  const floorMat = new THREE.MeshStandardMaterial({
-    map: toTexture(dirtTex, 3, 44, true), color: 0xb4a992,
-    bumpMap: toTexture(dirtTex, 3, 44, false), bumpScale: 0.3,
-    roughness: 1.0, metalness: 0, vertexColors: true,
-  });
   const dirtMat = new THREE.MeshStandardMaterial({
-    map: toTexture(dirtTex, 10, 22, true),
-    bumpMap: toTexture(dirtTex, 10, 22, false), bumpScale: 0.35,
-    roughness: 1.0, metalness: 0,
+    map: toTexture(dirtTex, 1, 1, true),
+    bumpMap: toTexture(dirtTex, 1, 1, false), bumpScale: 0.35,
+    roughnessMap: toTexture(dirtTex, 1, 1, false),
+    roughness: 1.0, metalness: 0, vertexColors: true,
   });
 
   const spoilTex = spoilCanvas();
   const spoilMat = new THREE.MeshStandardMaterial({
     map: toTexture(spoilTex, 3, 14, true),
     bumpMap: toTexture(spoilTex, 3, 14, false), bumpScale: 0.6,
+    roughnessMap: toTexture(spoilTex, 3, 14, false),
     roughness: 1.0, metalness: 0,
   });
   // trench patch: the restored surface strip always reads lighter than grade
@@ -799,11 +800,13 @@ function initPipe3D(reduced) {
   const concMat = new THREE.MeshStandardMaterial({
     map: toTexture(concTex, 3, 2, true),
     bumpMap: toTexture(concTex, 3, 2, false), bumpScale: 0.16,
+    roughnessMap: toTexture(concTex, 3, 2, false),
     roughness: 0.92, metalness: 0.02,
   });
   const mhMat = new THREE.MeshStandardMaterial({
     map: toTexture(concTex, 4, 2, true), color: 0xc8c4bc,
     bumpMap: toTexture(concTex, 4, 2, false), bumpScale: 0.2,
+    roughnessMap: toTexture(concTex, 4, 2, false),
     roughness: 0.95, metalness: 0.02,
   });
 
@@ -812,6 +815,7 @@ function initPipe3D(reduced) {
   const gravelBump = toTexture(gravelTex, 7, 26, false);
   const gravelMat  = new THREE.MeshStandardMaterial({
     map: gravelMap, bumpMap: gravelBump, bumpScale: 0.9,
+    roughnessMap: toTexture(gravelTex, 7, 26, false),
     roughness: 1.0, metalness: 0,
   });
 
@@ -819,62 +823,223 @@ function initPipe3D(reduced) {
     color: 0x3a3530, roughness: 0.62, metalness: 0.85,
   });
 
-  /* ── Earth: grade surfaces, trench walls, floor ────────── */
-  // Cheap baked AO (no SSAO — no new dependencies): darkest at the invert
-  // and in the wall/floor corners, fading to unshadowed near grade/centre.
-  // This is the single biggest fix for pipe/manholes reading as if they're
-  // hovering in a lit box instead of sitting in cut ground.
-  const wallAO  = y => lerp(0.42, 1.0, clamp01((y + TRENCH_D / 2) / TRENCH_D) ** 2);
-  const floorAO = x => lerp(0.55, 1.0, clamp01((TRENCH_HW - Math.abs(x)) / 0.9));
+  // Every PBR material that picks up scene.environment — used by applyLighting
+  // below to animate envMapIntensity across the sunrise (see DAY[].envI). The
+  // environment's own contribution is otherwise constant regardless of time of
+  // day, which — left alone — overpowers the intentionally-dark pre-dawn
+  // opening frame (work lights + a near-black sky) with a flat, time-of-day-
+  // blind fill; scaling it down at p=0 and up through sunrise keeps that beat
+  // reading as genuinely dark. pieceMat clones (see makePipe) share concMat's
+  // prototype chain only by value, not by reference, so RCP sections get their
+  // own envMapIntensity set alongside concMat, below, from the pieces list.
+  const envMaterials = [soilMat, dirtMat, spoilMat, patchMat, concMat, mhMat, gravelMat, ironMat];
 
-  function gradePlane(x0, x1, z0, z1) {
-    const g = new THREE.PlaneGeometry(x1 - x0, z0 - z1, 40, 100);
-    roughen(g, 0.09, 'Z'); // pre-rotation Z is world Y
-    const m = new THREE.Mesh(g, dirtMat);
-    m.rotation.x = -Math.PI / 2;
-    m.position.set((x0 + x1) / 2, GRADE, (z0 + z1) / 2);
-    m.receiveShadow = true;
-    scene.add(m);
-    return m;
+  /* ── Earth: one continuous terrain mesh ───────────────────
+     The two grade planes, two trench walls, floor, and end wall used to be
+     six separate flat PlaneGeometry meshes built to meet exactly at their
+     edges. roughen() then displaced EVERY vertex — boundary ones included —
+     using noise2() of each mesh's own LOCAL coordinates, along that mesh's
+     own local Z. Because adjacent meshes used different local frames and
+     displaced along different world axes, edges that were coincident came
+     apart — measured up to ~0.1 world units, which is the holes the site
+     owner is seeing.
+
+     Fixed by construction, not by patching: everything below is ONE
+     BufferGeometry — one shared vertex grid — so no edge can ever separate,
+     because there are no longer two different edges to begin with. A
+     height function (terrainBaseY) carves the trench with the same size/
+     batter the pipe, manholes and bedding are positioned against, plus
+     noise2() on top for surface roughness. Two materials render out of the
+     SAME shared vertex buffer via geometry groups (dirtMat outside the cut,
+     soilMat for the excavated walls/floor/end-wall face — which absorbs
+     what used to be floorMat and endMat too: soilCanvas's gradient runs
+     "invert" colour at its low end, which is exactly the exposed-subgrade
+     look the floor wants, reached here via the same depth-based V
+     coordinate that paints the walls). A material seam can still show as a
+     texture boundary, but never as a geometric gap.
+
+     Width is narrowed from the old ±42 to ±16 — the camera never sees past
+     roughly x ±14 — freeing resolution to spend where it is actually
+     visible: buildAxis() below packs a dense band across the trench walls
+     and the far end-wall transition, and stays coarse everywhere else. */
+  const BATTER       = TRENCH_D * 0.055;    // outward lean over the full depth — unchanged from the old wall math
+  const OUTER_HW      = TRENCH_HW + BATTER;  // trench half-width at grade (≈2.398, matches the fitMark() comment)
+  const END_RAMP       = 0.35;                // z-width of the far-end wall's rise from floor to grade
+  const TERRAIN_HW     = 16;                  // camera never sees past ~x14
+  const TERRAIN_Z_MIN  = Z_FAR - 12;           // == GROUND_EDGE_Z above: matches the old grade planes' far edge
+  const TERRAIN_Z_MAX  = Z_NEAR;
+
+  function shapeX(ax) {
+    if (ax <= TRENCH_HW) return 1;
+    if (ax >= OUTER_HW) return 0;
+    return (OUTER_HW - ax) / (OUTER_HW - TRENCH_HW); // linear ramp — same slope as the old wall's batter-by-height
   }
-  gradePlane(-42, -TRENCH_HW, Z_NEAR, Z_FAR - 12);
-  gradePlane(TRENCH_HW, 42, Z_NEAR, Z_FAR - 12);
+  function endMaskZ(z) {
+    if (z >= Z_FAR) return 1;
+    if (z <= Z_FAR - END_RAMP) return 0;
+    return (z - (Z_FAR - END_RAMP)) / END_RAMP;
+  }
+  // 1 = fully excavated (floor), 0 = fully outside the cut (grade). The
+  // corner where a side wall meets the end wall blends multiplicatively
+  // instead of mitering — smoother and simpler than the old right-angle
+  // meeting of two separate flat meshes, and there is no seam either way.
+  function excavation(x, z) { return shapeX(Math.abs(x)) * endMaskZ(z); }
+  function terrainBaseY(x, z) { return GRADE - TRENCH_D * excavation(x, z); }
 
-  function trenchWall(side) {
-    const g = new THREE.PlaneGeometry(Z_NEAR - Z_FAR, TRENCH_D, 180, 24);
-    roughen(g, 0.10, 'Z');
-    // Local +Z is the face normal, which points into the trench once rotated.
-    // Negative displacement therefore leans the top of the wall outward (batter).
-    const p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) {
-      p.setZ(i, p.getZ(i) - (p.getY(i) + TRENCH_D / 2) * 0.055);
+  // Grade was 0.10 (matching the old gradePlane's 0.09) until the width
+  // narrowed to ±16 and the camera started seeing more of it at a glancing
+  // angle — at that framing the same low-frequency noise2() reads as one
+  // large smooth dune instead of many small rolls, because fewer wavelengths
+  // fit across the visible strip. Pulled down to 0.06; the mottled bump/
+  // roughness texture carries the "looks like dirt" job, not the geometry.
+  const AMP_FLOOR = 0.05, AMP_GRADE = 0.06;
+  function terrainNoiseAmp(x, z) { return lerp(AMP_GRADE, AMP_FLOOR, excavation(x, z)); }
+
+  // Local slope of the (pre-noise) height field, via central differences —
+  // used to blend the UV projection below between "flat ground" and "wall"
+  // treatments. Deliberately analytic on terrainBaseY rather than the noisy
+  // final height: the ramp itself (shapeX/endMaskZ) is what should decide
+  // the projection, not per-vertex noise jitter, or the blend factor would
+  // be as noisy as the terrain and the projection would flicker vertex to
+  // vertex instead of following the actual wall.
+  //
+  // The sampling half-width matters more than it looks: shapeX/endMaskZ are
+  // only C0 continuous — the true slope is a step function (~0 -> ~18 -> ~0)
+  // with a KINK at each edge of the 0.198-wide batter, not a gentle curve.
+  // A narrow EPS (originally 0.05, well under half that width) reproduces
+  // that kink almost exactly, so the blend it drove kept its own edges: t
+  // sat at 1 through the ramp and dropped to 0 within about 0.03 units past
+  // OUTER_HW — a hard pop in UV space (U jumping ~6, V jumping ~5.6) right
+  // at the lip, even though the mesh itself has no seam there. Widening EPS
+  // past HALF the ramp width (0.099) means the ± sample window can never
+  // sit fully inside the ramp for any x, so central differencing can no
+  // longer reproduce the kink — it returns a smoothed bump spanning roughly
+  // 2*EPS beyond the ramp on each side instead. 0.25 was chosen to spread
+  // that bump (and therefore the UV blend) across roughly the same order of
+  // width as the batter itself, per the "smoothly over the batter" ask,
+  // without eating meaningfully into the flat floor or flat grade to either
+  // side of it.
+  const SLOPE_EPS = 0.25;
+  function terrainSlope(x, z) {
+    const dhdx = (terrainBaseY(x + SLOPE_EPS, z) - terrainBaseY(x - SLOPE_EPS, z)) / (2 * SLOPE_EPS);
+    const dhdz = (terrainBaseY(x, z + SLOPE_EPS) - terrainBaseY(x, z - SLOPE_EPS)) / (2 * SLOPE_EPS);
+    return Math.hypot(dhdx, dhdz);
+  }
+
+  // Darken with depth below grade, and again near the wall/floor junction —
+  // the same two effects the old wallAO/floorAO baked from two different
+  // local coordinate frames, re-derived here against the one shared field.
+  function terrainAO(x, y) {
+    const depthT = clamp01((GRADE - y) / TRENCH_D);
+    let ao = lerp(1.0, 0.42, depthT * depthT);
+    const nearWallBand = 1 - clamp01(Math.abs(Math.abs(x) - TRENCH_HW) / 0.9);
+    ao *= lerp(1, 0.72, nearWallBand * depthT);
+    return ao;
+  }
+
+  // Non-uniform axis: fine spacing through [bandLo, bandHi] (where the
+  // batter/end-wall slope actually lives), coarse everywhere else — this is
+  // what keeps the wall from looking stepped without paying for a uniformly
+  // dense grid across a terrain that's mostly flat, unfeatured ground.
+  function buildAxis(min, max, bandLo, bandHi, bandStep, outerStep) {
+    const pts = [];
+    const push = v => { if (!pts.length || v - pts[pts.length - 1] > 1e-6) pts.push(v); };
+    let v = min;
+    while (v < bandLo) { push(v); v += outerStep; }
+    v = bandLo;
+    while (v < bandHi) { push(v); v += bandStep; }
+    v = bandHi;
+    while (v < max) { push(v); v += outerStep; }
+    push(max);
+    return pts;
+  }
+
+  const terrainXs = buildAxis(-TERRAIN_HW, TERRAIN_HW, -3.0, 3.0, 0.05, 0.6);
+  const terrainZs = buildAxis(TERRAIN_Z_MIN, TERRAIN_Z_MAX, Z_FAR - 1.2, Z_FAR + 1.2, 0.07, 0.6);
+  // One shared scale for every projection below (horizontal AND vertical) —
+  // if the wall and the grade used different densities they'd visibly
+  // disagree about texel size right at the lip where they meet.
+  const TERRAIN_UV_SCALE = 0.28;
+  // Verticality blend reference. With SLOPE_EPS=0.25 (see terrainSlope's
+  // comment), terrainSlope() no longer reports the true ~18 batter slope —
+  // it reports a smoothed bump that plateaus around ~7.2 across the ramp and
+  // decays smoothly for roughly another 0.25-0.3 units to either side. 6.0
+  // sits just under that plateau (so the wall/floor interior still clamps
+  // cleanly to "fully vertical") while everything approaching it ramps
+  // through real intermediate values instead of jumping — verified directly
+  // against terrainSlope(x, -20) while tuning: 1.82, 5.45, 7.2(plateau),
+  // 7.2, ..., 5.38, 1.75, 0 walking x from 2.0 to 3.0, i.e. t rises
+  // 0.30 -> 0.91 -> 1.0 -> ... -> 0.90 -> 0.29 -> 0, not 0 -> 1 -> 0.
+  const VERT_SLOPE_REF = 6.0;
+
+  function buildTerrain() {
+    const nx = terrainXs.length, nz = terrainZs.length;
+    const pos = new Float32Array(nx * nz * 3);
+    const uv  = new Float32Array(nx * nz * 2);
+    let vi = 0, ui = 0;
+    for (let j = 0; j < nz; j++) {
+      const z = terrainZs[j];
+      for (let i = 0; i < nx; i++) {
+        const x = terrainXs[i];
+        const y = terrainBaseY(x, z) + noise2(x, z) * terrainNoiseAmp(x, z);
+        pos[vi++] = x; pos[vi++] = y; pos[vi++] = z;
+
+        // Slope-aware UV: a single shared vertex buffer feeds both material
+        // groups (dirtMat on flat grade, soilMat on the walls/floor), and a
+        // vertex right on the lip belongs to both — so the projection can't
+        // be chosen by group, it has to be chosen by local geometry. Blend
+        // between a horizontal planar projection (flat ground: real x/z
+        // variation in both axes) and a vertical one (walls: tiles along the
+        // trench length, V follows depth to match soilTex's strata gradient)
+        // by how steep the surface is at this vertex.
+        const t = clamp01(terrainSlope(x, z) / VERT_SLOPE_REF);
+        const uH = x * TERRAIN_UV_SCALE, vH = z * TERRAIN_UV_SCALE;
+        const uV = z * TERRAIN_UV_SCALE, vV = (GRADE - y) * TERRAIN_UV_SCALE;
+        uv[ui++] = lerp(uH, uV, t);
+        uv[ui++] = lerp(vH, vV, t);
+      }
     }
-    p.needsUpdate = true; g.computeVertexNormals();
-    bakeAO(g, (x, y) => wallAO(y)); // local Y is height here — see wallAO above
 
-    const m = new THREE.Mesh(g, soilMat);
-    m.rotation.y = -side * Math.PI / 2; // face the trench centreline, not away from it
-    m.position.set(side * TRENCH_HW, GRADE - TRENCH_D / 2, (Z_NEAR + Z_FAR) / 2);
-    m.receiveShadow = true;
-    scene.add(m);
+    // Split into two material groups from the SAME index space — a triangle
+    // whose vertices average past the halfway excavation mark renders with
+    // soilMat, otherwise dirtMat. The vertices themselves are never
+    // duplicated, so this is a rendering-only boundary, not a geometric one.
+    const dirtIdx = [], soilIdx = [];
+    const idxAt = (i, j) => j * nx + i;
+    for (let j = 0; j < nz - 1; j++) {
+      for (let i = 0; i < nx - 1; i++) {
+        const v00 = idxAt(i, j), v10 = idxAt(i + 1, j), v01 = idxAt(i, j + 1), v11 = idxAt(i + 1, j + 1);
+        const x0 = terrainXs[i], x1 = terrainXs[i + 1], z0 = terrainZs[j], z1 = terrainZs[j + 1];
+        const avgExc = (excavation(x0, z0) + excavation(x1, z0) + excavation(x0, z1) + excavation(x1, z1)) / 4;
+        const bucket = avgExc > 0.5 ? soilIdx : dirtIdx;
+        // Winding for a +Y-facing normal on an XZ grid (x across, z along):
+        // (v00,v01,v10) then (v10,v01,v11).
+        bucket.push(v00, v01, v10, v10, v01, v11);
+      }
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    geo.setIndex([...dirtIdx, ...soilIdx]);
+    geo.addGroup(0, dirtIdx.length, 0);              // material[0] = dirtMat
+    geo.addGroup(dirtIdx.length, soilIdx.length, 1);  // material[1] = soilMat
+    geo.computeVertexNormals();
+
+    const col = new Float32Array(nx * nz * 3);
+    for (let k = 0, p3 = 0; k < nx * nz; k++, p3 += 3) {
+      const v = terrainAO(pos[p3], pos[p3 + 1]);
+      col[p3] = col[p3 + 1] = col[p3 + 2] = v;
+    }
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
+    const mesh = new THREE.Mesh(geo, [dirtMat, soilMat]);
+    mesh.receiveShadow = true;
+    mesh.castShadow = true; // lets a wall shadow its own floor now that it's possible with one continuous mesh
+    scene.add(mesh);
+    return mesh;
   }
-  trenchWall(1);   // wall at +x, facing in
-  trenchWall(-1);  // wall at -x, facing in
-
-  const trenchFloorGeo = roughen(new THREE.PlaneGeometry(TRENCH_HW * 2, Z_NEAR - Z_FAR, 16, 180), 0.06, 'Z');
-  bakeAO(trenchFloorGeo, x => floorAO(x)); // local X is across the trench here — see floorAO above
-  const trenchFloor = new THREE.Mesh(trenchFloorGeo, floorMat);
-  trenchFloor.rotation.x = -Math.PI / 2;
-  trenchFloor.position.set(0, FLOOR, (Z_NEAR + Z_FAR) / 2);
-  trenchFloor.receiveShadow = true;
-  scene.add(trenchFloor);
-
-  // far end wall closes the trench — same height convention as trenchWall
-  const endWallGeo = bakeAO(new THREE.PlaneGeometry(TRENCH_HW * 2, TRENCH_D, 8, 8), (x, y) => wallAO(y));
-  const endWall = new THREE.Mesh(endWallGeo, endMat);
-  endWall.position.set(0, GRADE - TRENCH_D / 2, Z_FAR);
-  endWall.receiveShadow = true;
-  scene.add(endWall);
+  buildTerrain();
 
   /* ── Spoil pile on the far side of the trench ──────────── */
   (function spoilPile() {
@@ -1104,6 +1269,7 @@ function initPipe3D(reduced) {
     const pieceMat = concMat.clone();
     pieceMat.color.offsetHSL(rndRange(-0.02, 0.02), rndRange(0, 0.05), rndRange(-0.04, 0.04));
     pieceMat.roughness = THREE.MathUtils.clamp(concMat.roughness + rndRange(-0.05, 0.05), 0, 1);
+    envMaterials.push(pieceMat); // clone, not a concMat reference — needs its own envMapIntensity update
     const barrel = new THREE.Mesh(barrelGeo, pieceMat);
     barrel.position.y = -RCP_LEN / 2;
     g.add(barrel);
