@@ -1,1 +1,7 @@
 .DS_Store
+
+# Scratch git worktrees created when work is split across parallel agents.
+# These are full checkouts of this same repository, not project content —
+# their commits reach the branch through a merge, never by being committed
+# as files inside it.
+.claude/worktrees/
