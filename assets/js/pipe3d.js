@@ -373,21 +373,23 @@ function initPipe3D(reduced) {
 
      Rest pose (t=1.00, and its 0.92 lead-in) was rebuilt from a straight
      "out at grade" wide shot — camera pulled back to (4.4, 1.8, 9) looking
-     at (-0.3, -2.2, -12) — into a close 3/4 view standing right at the open
-     cutaway's edge instead. That old pose put the subject (the installed
-     run: manhole + pipe + gravel, only ~4.8 world units wide) so far from
-     the lens relative to the 58° horizontal FOV that it read as a thin
-     ribbon in the middle of a much wider grade plane (TERRAIN_HW=16) —
-     hence "mostly flat dirt". Standing closer (z≈3.4 instead of 9, i.e.
-     inside the open near-cutaway zone: BACKFILL_NEAR=-14 means everything
-     from z=-14 to Z_NEAR=20 stays unfilled) makes the same ~4.8-unit run
-     subtend roughly half the frame width instead of a fifth, and looking
-     down into the cut (rather than across the grade plane toward the
-     horizon) trades empty sky/dirt for the actual trench cross-section —
-     the near manhole (MH_Z=-6) and the two nearest pipe joints, still open,
-     bedding and all. Both keyframes stay above grade (y>0 throughout), so
-     neither touches the wall-clearance logic above; only the exit leg's
-     tail was reshaped. */
+     at (-0.3, -2.2, -12), a near-horizontal 75°-off-vertical look — into a
+     closer, steeper 3/4 view standing over the open cutaway instead. The
+     subject (the installed run: manhole + pipe + gravel, only ~4.8 world
+     units wide) sits inside grade that spans TERRAIN_HW=16 to either side,
+     and it turns out proximity alone barely helps that ratio: a shallow,
+     near-horizontal look angle shows a flat plane stretching toward its own
+     horizon regardless of how close the camera stands to the subject, since
+     grazing incidence is what makes a flat plane fill a frame, not distance.
+     Cutting the look angle to roughly 50° off vertical (steeply down into
+     the cut, only slightly forward) is what actually shrinks the visible
+     grade: the ground plane forecloses much sooner in a downward look, so
+     the ~4.4-unit-wide open trench — the near manhole (MH_Z=-6), the
+     nearest pipe joints, bedding and all: everything from z=-14 to
+     Z_NEAR=20 stays unfilled per BACKFILL_NEAR, see below — reads as the
+     near-field subject instead of a ribbon lost in a wide flat plain. Both
+     keyframes stay above grade (y>0 throughout), so neither touches the
+     wall-clearance logic above; only the exit leg's tail was reshaped. */
   const camPath = [
     { t: 0.00, pos: [3.4,  3.2, 11], look: [0.2, -3.2,   1] }, // look into the empty cut
     { t: 0.26, pos: [2.8,  1.4, 11], look: [0.1, -2.8,  -4] }, // descending
@@ -395,8 +397,8 @@ function initPipe3D(reduced) {
     { t: 0.52, pos: [2.0, -0.8, 10], look: [0,   -2.5, -10] }, // over the rim
     { t: 0.76, pos: [1.5, -1.7,  8], look: [0,   -2.6, -15] }, // at pipe level
     { t: 0.86, pos: [1.7,  0.55, 8.6], look: [-0.1, -2.55, -14.5] }, // rise straight up, still inside the walls
-    { t: 0.92, pos: [2.35, 1.15, 5.6], look: [-0.05, -1.9, -10.5] }, // clear of grade, closing in on the run
-    { t: 1.00, pos: [2.15, 1.75, 3.4], look: [0,   -1.35, -8] }, // rest: standing over the open cutaway, run centred
+    { t: 0.92, pos: [1.9, 2.3, 3.9], look: [-0.05, -2.3, -6.5] }, // clear of grade, tilting down into the run
+    { t: 1.00, pos: [1.5, 3.2, 1.9], look: [-0.1, -2.7, -4.6] }, // rest: steep 3/4 look down into the open cutaway
   ];
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
