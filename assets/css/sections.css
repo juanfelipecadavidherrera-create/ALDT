@@ -1,7 +1,6 @@
 /* ============================================================
-   ALDT – Advanced Land Development Tools
-   Sections Stylesheet – Workflow, Stats, About, Pricing,
-   Download CTA, Footer
+   ALDT — sections
+   Workflow, stats, about, pricing, download CTA, footer.
    ============================================================
    Loads last (base → intro → nav-hero → tools → sections), so rules
    here are free to win ties against earlier files by source order
@@ -10,9 +9,9 @@
    --text-primary, --radius, etc.) are defined in base.css; this file
    only consumes them. */
 
-/* ── Workflow ───────────────────────────────────────────────
-   Padding trimmed from the old 7rem/5rem (tuned for a 3-icon section
-   with nothing below it) now that .workflow__showcase gives the
+/* ── Workflow Section ───────────────────────────────────────── */
+/* Padding trimmed from the plain 7rem/5rem (tuned for a 3-icon section
+   with nothing below it) now that .workflow__showcase below gives the
    section real content weight instead of empty air under the steps. */
 .workflow {
   padding: 6.5rem 0 6rem;
@@ -247,6 +246,201 @@
   letter-spacing: 0.06em;
 }
 
+.stat__suffix {
+  /* inherits all .stat__value styles (font, size, color) automatically */
+}
+
+/* ── Pricing ─────────────────────────────────────────────────── */
+.pricing {
+  padding: 6rem 0 6.5rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.pricing__header {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Previously a bare ".pricing h2 { margin-bottom }" — no font-family or
+   size rule existed at all, so the heading fell back to plain body type
+   and read visibly smaller than every other section's h2. This brings
+   it up to .tools__header h2's scale. */
+.pricing__header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.pricing__header h2 span { color: var(--accent); }
+
+.pricing__intro {
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: 0 auto 3.5rem;
+  font-size: 1rem;
+}
+
+.pricing__grid {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.pricing__card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.8rem 2.6rem 2.4rem;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+}
+
+.pricing__card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.10);
+}
+
+.pricing__card--featured {
+  border-color: var(--accent);
+  /* dropped the old inset rgba(255,255,255,0.04) "glossy edge" highlight —
+     it simulated a light catching a dark card and is invisible/meaningless
+     on a white one */
+  box-shadow: 0 0 40px rgba(0, 122, 163, 0.12);
+}
+
+.pricing__card--featured:hover {
+  box-shadow: 0 12px 48px rgba(0, 122, 163, 0.20);
+}
+
+.pricing__badge {
+  position: absolute;
+  top: -0.85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: var(--bg-primary);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.28em 1.1em;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.pricing__period {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 0.6rem;
+}
+
+.pricing__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+  margin: 0.5rem 0 0.2rem;
+}
+
+.pricing__currency {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  align-self: flex-start;
+  margin-top: 0.5em;
+}
+
+.pricing__number {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.pricing__card--featured .pricing__number {
+  color: var(--accent);
+}
+
+.pricing__unit {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  align-self: flex-end;
+  padding-bottom: 0.35em;
+}
+
+.pricing__billed {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+/* What's-included checklist — the section's main fix: a buyer
+   previously had a price and a button with nothing to compare, no
+   basis to choose. Left-aligned against the card's own centered
+   layout on purpose — a centered checklist is hard to scan. */
+.pricing__features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 1.2rem 0 1.6rem;
+  text-align: left;
+}
+
+.pricing__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.pricing__features li svg {
+  flex-shrink: 0;
+  margin-top: 0.2em;
+  color: var(--accent);
+}
+
+.pricing__features-highlight {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.pricing__cta {
+  width: 100%;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.pricing__footnote {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  max-width: 640px;
+  margin: 2.5rem auto 0;
+  line-height: 1.6;
+}
+
 /* ── About ──────────────────────────────────────────────────── */
 .about {
   padding: 6.5rem 0;
@@ -363,194 +557,6 @@
   max-width: 460px;
 }
 
-/* ── Pricing ─────────────────────────────────────────────────── */
-.pricing {
-  padding: 6rem 0 6.5rem;
-  background: var(--bg-secondary);
-  border-top: 1px solid var(--border);
-  text-align: center;
-}
-
-.pricing__header {
-  max-width: 640px;
-  margin: 0 auto;
-}
-
-/* Was inheriting plain body type (no font-family/size rule existed at
-   all) — every other section heading is Space Grotesk at a clamped
-   display size; this brings pricing's h2 up to the same scale as
-   .tools__header h2 so the section doesn't read as an afterthought. */
-.pricing__header h2 {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-  margin-bottom: 1rem;
-}
-
-.pricing__header h2 span { color: var(--accent); }
-
-.pricing__intro {
-  color: var(--text-muted);
-  max-width: 480px;
-  margin: 0 auto 3.5rem;
-  font-size: 1rem;
-}
-
-.pricing__grid {
-  display: flex;
-  gap: 2rem;
-  justify-content: center;
-  align-items: stretch;
-  flex-wrap: wrap;
-}
-
-.pricing__card {
-  position: relative;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 2.8rem 2.6rem 2.4rem;
-  width: 320px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  transition: var(--transition);
-}
-
-.pricing__card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.10);
-}
-
-.pricing__card--featured {
-  border-color: var(--accent);
-  box-shadow: 0 0 40px rgba(0, 122, 163, 0.12);
-}
-
-.pricing__card--featured:hover {
-  box-shadow: 0 12px 48px rgba(0, 122, 163, 0.20);
-}
-
-.pricing__badge {
-  position: absolute;
-  top: -0.85rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--accent);
-  color: var(--bg-primary);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.28em 1.1em;
-  border-radius: 100px;
-  white-space: nowrap;
-}
-
-.pricing__period {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-top: 0.6rem;
-}
-
-.pricing__amount {
-  display: flex;
-  align-items: baseline;
-  gap: 0.1rem;
-  margin: 0.5rem 0 0.2rem;
-}
-
-.pricing__currency {
-  font-family: var(--font-display);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--accent);
-  align-self: flex-start;
-  margin-top: 0.5em;
-}
-
-.pricing__number {
-  font-family: var(--font-display);
-  font-size: clamp(2.8rem, 5vw, 3.5rem);
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  color: var(--text-primary);
-}
-
-.pricing__card--featured .pricing__number {
-  color: var(--accent);
-}
-
-.pricing__unit {
-  font-family: var(--font-mono);
-  font-size: 0.95rem;
-  color: var(--text-muted);
-  align-self: flex-end;
-  padding-bottom: 0.35em;
-}
-
-.pricing__billed {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  margin-bottom: 0.4rem;
-}
-
-/* What's-included checklist — this is the section's main fix: a buyer
-   previously had a price and a button with nothing to compare, no
-   basis to choose. Left-aligned against the card's own centered
-   layout on purpose — a centered checklist is hard to scan. */
-.pricing__features {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.65rem;
-  width: 100%;
-  margin: 1.2rem 0 1.6rem;
-  text-align: left;
-}
-
-.pricing__features li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
-.pricing__features li svg {
-  flex-shrink: 0;
-  margin-top: 0.2em;
-  color: var(--accent);
-}
-
-.pricing__features-highlight {
-  color: var(--text-primary);
-  font-weight: 500;
-}
-
-.pricing__cta {
-  width: 100%;
-  justify-content: center;
-  margin-top: auto;
-}
-
-.pricing__footnote {
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  max-width: 640px;
-  margin: 2.5rem auto 0;
-  line-height: 1.6;
-}
-
 /* ── Download CTA ───────────────────────────────────────────── */
 .download {
   padding: 6rem 0;
@@ -631,10 +637,10 @@
    reads as "the one external marketplace link" rather than a second
    primary CTA, but re-grounded in the site's own tokens (was a bare
    #1a1a2e/#222240 pair with no token behind it — a genuine third,
-   off-palette color). Hover bridges into --accent-dark instead of an
-   unrelated lighter navy, so it still feels like part of the same
-   system. This file loads after base.css, so this simply wins by
-   source order — see the file-header comment. */
+   off-palette color, per the conversion review). Hover bridges into
+   --accent-dark instead of an unrelated lighter navy, so it still
+   feels like part of the same system. This file loads after base.css
+   (see the file-header comment), so this simply wins by source order. */
 .btn--autodesk {
   background: var(--text-primary);
   color: #fff;
@@ -726,11 +732,9 @@
    isn't this file's to edit), but the label itself is the point: a
    visitor now sees the actual breadth of the suite without scrolling
    the horizontal showcase. Two CSS columns keep 12 items from making
-   the footer absurdly tall. */
-/* Overrides the flex column layout .footer__col ul sets generally —
-   flex containers ignore CSS multicol on their children entirely, so
-   this has to switch back to block display for the 2-column split to
-   take effect. */
+   the footer absurdly tall — overrides .footer__col ul's flex display
+   above, since flex containers ignore CSS multicol on their children
+   entirely. */
 .footer__col--toolsets ul {
   display: block;
   column-count: 2;
@@ -770,10 +774,7 @@
 }
 .footer__social a:hover { color: var(--accent); }
 
-/* ── Responsive ─────────────────────────────────────────────
-   Load order rule: this stylesheet is last, so these can just sit at
-   the bottom of the file it belongs to rather than needing to out-
-   rank anything from an earlier file. */
+/* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .workflow__steps {
     grid-template-columns: 1fr;

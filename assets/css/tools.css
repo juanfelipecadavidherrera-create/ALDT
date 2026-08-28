@@ -1,0 +1,288 @@
+/* ============================================================
+   ALDT — tools
+   Tools section + horizontal command-suite showcase.
+   ============================================================ */
+
+/* ── Tools Section ──────────────────────────────────────────── */
+.tools {
+  padding: 6rem 0;
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.tools__header {
+  margin-bottom: 4rem;
+}
+
+.tools__header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.tools__header h2 span { color: var(--accent); }
+
+.tools__header p {
+  color: var(--text-muted);
+  max-width: 520px;
+  margin-top: 0.8rem;
+  font-size: 1rem;
+}
+
+.tools__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.tool-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.tool-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--accent-glow) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.tool-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-4px);
+  box-shadow: 0 20px 48px rgba(15,23,42,0.10);
+}
+
+.tool-card:hover::before { opacity: 1; }
+
+.tool-card__icon {
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  /* was rgba(255,255,255-adjacent blue at 0.04 alpha — invisible on white;
+     the off-white section token reads as an actual visible tint instead */
+  background: var(--bg-secondary);
+  position: relative;
+}
+
+.tool-card__command {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+.tool-card__name {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.tool-card__desc {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  position: relative;
+}
+
+
+/* ── Horizontal Tools Scroll ────────────────────────────────
+   Base rules here are the mobile-first / reduced-motion fallback: a
+   natively swipeable, scroll-snapped strip — no JS involved. At desktop
+   widths (min-width 768px) the media query below hands the horizontal
+   motion to GSAP ScrollTrigger instead (see main.js §13), which pins
+   this element and scrubs the track's transform as the page scrolls.
+   The prefers-reduced-motion query, deliberately unconditional on
+   width, always wins last in the cascade and collapses everything back
+   to a plain static vertical stack — no pin, no scrub, no snap.
+
+   Cards are now category cards (12 of them, one per catalogue group)
+   rather than single-tool cards (previously 4) — see main.js §13 for
+   the pin-length math this shape enables. Each card holds a compact
+   two-column grid of command tokens instead of prose, which is what
+   keeps 12 cards at a narrower per-card width than the old 4. ───────── */
+.tools-scroll {
+  margin-top: 3rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.tools-scroll::-webkit-scrollbar { display: none; }
+
+.tools-scroll__track {
+  display: flex;
+  width: max-content;
+  gap: 1.25rem;
+  padding: 0.5rem 6vw 1.5rem;
+}
+
+.tools-scroll__card {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: min(86vw, 380px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+}
+
+.tools-scroll__cat-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tools-scroll__cat-count {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-dark);
+  align-self: flex-start;
+  border: 1px solid var(--border);
+  padding: 0.3em 0.85em;
+  border-radius: 100px;
+  background: rgba(0,122,163,0.08);
+}
+
+.tools-scroll__cat-name {
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.tools-scroll__cat-blurb {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.tools-scroll__cmd-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.tools-scroll__cmd-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55em 0.7em;
+}
+
+.tools-scroll__cmd-token {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: var(--accent-dark);
+  word-break: break-word;
+}
+
+.tools-scroll__cmd-title {
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--text-primary);
+}
+
+/* Desktop: GSAP owns the horizontal motion (main.js §13, gsap.matchMedia
+   scoped to this same breakpoint) — the section becomes a full-height pin
+   target and native scroll/snap is switched off so the two systems don't
+   fight each other.
+
+   Card width is deliberately narrow (min(33vw, 420px), capped well below
+   the old single-tool card's 860px) — at 12 cards, keeping the old pitch
+   would push pinned scroll to ~12.8 viewports. Narrower cards plus the
+   PIN_SPEED multiplier in main.js (which decouples pin-scroll length from
+   raw pixel travel — see main.js §13) bring that to ~4 viewports. */
+@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .tools-scroll {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    scroll-snap-type: none;
+  }
+
+  .tools-scroll__track {
+    gap: 1.5rem;
+    padding: 0 6vw;
+    align-items: stretch;
+  }
+
+  .tools-scroll__card {
+    scroll-snap-align: none;
+    width: min(33vw, 420px);
+    padding: 2rem;
+    justify-content: flex-start;
+  }
+
+  .tools-scroll__cat-blurb {
+    font-size: 0.85rem;
+  }
+}
+
+/* Reduced motion: static, readable, no pin/scrub/snap regardless of width.
+   Declared after the desktop block so it wins on source order at any
+   viewport size the two queries overlap at. */
+@media (prefers-reduced-motion: reduce) {
+  .tools-scroll {
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+
+  .tools-scroll__track {
+    display: flex;
+    flex-direction: column;
+    width: auto;
+    padding: 0;
+    gap: 1.5rem;
+  }
+
+  .tools-scroll__card {
+    width: 100%;
+  }
+
+  .tools-scroll__cmd-list {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .tools-scroll__cmd-list {
+    grid-template-columns: 1fr;
+  }
+}
+
