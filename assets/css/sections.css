@@ -1,0 +1,820 @@
+/* ============================================================
+   ALDT – Advanced Land Development Tools
+   Sections Stylesheet – Workflow, Stats, About, Pricing,
+   Download CTA, Footer
+   ============================================================
+   Loads last (base → intro → nav-hero → tools → sections), so rules
+   here are free to win ties against earlier files by source order
+   alone — used deliberately below to retint .btn--autodesk (defined
+   in base.css) without touching that file. Design tokens (--accent,
+   --text-primary, --radius, etc.) are defined in base.css; this file
+   only consumes them. */
+
+/* ── Workflow ───────────────────────────────────────────────
+   Padding trimmed from the old 7rem/5rem (tuned for a 3-icon section
+   with nothing below it) now that .workflow__showcase gives the
+   section real content weight instead of empty air under the steps. */
+.workflow {
+  padding: 6.5rem 0 6rem;
+  background: var(--bg-primary);
+}
+
+.workflow__header {
+  text-align: center;
+  margin-bottom: 4rem;
+}
+
+.workflow__header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.8rem;
+}
+
+.workflow__header p {
+  color: var(--text-muted);
+  max-width: 480px;
+  margin-inline: auto;
+}
+
+.workflow__steps {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  align-items: start;
+  gap: 0;
+}
+
+.workflow__connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 2.8rem;
+}
+
+.workflow__connector svg {
+  /* var(--border) is a near-invisible 0.12-alpha hairline by design — too
+     faint to read as a connecting line on its own, so this uses a
+     dedicated light-but-visible neutral instead of the border token. */
+  color: #CBD2DA;
+}
+
+.workflow__step {
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.workflow__step-num {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  margin-bottom: 1.2rem;
+}
+
+.workflow__step-icon {
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.2rem;
+  background: var(--bg-card);
+}
+
+.workflow__step h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.workflow__step p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+/* ── Workflow Showcase: ribbon-tab illustration ──────────────
+   A stylized, HTML/CSS/SVG mockup of "the suite lives in one ribbon
+   tab" — not a screenshot, and deliberately not a reproduction of
+   Autodesk's actual ribbon chrome (no Autodesk/AutoCAD logos, no
+   attempt to match their bar layout, icon set or type pixel-for-
+   pixel). Icons are drawn fresh in the site's own line-icon style;
+   command tokens shown are real ones pulled from the Tools section
+   (a legitimate content re-use, not an invented product claim). */
+.workflow__showcase {
+  margin-top: 4.5rem;
+}
+
+.ribbon-mock {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+.ribbon-mock__tabbar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.9rem 1.4rem 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ribbon-mock__tabbar::-webkit-scrollbar { display: none; }
+
+.ribbon-mock__tab {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  padding: 0.6rem 0.9rem 0.8rem;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.ribbon-mock__tab--active {
+  color: var(--accent-dark);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+.ribbon-mock__panel {
+  display: flex;
+  gap: 0;
+  padding: 1.5rem 1rem;
+  overflow-x: auto;
+}
+
+.ribbon-mock__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 1.4rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+.ribbon-mock__group:last-child { border-right: none; }
+
+.ribbon-mock__buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.ribbon-mock__btn {
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.3rem 0.5rem;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.ribbon-mock__btn svg {
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+}
+
+.ribbon-mock__btn span {
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.ribbon-mock__group-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.workflow__showcase-caption {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 1.2rem;
+  letter-spacing: 0.02em;
+}
+
+/* ── Stats ──────────────────────────────────────────────────── */
+.stats {
+  padding: 4.5rem 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.stats__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  text-align: center;
+}
+
+.stat__value {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.03em;
+}
+
+.stat__label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+/* ── About ──────────────────────────────────────────────────── */
+.about {
+  padding: 6.5rem 0;
+  background: var(--bg-primary);
+}
+
+.about__inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5rem;
+  align-items: start;
+}
+
+.about__content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+}
+
+.about__content h2 span { color: var(--accent); }
+
+.about__content p {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.75;
+  margin-bottom: 1.2rem;
+}
+
+.about__links {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.about__visual {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Portrait placeholder — see the HTML comment above this markup in
+   index.html for exactly what file to drop in and where. Sized 4:5
+   (a standard headshot crop ratio) so a real photo drops in with no
+   layout change; the corner brackets + monogram are a deliberate
+   "frame waiting for a photo" motif, not an attempt to pass as one. */
+.about__portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  width: 210px;
+  margin-bottom: 3rem;
+}
+
+.about__portrait-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 28% 22%, var(--accent-glow) 0%, transparent 55%),
+    linear-gradient(160deg, var(--bg-secondary) 0%, #EDF1F5 100%);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about__portrait-mark {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  opacity: 0.85;
+}
+
+.about__portrait-corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--accent-warm);
+  opacity: 0.55;
+}
+.about__portrait-corner--tl { top: 14px; left: 14px; border-right: none; border-bottom: none; }
+.about__portrait-corner--tr { top: 14px; right: 14px; border-left: none; border-bottom: none; }
+.about__portrait-corner--bl { bottom: 14px; left: 14px; border-right: none; border-top: none; }
+.about__portrait-corner--br { bottom: 14px; right: 14px; border-left: none; border-top: none; }
+
+.about__portrait-caption {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  text-align: center;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.about__portrait-caption span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 0.15rem;
+}
+
+.about__diagram {
+  width: 100%;
+  max-width: 460px;
+}
+
+/* ── Pricing ─────────────────────────────────────────────────── */
+.pricing {
+  padding: 6rem 0 6.5rem;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.pricing__header {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Was inheriting plain body type (no font-family/size rule existed at
+   all) — every other section heading is Space Grotesk at a clamped
+   display size; this brings pricing's h2 up to the same scale as
+   .tools__header h2 so the section doesn't read as an afterthought. */
+.pricing__header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.pricing__header h2 span { color: var(--accent); }
+
+.pricing__intro {
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: 0 auto 3.5rem;
+  font-size: 1rem;
+}
+
+.pricing__grid {
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.pricing__card {
+  position: relative;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.8rem 2.6rem 2.4rem;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+}
+
+.pricing__card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.10);
+}
+
+.pricing__card--featured {
+  border-color: var(--accent);
+  box-shadow: 0 0 40px rgba(0, 122, 163, 0.12);
+}
+
+.pricing__card--featured:hover {
+  box-shadow: 0 12px 48px rgba(0, 122, 163, 0.20);
+}
+
+.pricing__badge {
+  position: absolute;
+  top: -0.85rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: var(--bg-primary);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.28em 1.1em;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.pricing__period {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 0.6rem;
+}
+
+.pricing__amount {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+  margin: 0.5rem 0 0.2rem;
+}
+
+.pricing__currency {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent);
+  align-self: flex-start;
+  margin-top: 0.5em;
+}
+
+.pricing__number {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.pricing__card--featured .pricing__number {
+  color: var(--accent);
+}
+
+.pricing__unit {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  align-self: flex-end;
+  padding-bottom: 0.35em;
+}
+
+.pricing__billed {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+/* What's-included checklist — this is the section's main fix: a buyer
+   previously had a price and a button with nothing to compare, no
+   basis to choose. Left-aligned against the card's own centered
+   layout on purpose — a centered checklist is hard to scan. */
+.pricing__features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 1.2rem 0 1.6rem;
+  text-align: left;
+}
+
+.pricing__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.pricing__features li svg {
+  flex-shrink: 0;
+  margin-top: 0.2em;
+  color: var(--accent);
+}
+
+.pricing__features-highlight {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.pricing__cta {
+  width: 100%;
+  justify-content: center;
+  margin-top: auto;
+}
+
+.pricing__footnote {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  max-width: 640px;
+  margin: 2.5rem auto 0;
+  line-height: 1.6;
+}
+
+/* ── Download CTA ───────────────────────────────────────────── */
+.download {
+  padding: 6rem 0;
+  background: var(--bg-secondary);
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.download__glow {
+  position: absolute;
+  width: 700px;
+  height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(0, 122, 163, 0.07) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.download__content {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  margin-inline: auto;
+}
+
+.download__content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin-bottom: 1.2rem;
+}
+
+.download__content h2 span { color: var(--accent); }
+
+.download__content p {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+}
+
+.download__actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 3rem;
+}
+
+.download__reqs {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.req-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  padding: 0.4em 0.9em;
+  border-radius: 100px;
+}
+
+.req-pill svg { color: var(--accent); flex-shrink: 0; }
+
+/* Autodesk App Store button — kept deliberately dark/neutral so it
+   reads as "the one external marketplace link" rather than a second
+   primary CTA, but re-grounded in the site's own tokens (was a bare
+   #1a1a2e/#222240 pair with no token behind it — a genuine third,
+   off-palette color). Hover bridges into --accent-dark instead of an
+   unrelated lighter navy, so it still feels like part of the same
+   system. This file loads after base.css, so this simply wins by
+   source order — see the file-header comment. */
+.btn--autodesk {
+  background: var(--text-primary);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.85rem 1.8rem;
+  gap: 0.6rem;
+  transition: var(--transition);
+}
+
+.btn--autodesk:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 89, 116, 0.28);
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.footer {
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border);
+  padding: 3.5rem 0 2rem;
+}
+
+.footer__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.footer__brand { max-width: 260px; }
+.footer__brand .nav__logo { margin-bottom: 0.6rem; }
+
+.footer__brand p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.footer__store-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+.footer__store-link:hover { color: var(--accent-dark); }
+.footer__store-link svg { flex-shrink: 0; }
+
+.footer__links {
+  display: flex;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+.footer__col h4 {
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.9rem;
+}
+
+.footer__col ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.footer__col a {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+.footer__col a:hover { color: var(--text-primary); }
+
+/* The Toolsets column lists all 12 real catalogue categories (matches
+   the Tools section) rather than 4 arbitrary commands — every link
+   still resolves to #tools (there's no per-category anchor to deep
+   link to; that would mean touching the Tools section markup, which
+   isn't this file's to edit), but the label itself is the point: a
+   visitor now sees the actual breadth of the suite without scrolling
+   the horizontal showcase. Two CSS columns keep 12 items from making
+   the footer absurdly tall. */
+/* Overrides the flex column layout .footer__col ul sets generally —
+   flex containers ignore CSS multicol on their children entirely, so
+   this has to switch back to block display for the 2-column split to
+   take effect. */
+.footer__col--toolsets ul {
+  display: block;
+  column-count: 2;
+  column-gap: 1.5rem;
+}
+.footer__col--toolsets li {
+  break-inside: avoid;
+  margin-bottom: 0.55rem;
+}
+
+.footer__bottom {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.footer__copy {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.footer__social {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.footer__social a {
+  color: var(--text-muted);
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+}
+.footer__social a:hover { color: var(--accent); }
+
+/* ── Responsive ─────────────────────────────────────────────
+   Load order rule: this stylesheet is last, so these can just sit at
+   the bottom of the file it belongs to rather than needing to out-
+   rank anything from an earlier file. */
+@media (max-width: 900px) {
+  .workflow__steps {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  .workflow__connector { display: none; }
+
+  .about__inner {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+  .about__visual { align-items: center; }
+
+  .stats__grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  .ribbon-mock__panel { justify-content: flex-start; }
+}
+
+@media (max-width: 680px) {
+  .stats__grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .footer__inner { flex-direction: column; }
+  .footer__links { gap: 2rem; }
+
+  /* Text links in a dense footer are the one interactive element this
+     file adds in quantity — pad them toward the ≥44px touch-target
+     guideline on mobile without inflating the desktop footer. */
+  .footer__col a { display: inline-block; padding: 0.55rem 0; }
+
+  .pricing__card { width: 100%; max-width: 340px; }
+
+  .ribbon-mock__group { padding: 0 1rem; }
+  .ribbon-mock__btn { width: 60px; }
+}
+
+@media (max-width: 480px) {
+  .footer__col--toolsets ul { column-count: 1; }
+}
