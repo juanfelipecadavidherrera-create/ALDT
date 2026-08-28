@@ -1,17 +1,26 @@
 /* ============================================================
    ALDT — sections
    Workflow, stats, about, pricing, download CTA, footer.
-   ============================================================ */
+   ============================================================
+   Loads last (base → intro → nav-hero → tools → sections), so rules
+   here are free to win ties against earlier files by source order
+   alone — used deliberately below to retint .btn--autodesk (defined
+   in base.css) without touching that file. Design tokens (--accent,
+   --text-primary, --radius, etc.) are defined in base.css; this file
+   only consumes them. */
 
 /* ── Workflow Section ───────────────────────────────────────── */
+/* Padding trimmed from the plain 7rem/5rem (tuned for a 3-icon section
+   with nothing below it) now that .workflow__showcase below gives the
+   section real content weight instead of empty air under the steps. */
 .workflow {
-  padding: 7rem 0;
+  padding: 6.5rem 0 6rem;
   background: var(--bg-primary);
 }
 
 .workflow__header {
   text-align: center;
-  margin-bottom: 5rem;
+  margin-bottom: 4rem;
 }
 
 .workflow__header h2 {
@@ -87,9 +96,127 @@
   line-height: 1.6;
 }
 
+/* ── Workflow Showcase: ribbon-tab illustration ──────────────
+   A stylized, HTML/CSS/SVG mockup of "the suite lives in one ribbon
+   tab" — not a screenshot, and deliberately not a reproduction of
+   Autodesk's actual ribbon chrome (no Autodesk/AutoCAD logos, no
+   attempt to match their bar layout, icon set or type pixel-for-
+   pixel). Icons are drawn fresh in the site's own line-icon style;
+   command tokens shown are real ones pulled from the Tools section
+   (a legitimate content re-use, not an invented product claim). */
+.workflow__showcase {
+  margin-top: 4.5rem;
+}
+
+.ribbon-mock {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+}
+
+.ribbon-mock__tabbar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.9rem 1.4rem 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ribbon-mock__tabbar::-webkit-scrollbar { display: none; }
+
+.ribbon-mock__tab {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  padding: 0.6rem 0.9rem 0.8rem;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+
+.ribbon-mock__tab--active {
+  color: var(--accent-dark);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+
+.ribbon-mock__panel {
+  display: flex;
+  gap: 0;
+  padding: 1.5rem 1rem;
+  overflow-x: auto;
+}
+
+.ribbon-mock__group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0 1.4rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+}
+.ribbon-mock__group:last-child { border-right: none; }
+
+.ribbon-mock__buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.ribbon-mock__btn {
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 0.3rem 0.5rem;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+}
+
+.ribbon-mock__btn svg {
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+}
+
+.ribbon-mock__btn span {
+  font-family: var(--font-mono);
+  font-size: 0.54rem;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.ribbon-mock__group-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+.workflow__showcase-caption {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 1.2rem;
+  letter-spacing: 0.02em;
+}
+
 /* ── Stats ──────────────────────────────────────────────────── */
 .stats {
-  padding: 5rem 0;
+  padding: 4.5rem 0;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
@@ -125,14 +252,37 @@
 
 /* ── Pricing ─────────────────────────────────────────────────── */
 .pricing {
-  padding: 7rem 0;
+  padding: 6rem 0 6.5rem;
   background: var(--bg-secondary);
   border-top: 1px solid var(--border);
   text-align: center;
 }
 
-.pricing h2 {
-  margin-bottom: 3.5rem;
+.pricing__header {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Previously a bare ".pricing h2 { margin-bottom }" — no font-family or
+   size rule existed at all, so the heading fell back to plain body type
+   and read visibly smaller than every other section's h2. This brings
+   it up to .tools__header h2's scale. */
+.pricing__header h2 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+
+.pricing__header h2 span { color: var(--accent); }
+
+.pricing__intro {
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: 0 auto 3.5rem;
+  font-size: 1rem;
 }
 
 .pricing__grid {
@@ -148,8 +298,8 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 2.8rem 3rem 2.4rem;
-  width: 300px;
+  padding: 2.8rem 2.6rem 2.4rem;
+  width: 320px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -159,7 +309,7 @@
 
 .pricing__card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(15,23,42,0.10);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.10);
 }
 
 .pricing__card--featured {
@@ -167,11 +317,11 @@
   /* dropped the old inset rgba(255,255,255,0.04) "glossy edge" highlight —
      it simulated a light catching a dark card and is invisible/meaningless
      on a white one */
-  box-shadow: 0 0 40px rgba(0,122,163,0.12);
+  box-shadow: 0 0 40px rgba(0, 122, 163, 0.12);
 }
 
 .pricing__card--featured:hover {
-  box-shadow: 0 12px 48px rgba(0,122,163,0.20);
+  box-shadow: 0 12px 48px rgba(0, 122, 163, 0.20);
 }
 
 .pricing__badge {
@@ -240,7 +390,41 @@
 .pricing__billed {
   font-size: 0.8rem;
   color: var(--text-muted);
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+/* What's-included checklist — the section's main fix: a buyer
+   previously had a price and a button with nothing to compare, no
+   basis to choose. Left-aligned against the card's own centered
+   layout on purpose — a centered checklist is hard to scan. */
+.pricing__features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  margin: 1.2rem 0 1.6rem;
+  text-align: left;
+}
+
+.pricing__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.pricing__features li svg {
+  flex-shrink: 0;
+  margin-top: 0.2em;
+  color: var(--accent);
+}
+
+.pricing__features-highlight {
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 .pricing__cta {
@@ -249,9 +433,17 @@
   margin-top: auto;
 }
 
+.pricing__footnote {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  max-width: 640px;
+  margin: 2.5rem auto 0;
+  line-height: 1.6;
+}
+
 /* ── About ──────────────────────────────────────────────────── */
 .about {
-  padding: 7rem 0;
+  padding: 6.5rem 0;
   background: var(--bg-primary);
 }
 
@@ -259,7 +451,7 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 5rem;
-  align-items: center;
+  align-items: start;
 }
 
 .about__content h2 {
@@ -290,17 +482,84 @@
 
 .about__visual {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Portrait placeholder — see the HTML comment above this markup in
+   index.html for exactly what file to drop in and where. Sized 4:5
+   (a standard headshot crop ratio) so a real photo drops in with no
+   layout change; the corner brackets + monogram are a deliberate
+   "frame waiting for a photo" motif, not an attempt to pass as one. */
+.about__portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  width: 210px;
+  margin-bottom: 3rem;
+}
+
+.about__portrait-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 28% 22%, var(--accent-glow) 0%, transparent 55%),
+    linear-gradient(160deg, var(--bg-secondary) 0%, #EDF1F5 100%);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.about__portrait-mark {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+  opacity: 0.85;
+}
+
+.about__portrait-corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--accent-warm);
+  opacity: 0.55;
+}
+.about__portrait-corner--tl { top: 14px; left: 14px; border-right: none; border-bottom: none; }
+.about__portrait-corner--tr { top: 14px; right: 14px; border-left: none; border-bottom: none; }
+.about__portrait-corner--bl { bottom: 14px; left: 14px; border-right: none; border-top: none; }
+.about__portrait-corner--br { bottom: 14px; right: 14px; border-left: none; border-top: none; }
+
+.about__portrait-caption {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  text-align: center;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+.about__portrait-caption span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 0.15rem;
 }
 
 .about__diagram {
   width: 100%;
   max-width: 460px;
-  margin-left: auto;
 }
 
 /* ── Download CTA ───────────────────────────────────────────── */
 .download {
-  padding: 7rem 0;
+  padding: 6rem 0;
   background: var(--bg-secondary);
   position: relative;
   overflow: hidden;
@@ -312,7 +571,7 @@
   width: 700px;
   height: 400px;
   border-radius: 50%;
-  background: radial-gradient(ellipse, rgba(0,122,163,0.07) 0%, transparent 70%);
+  background: radial-gradient(ellipse, rgba(0, 122, 163, 0.07) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -374,11 +633,37 @@
 
 .req-pill svg { color: var(--accent); flex-shrink: 0; }
 
+/* Autodesk App Store button — kept deliberately dark/neutral so it
+   reads as "the one external marketplace link" rather than a second
+   primary CTA, but re-grounded in the site's own tokens (was a bare
+   #1a1a2e/#222240 pair with no token behind it — a genuine third,
+   off-palette color, per the conversion review). Hover bridges into
+   --accent-dark instead of an unrelated lighter navy, so it still
+   feels like part of the same system. This file loads after base.css
+   (see the file-header comment), so this simply wins by source order. */
+.btn--autodesk {
+  background: var(--text-primary);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.85rem 1.8rem;
+  gap: 0.6rem;
+  transition: var(--transition);
+}
+
+.btn--autodesk:hover {
+  background: var(--accent-dark);
+  border-color: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 89, 116, 0.28);
+}
+
 /* ── Footer ─────────────────────────────────────────────────── */
 .footer {
   background: var(--bg-primary);
   border-top: 1px solid var(--border);
-  padding: 3rem 0 2rem;
+  padding: 3.5rem 0 2rem;
 }
 
 .footer__inner {
@@ -390,14 +675,26 @@
   margin-bottom: 2.5rem;
 }
 
+.footer__brand { max-width: 260px; }
 .footer__brand .nav__logo { margin-bottom: 0.6rem; }
 
 .footer__brand p {
   color: var(--text-muted);
   font-size: 0.85rem;
-  max-width: 260px;
   line-height: 1.6;
 }
+
+.footer__store-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+.footer__store-link:hover { color: var(--accent-dark); }
+.footer__store-link svg { flex-shrink: 0; }
 
 .footer__links {
   display: flex;
@@ -428,6 +725,26 @@
 }
 .footer__col a:hover { color: var(--text-primary); }
 
+/* The Toolsets column lists all 12 real catalogue categories (matches
+   the Tools section) rather than 4 arbitrary commands — every link
+   still resolves to #tools (there's no per-category anchor to deep
+   link to; that would mean touching the Tools section markup, which
+   isn't this file's to edit), but the label itself is the point: a
+   visitor now sees the actual breadth of the suite without scrolling
+   the horizontal showcase. Two CSS columns keep 12 items from making
+   the footer absurdly tall — overrides .footer__col ul's flex display
+   above, since flex containers ignore CSS multicol on their children
+   entirely. */
+.footer__col--toolsets ul {
+  display: block;
+  column-count: 2;
+  column-gap: 1.5rem;
+}
+.footer__col--toolsets li {
+  break-inside: avoid;
+  margin-bottom: 0.55rem;
+}
+
 .footer__bottom {
   border-top: 1px solid var(--border);
   padding-top: 1.5rem;
@@ -457,7 +774,6 @@
 }
 .footer__social a:hover { color: var(--accent); }
 
-
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .workflow__steps {
@@ -470,12 +786,14 @@
     grid-template-columns: 1fr;
     gap: 3rem;
   }
-  .about__diagram { margin: 0 auto; }
+  .about__visual { align-items: center; }
 
   .stats__grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
   }
+
+  .ribbon-mock__panel { justify-content: flex-start; }
 }
 
 @media (max-width: 680px) {
@@ -486,4 +804,18 @@
 
   .footer__inner { flex-direction: column; }
   .footer__links { gap: 2rem; }
+
+  /* Text links in a dense footer are the one interactive element this
+     file adds in quantity — pad them toward the ≥44px touch-target
+     guideline on mobile without inflating the desktop footer. */
+  .footer__col a { display: inline-block; padding: 0.55rem 0; }
+
+  .pricing__card { width: 100%; max-width: 340px; }
+
+  .ribbon-mock__group { padding: 0 1rem; }
+  .ribbon-mock__btn { width: 60px; }
+}
+
+@media (max-width: 480px) {
+  .footer__col--toolsets ul { column-count: 1; }
 }
