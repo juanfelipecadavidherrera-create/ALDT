@@ -11,8 +11,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet" />
 
-  <!-- Styles -->
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <!-- Styles. Split by concern; load order IS the cascade order, so a
+       section's responsive overrides live in that section's own partial. -->
+  <link rel="stylesheet" href="assets/css/base.css" />
+  <link rel="stylesheet" href="assets/css/intro.css" />
+  <link rel="stylesheet" href="assets/css/nav-hero.css" />
+  <link rel="stylesheet" href="assets/css/tools.css" />
+  <link rel="stylesheet" href="assets/css/sections.css" />
 
   <!-- Three.js / anime.js importmap. Both versions are pinned exactly —
        floating tags on a production hero risk a silent breaking bump. -->
@@ -714,8 +719,15 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <!-- ScrollTrigger plugin -->
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
-  <!-- Site logic -->
+  <!-- Site logic. main.js owns the shared Lenis/GSAP instances on
+       window.ALDT; every file after it reads them from there, so the
+       order below matters. boot.js refreshes ScrollTrigger last. -->
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/intro.js"></script>
+  <script src="assets/js/hero.js"></script>
+  <script src="assets/js/tools.js"></script>
+  <script src="assets/js/sections.js"></script>
+  <script src="assets/js/boot.js"></script>
   <!-- 3D pipe canvas -->
   <script type="module" src="assets/js/pipe3d.js"></script>
 </body>
