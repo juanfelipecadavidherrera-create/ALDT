@@ -163,8 +163,22 @@ img, svg { display: block; max-width: 100%; }
 }
 
 /* ── Reveal Animations ──────────────────────────────────────── */
-.reveal { opacity: 0; transform: translateY(50px); }
+/* Default is VISIBLE. The hidden start state is scoped to .js — set on
+   <html> by an inline script in index.html and removed again if the site
+   fails to boot — because these elements are un-hidden by GSAP, and GSAP
+   comes from a CDN. Unscoped, a blocked CDN or JS-off client renders every
+   heading, the pricing and the about copy at opacity:0 on a blank page.
+   Progressive enhancement: hide only where something can un-hide. */
+.reveal { opacity: 1; transform: none; }
+.js .reveal { opacity: 0; transform: translateY(50px); }
 .reveal.is-visible { opacity: 1; transform: translateY(0); }
+
+/* Reduced motion: never hide content waiting on an animation that should
+   not play. !important is load-bearing — GSAP writes opacity inline, and
+   an inline style would otherwise beat this rule. */
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal { opacity: 1 !important; transform: none !important; }
+}
 
 /* ── Scrollbar ──────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; }
@@ -177,3 +191,29 @@ img, svg { display: block; max-width: 100%; }
 
 /* ── Selection ──────────────────────────────────────────────── */
 ::selection { background: rgba(0,122,163,0.22); color: var(--text-primary); }
+
+/* ── Skip Link ──────────────────────────────────────────────── */
+/* Off-screen until focused, then pinned over the fixed nav (z-index 100)
+   so the first Tab on the page reaches the content past the decorative
+   3D intro. */
+.skip-link {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -120%);
+  z-index: 200;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.7rem 1.4rem;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translate(-50%, 0);
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}

@@ -11,6 +11,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet" />
 
+  <!-- The reveal animations below start at opacity:0 and are un-hidden by
+       GSAP. Scope that hidden state to documents that can actually run the
+       un-hiding: without this, a blocked CDN or disabled JS leaves every
+       headline, the pricing and the about copy permanently invisible on a
+       blank white page. Set before the stylesheets so there is no flash. -->
+  <script>
+    (function () {
+      var el = document.documentElement;
+      el.classList.add('js');
+      // JS ran but the site never booted (CDN blocked, script error): show
+      // the content rather than leaving the page blank.
+      setTimeout(function () {
+        if (!window.ALDT) el.classList.remove('js');
+      }, 2500);
+    })();
+  </script>
+
   <!-- Styles. Split by concern; load order IS the cascade order, so a
        section's responsive overrides live in that section's own partial. -->
   <link rel="stylesheet" href="assets/css/base.css" />
@@ -32,6 +49,8 @@
   </script>
 </head>
 <body>
+
+  <a class="skip-link" href="#main">Skip to main content</a>
 
   <!-- ══════════════════════════════════════
        PIPE ASSEMBLY INTRO
@@ -87,6 +106,8 @@
       </ul>
     </div>
   </nav>
+
+  <main id="main">
 
   <!-- ══════════════════════════════════════
        HERO
@@ -650,6 +671,8 @@
       </div>
     </div>
   </section>
+
+  </main><!-- /main -->
 
   <!-- ══════════════════════════════════════
        FOOTER
