@@ -1,25 +1,95 @@
 /* ============================================================
-   ALDT — intro overlay: Skip control + static no-JS/no-WebGL fallback.
-   Linked from inside #pipeIntro itself (see index.html) rather than
-   <head> — everything .pipe-intro/.pipe-intro__text/.pipe-intro__hint
-   needed already lives in style.css; this file only adds the two things
-   that setup never had to account for: a real Skip affordance, and a
-   visible pre-JS state instead of the plain #05070C void .pipe-intro
-   falls back to on its own (see style.css's .pipe-intro background
-   comment — that colour is the "nothing has painted yet" placeholder,
-   not a designed screen).
-   Colour tokens (--font-display/--font-mono/--accent-bright) are read
-   from :root in style.css, not redefined here.
+   ALDT — intro
+   Trench intro overlay (3D canvas lives in assets/js/pipe3d.js; the DOM
+   overlay driver — tagline/hint crossfade, nav-reveal failsafes, Skip —
+   lives in assets/js/intro.js).
    ============================================================ */
 
-/* ── Static fallback ───────────────────────────────────────
+/* ── Pipe Assembly Intro ────────────────────────────────────── */
+.pipe-intro {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Intentionally NOT var(--bg-primary) — the rest of the site is now a
+     light theme, but this fallback only shows before the WebGL canvas has
+     painted its first (dark, pre-dawn) frame. A white background here would
+     flash white for a moment on load; keep it dark/neutral regardless of
+     the light theme everywhere else. */
+  background: #05070C;
+  overflow: hidden;
+  z-index: 1; /* below fixed nav (100) — intro no longer pins over it */
+}
+
+/* Text overlay */
+.pipe-intro__text {
+  position: absolute;
+  bottom: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* Tagline and scroll hint sit on top of the WebGL scene, not the page
+   background, and that scene starts dark (pre-dawn) — so like .pipe-intro
+   above these are intentionally NOT tied to the global light-theme text
+   tokens (which are dark-on-light). A soft shadow keeps them readable
+   across the animation's brightness range. */
+.pipe-intro__tagline {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2.8vw, 1.9rem);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+  letter-spacing: -0.01em;
+}
+
+/* Scroll hint */
+.pipe-intro__hint {
+  position: absolute;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
+  transition: opacity 0.4s;
+}
+
+@media (max-width: 680px) {
+  .pipe-intro__tagline {
+    font-size: 1rem;
+  }
+}
+
+/* ── Static fallback: a JS-off or WebGL-unavailable visitor still sees
+   something intentional, not the #05070C void above ──────────
    Painted BEFORE #pipe-canvas in source order (see index.html), so in
    their shared stacking context it sits behind the canvas by default —
-   no JS-set class or feature query required. The canvas's first real
-   frame (an opaque sky texture, see pipe3d.js's scene.background) covers
-   it completely the instant WebGL actually starts rendering; until then,
-   or if it never does, this is what a visitor sees instead of a blank
-   dark panel. */
+   deliberately NOT gated behind the `html.js` class the head script sets
+   (see index.html): that class only tracks whether window.ALDT (the
+   shared Lenis/GSAP core) booted, which says nothing about whether THIS
+   canvas specifically ever got a WebGL context — three.js's CDN could be
+   blocked, or WebGL could be disabled, while the rest of the page boots
+   fine. Plain DOM order covers both failure modes with nothing to
+   coordinate: no context ever created on the canvas (module never ran,
+   or WebGL truly unavailable) means nothing ever draws over this, JS or
+   no JS. The canvas's first real frame (an opaque sky texture, see
+   pipe3d.js's scene.background) covers it completely the instant WebGL
+   actually starts rendering. */
 .pipe-intro__fallback {
   position: absolute;
   inset: 0;
@@ -57,11 +127,11 @@
 }
 
 /* ── Skip control ───────────────────────────────────────────
-   Same voice as .pipe-intro__hint (mono, uppercase, small, in style.css)
-   — a returning visitor shouldn't have to sit through a build sequence
-   every time to reach the page underneath it. Sits above the canvas
-   (z-index higher than #pipe-canvas's 1, set inline in index.html) and,
-   unlike the canvas/hint/tagline, is never pointer-events:none. */
+   Same voice as .pipe-intro__hint above (mono, uppercase, small) — a
+   returning visitor shouldn't have to sit through a build sequence every
+   time to reach the page underneath it. Sits above the canvas (z-index
+   higher than #pipe-canvas's 1, set inline in index.html) and, unlike
+   the canvas/hint/tagline, is never pointer-events:none. */
 .pipe-intro__skip {
   position: absolute;
   top: 1.5rem;
@@ -112,6 +182,11 @@
 @media (prefers-reduced-motion: reduce) {
   .pipe-intro__skip { display: none; }
 }
+
+/* Genuinely no JS at all (see the html.js class comment above): the click
+   handler that gives this button a job never attaches, so don't offer a
+   control that can't do anything. */
+html:not(.js) .pipe-intro__skip { display: none; }
 
 @media (max-width: 680px) {
   .pipe-intro__skip {
