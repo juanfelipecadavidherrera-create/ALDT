@@ -15,11 +15,14 @@
   <link rel="stylesheet" href="assets/css/style.css" />
 
   <!-- Three.js / anime.js importmap. Both versions are pinned exactly —
-       floating tags on a production hero risk a silent breaking bump. -->
+       floating tags on a production hero risk a silent breaking bump.
+       three.module.js was ~258KB gzipped unminified; jsdelivr serves the
+       same 0.160.0 build pre-minified at the same path with .min before
+       the extension, so this is a same-version swap, not a version bump. -->
   <script type="importmap">
   {
     "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
       "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/modules/index.js"
     }
@@ -30,11 +33,39 @@
 
   <!-- ══════════════════════════════════════
        PIPE ASSEMBLY INTRO
+       Not aria-hidden at the container level any more — a real, focusable
+       Skip control lives in here (see #pipeIntroSkip below), and a focused
+       element inside an aria-hidden ancestor is an accessibility-tree
+       conflict most assistive tech will reject. The purely decorative
+       pieces (canvas, static fallback, scroll hint) carry aria-hidden
+       individually instead; #pipeIntroText's tagline is short marketing
+       copy and is left exposed, same as any other on-page heading.
   ══════════════════════════════════════ -->
-  <div class="pipe-intro" id="pipeIntro" aria-hidden="true">
+  <div class="pipe-intro" id="pipeIntro">
+
+    <!-- assets/css/intro.css: Skip control + the static fallback below.
+         Loaded from here rather than <head> — this file's HTML surface is
+         scoped to this div, and a body-level stylesheet link is fetched
+         and applied exactly like a <head> one, just discovered slightly
+         later in parsing (immaterial for a small stylesheet this far
+         down the document). -->
+    <link rel="stylesheet" href="assets/css/intro.css" />
+
+    <!-- Static pre-JS state: painted first, so it sits BEHIND the canvas
+         in this shared stacking context by source order alone — no JS-set
+         class or feature query needed. A visitor with JS off never gets a
+         module that could draw over it; a visitor whose device can't get a
+         WebGL context never gets a canvas that draws over it either. Both
+         land here instead of the #05070C void .pipe-intro falls back to
+         on its own. Once the scene DOES start rendering, its first frame
+         (an opaque sky-textured background) covers this completely. -->
+    <div class="pipe-intro__fallback" aria-hidden="true">
+      <p class="pipe-intro__fallback-mark">ALDT</p>
+      <p class="pipe-intro__fallback-tag">Engineered. Piece&nbsp;by&nbsp;piece.</p>
+    </div>
 
     <!-- 3D canvas fills the intro; replaces the 2D SVG assembly -->
-    <canvas id="pipe-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
+    <canvas id="pipe-canvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;"></canvas>
 
 
     <!-- Text reveal at end of assembly -->
@@ -43,7 +74,7 @@
     </div>
 
     <!-- Initial scroll hint -->
-    <div class="pipe-intro__hint" id="pipeScrollHint">
+    <div class="pipe-intro__hint" id="pipeScrollHint" aria-hidden="true">
       <span>Scroll to explore</span>
       <svg width="14" height="22" viewBox="0 0 14 22" fill="none" aria-hidden="true">
         <rect x="1" y="1" width="12" height="20" rx="6" stroke="currentColor" stroke-width="1.5"/>
@@ -53,6 +84,13 @@
         </circle>
       </svg>
     </div>
+
+    <!-- Skip: a returning visitor shouldn't have to sit through the build
+         sequence every time to reach the page underneath it. A real
+         <button>, so Tab + Enter/Space reach it with no extra JS. -->
+    <button type="button" class="pipe-intro__skip" id="pipeIntroSkip" aria-label="Skip intro animation">Skip</button>
+
+    <script src="assets/js/intro.js"></script>
 
   </div><!-- /pipe-intro -->
 

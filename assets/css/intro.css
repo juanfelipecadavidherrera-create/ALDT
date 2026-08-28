@@ -1,0 +1,123 @@
+/* ============================================================
+   ALDT — intro overlay: Skip control + static no-JS/no-WebGL fallback.
+   Linked from inside #pipeIntro itself (see index.html) rather than
+   <head> — everything .pipe-intro/.pipe-intro__text/.pipe-intro__hint
+   needed already lives in style.css; this file only adds the two things
+   that setup never had to account for: a real Skip affordance, and a
+   visible pre-JS state instead of the plain #05070C void .pipe-intro
+   falls back to on its own (see style.css's .pipe-intro background
+   comment — that colour is the "nothing has painted yet" placeholder,
+   not a designed screen).
+   Colour tokens (--font-display/--font-mono/--accent-bright) are read
+   from :root in style.css, not redefined here.
+   ============================================================ */
+
+/* ── Static fallback ───────────────────────────────────────
+   Painted BEFORE #pipe-canvas in source order (see index.html), so in
+   their shared stacking context it sits behind the canvas by default —
+   no JS-set class or feature query required. The canvas's first real
+   frame (an opaque sky texture, see pipe3d.js's scene.background) covers
+   it completely the instant WebGL actually starts rendering; until then,
+   or if it never does, this is what a visitor sees instead of a blank
+   dark panel. */
+.pipe-intro__fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  text-align: center;
+  padding: 0 1.5rem;
+  /* Pre-dawn blue hour warming into excavated earth — the same beats the
+     WebGL sunrise timeline plays through (see pipe3d.js's DAY keyframes),
+     compressed into one static gradient rather than any one frame of it. */
+  background: linear-gradient(180deg,
+    #0a1830 0%, #2c5da3 38%, #dfd0ad 68%, #8a6a45 86%, #4e3d2c 100%);
+}
+
+.pipe-intro__fallback-mark {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 5vw, 2.6rem);
+  letter-spacing: -0.01em;
+  color: #F7F9FB;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
+}
+
+.pipe-intro__fallback-tag {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Skip control ───────────────────────────────────────────
+   Same voice as .pipe-intro__hint (mono, uppercase, small, in style.css)
+   — a returning visitor shouldn't have to sit through a build sequence
+   every time to reach the page underneath it. Sits above the canvas
+   (z-index higher than #pipe-canvas's 1, set inline in index.html) and,
+   unlike the canvas/hint/tagline, is never pointer-events:none. */
+.pipe-intro__skip {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.86);
+  background: rgba(10, 14, 22, 0.34);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition: opacity 0.35s ease, background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.pipe-intro__skip:hover {
+  background: rgba(10, 14, 22, 0.55);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #fff;
+}
+
+.pipe-intro__skip:focus-visible {
+  outline: 2px solid var(--accent-bright, #0091C2);
+  outline-offset: 2px;
+  background: rgba(10, 14, 22, 0.55);
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #fff;
+}
+
+/* Retired by intro.js once 'aldt:intro-complete' fires — nothing left to
+   skip past once the build has actually finished. */
+.pipe-intro__skip.is-done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The reduced-motion still frame IS the finished condition already (see
+   pipe3d.js's `reduced` branch) — there's nothing to skip past, so the
+   control never appears rather than flashing briefly before intro.js's
+   own 'aldt:intro-complete' listener retires it. */
+@media (prefers-reduced-motion: reduce) {
+  .pipe-intro__skip { display: none; }
+}
+
+@media (max-width: 680px) {
+  .pipe-intro__skip {
+    top: 1.1rem;
+    right: 1.1rem;
+    font-size: 0.62rem;
+    padding: 0.45rem 0.75rem;
+  }
+}
