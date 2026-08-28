@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://juanfelipecadavidherrera-create.github.io/ALDT/sitemap.xml
