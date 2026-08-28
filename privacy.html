@@ -5,14 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Policy — ALDT</title>
   <meta name="description" content="Privacy policy for Advanced Land Development Tools — a Civil 3D plugin by Juan Felipe Cadavid." />
+  <meta name="author" content="Juan Felipe Cadavid Herrera" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://juanfelipecadavidherrera-create.github.io/ALDT/privacy.html" />
+
+  <!-- Favicon / touch icon / manifest — same brand mark as the main page -->
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="site.webmanifest" />
+  <meta name="theme-color" content="#007AA3" />
+
+  <!-- Open Graph / Twitter sharing card -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="ALDT" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:url" content="https://juanfelipecadavidherrera-create.github.io/ALDT/privacy.html" />
+  <meta property="og:title" content="Privacy Policy — ALDT" />
+  <meta property="og:description" content="Privacy policy for Advanced Land Development Tools — a Civil 3D plugin by Juan Felipe Cadavid." />
+  <meta property="og:image" content="https://juanfelipecadavidherrera-create.github.io/ALDT/assets/img/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="ALDT — Advanced Land Development Tools: 53 commands, one plugin, built for land development." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Privacy Policy — ALDT" />
+  <meta name="twitter:description" content="Privacy policy for Advanced Land Development Tools — a Civil 3D plugin by Juan Felipe Cadavid." />
+  <meta name="twitter:image" content="https://juanfelipecadavidherrera-create.github.io/ALDT/assets/img/og-image.png" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet" />
 
-  <!-- Shared styles -->
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <!-- Shared styles — split partials, loaded in cascade order (must match
+       index.html exactly: base tokens/reset first, then the sections this
+       page actually reuses — nav/hero chrome and the general layout rules
+       shared with the rest of the site). -->
+  <link rel="stylesheet" href="assets/css/base.css" />
+  <link rel="stylesheet" href="assets/css/intro.css" />
+  <link rel="stylesheet" href="assets/css/nav-hero.css" />
+  <link rel="stylesheet" href="assets/css/tools.css" />
+  <link rel="stylesheet" href="assets/css/sections.css" />
 
   <style>
     /* ── Privacy page specific ── */
@@ -58,7 +91,7 @@
 
     /* Summary highlight box */
     .privacy-summary {
-      background: rgba(0,191,255,0.06);
+      background: rgba(0,122,163,0.06);
       border: 1px solid var(--border);
       border-left: 3px solid var(--accent);
       border-radius: 0 var(--radius) var(--radius) 0;
@@ -126,7 +159,7 @@
     .privacy-content code {
       font-family: var(--font-mono);
       font-size: 0.82rem;
-      background: rgba(0,191,255,0.08);
+      background: rgba(0,122,163,0.08);
       border: 1px solid var(--border);
       color: var(--accent);
       padding: 0.12em 0.5em;
@@ -136,7 +169,7 @@
     .privacy-content a {
       color: var(--accent);
       text-decoration: underline;
-      text-decoration-color: rgba(0,191,255,0.4);
+      text-decoration-color: rgba(0,122,163,0.4);
       text-underline-offset: 3px;
     }
 
@@ -146,7 +179,7 @@
 
     /* Mid-page note box */
     .privacy-note {
-      background: rgba(255,107,43,0.06);
+      background: rgba(204,62,0,0.06);
       border: 1px solid var(--border-warm);
       border-left: 3px solid var(--accent-warm);
       border-radius: 0 var(--radius) var(--radius) 0;
@@ -173,11 +206,11 @@
     <div class="container nav__inner">
       <a href="index.html" class="nav__logo">
         <svg class="nav__logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect width="32" height="32" rx="8" fill="rgba(0,191,255,0.1)"/>
-          <path d="M8 24 L8 16 Q8 10 14 10 L24 10" stroke="#00BFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-          <circle cx="8" cy="24" r="2.5" fill="#00BFFF"/>
-          <circle cx="24" cy="10" r="2.5" fill="#FF6B2B"/>
-          <circle cx="8" cy="16" r="1.5" fill="rgba(0,191,255,0.5)"/>
+          <rect width="32" height="32" rx="8" fill="rgba(0,122,163,0.1)"/>
+          <path d="M8 24 L8 16 Q8 10 14 10 L24 10" stroke="#007AA3" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+          <circle cx="8" cy="24" r="2.5" fill="#007AA3"/>
+          <circle cx="24" cy="10" r="2.5" fill="#CC3E00"/>
+          <circle cx="8" cy="16" r="1.5" fill="rgba(0,122,163,0.5)"/>
         </svg>
         ALDT
       </a>
@@ -331,11 +364,11 @@
         <div class="footer__brand">
           <a href="index.html" class="nav__logo">
             <svg class="nav__logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="32" height="32" rx="8" fill="rgba(0,191,255,0.1)"/>
-              <path d="M8 24 L8 16 Q8 10 14 10 L24 10" stroke="#00BFFF" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-              <circle cx="8" cy="24" r="2.5" fill="#00BFFF"/>
-              <circle cx="24" cy="10" r="2.5" fill="#FF6B2B"/>
-              <circle cx="8" cy="16" r="1.5" fill="rgba(0,191,255,0.5)"/>
+              <rect width="32" height="32" rx="8" fill="rgba(0,122,163,0.1)"/>
+              <path d="M8 24 L8 16 Q8 10 14 10 L24 10" stroke="#007AA3" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <circle cx="8" cy="24" r="2.5" fill="#007AA3"/>
+              <circle cx="24" cy="10" r="2.5" fill="#CC3E00"/>
+              <circle cx="8" cy="16" r="1.5" fill="rgba(0,122,163,0.5)"/>
             </svg>
             ALDT
           </a>
