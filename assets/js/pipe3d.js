@@ -15,11 +15,18 @@ import { createTimeline, spring, stagger, engine } from 'animejs';
    near the bottom. Everything that's a genuinely continuous function of
    progress instead of a discrete drop — bedding growth, the backfill
    sweep, the camera path, the sunrise lighting — stays exactly what it
-   was: a plain function of p, called every render frame. There's no
-   dedicated "three.js plugin" in anime.js v4; the integration is anime's
-   generic ability to tween any numeric property of any JS object, applied
-   directly to a THREE.Object3D's `.position`/`.rotation` (Vector3/Euler
-   are just plain {x,y,z} objects to it) — that IS the three.js adapter.
+   was: a plain function of p, called every render frame. anime.js v4
+   DOES ship a dedicated three.js integration — `animejs/adapters/three`
+   exports `threeAdapter`, with target adapters for Object3D (position,
+   rotation, scale, opacity, colour, visibility, plus light/camera
+   specifics), materials, textures, fog, colours, vectors, and TSL
+   UniformNodes. This file doesn't use it: the per-piece tweens below go
+   straight at `.position`/`.rotation` via anime's generic ability to
+   tween any numeric property of any JS object (Vector3/Euler are just
+   plain {x,y,z} to it), which is enough for what's needed here. That's a
+   deliberate choice to avoid rewriting working, already-tuned code for a
+   refactor with real regression risk and no user-visible gain — not a
+   sign the adapter doesn't exist.
    ============================================================ */
 
 const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -108,6 +115,50 @@ function toTexture(canvas, repeatX, repeatY, srgb) {
   t.anisotropy = 8;
   t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
   return t;
+}
+
+/* Derive a tangent-space normal map from a canvas's own luminance, via a
+   Sobel gradient — same noise `map`/`bumpMap` already read, no separate
+   asset or generation pass. bumpMap faked a height offset per-fragment at
+   render time (cheap but low quality: it reconstructs a normal from a
+   single-channel derivative on the fly); baking an actual normal map once
+   here, at scene-build time, is strictly better for the same source data,
+   which is the whole of the audit's ask. Wrapped sampling (the `% H`/`% W`
+   below) matches the source canvas's RepeatWrapping so the generated map
+   tiles seamlessly with it. `strength` plays the same role bumpScale used
+   to: how pronounced the fragment's tilt reads, not a physical unit. */
+function normalMapFromCanvas(srcCanvas, strength) {
+  const W = srcCanvas.width, H = srcCanvas.height;
+  const src = srcCanvas.getContext('2d').getImageData(0, 0, W, H).data;
+  const lum = new Float32Array(W * H);
+  for (let i = 0, p = 0; i < W * H; i++, p += 4) {
+    lum[i] = (src[p] * 0.299 + src[p + 1] * 0.587 + src[p + 2] * 0.114) / 255;
+  }
+  const at = (x, y) => lum[((y + H) % H) * W + ((x + W) % W)];
+
+  const out = makeCanvas(W, H);
+  const octx = out.getContext('2d');
+  const img = octx.createImageData(W, H);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      // Standard 3x3 Sobel operator on the luminance heightfield.
+      const gx = -at(x - 1, y - 1) + at(x + 1, y - 1)
+               - 2 * at(x - 1, y) + 2 * at(x + 1, y)
+               - at(x - 1, y + 1) + at(x + 1, y + 1);
+      const gy = -at(x - 1, y - 1) - 2 * at(x, y - 1) - at(x + 1, y - 1)
+               + at(x - 1, y + 1) + 2 * at(x, y + 1) + at(x + 1, y + 1);
+      let nx = -gx * strength, ny = -gy * strength, nz = 1;
+      const invLen = 1 / Math.hypot(nx, ny, nz);
+      nx *= invLen; ny *= invLen; nz *= invLen;
+      const idx = (y * W + x) * 4;
+      img.data[idx]     = (nx * 0.5 + 0.5) * 255;
+      img.data[idx + 1] = (ny * 0.5 + 0.5) * 255;
+      img.data[idx + 2] = (nz * 0.5 + 0.5) * 255;
+      img.data[idx + 3] = 255;
+    }
+  }
+  octx.putImageData(img, 0, 0);
+  return out;
 }
 
 /* Excavated trench wall: horizontal strata + bucket scoring. */
@@ -451,6 +502,103 @@ function initPipe3D(reduced) {
   scene.environment = envRT.texture;
   pmrem.dispose();
 
+  /* ── Post: grain + vignette ────────────────────────────────
+     The two cheapest realism levers available and, with IBL/materials/AO
+     already in place, the two still missing: grain hides the too-clean
+     gradients a render gives away (nearly free — a per-pixel hash, no
+     texture fetch), vignette reads as a lens rather than a flat synthetic
+     frame (one dot product). Deliberately NOT EffectComposer from
+     three/addons/postprocessing/ — that's another file off jsdelivr on a
+     page already under payload scrutiny for what amounts to a single small
+     shader. Hand-rolled instead as a plain two-pass render: the existing
+     scene into an offscreen target, then one fullscreen triangle with a
+     tiny custom ShaderMaterial that reads it back, darkens the edges and
+     adds noise, straight to the canvas. One extra draw call, one extra
+     program, done. GTAOPass/SSAOPass/N8AO/BokehPass and bloom are
+     deliberately out of scope per the brief — SSAO and DOF are real
+     per-frame cost, and this is a daylight scene with nothing genuinely
+     emissive to bloom against.
+
+     The post material is raw THREE.ShaderMaterial (no built-in chunks it
+     gets for free), so it has to redo two things itself that a built-in
+     material's shader gets automatically: AgXToneMapping already ran when
+     the scene rendered into sceneRT (tonemapping is baked into every
+     material's own compiled shader regardless of render target), but the
+     linear->sRGB OETF encode does NOT run for an offscreen target — three
+     only applies it when the current render target is the canvas itself
+     (see the postMat fragment shader's own comment on this, and don't
+     drop that encode: without it every colour reads darker and
+     oversaturated, a regression that's easy to reintroduce by assuming
+     the render-target texture is already display-ready). */
+  let sceneRT = new THREE.WebGLRenderTarget(
+    Math.round(w * renderer.getPixelRatio()), Math.round(h * renderer.getPixelRatio())
+  );
+  const postScene  = new THREE.Scene();
+  const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const postMat = new THREE.ShaderMaterial({
+    uniforms: {
+      tScene:    { value: sceneRT.texture },
+      uSeed:     { value: 0 },
+      uGrain:    { value: 0.028 }, // amplitude — kept at the threshold of perception, not visible noise
+      uVignette: { value: 0.32 }, // edge-darkening strength
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = vec4(position.xy, 0.0, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform sampler2D tScene;
+      uniform float uSeed, uGrain, uVignette;
+      varying vec2 vUv;
+      // Cheap per-pixel hash — no texture fetch, driven off uSeed so it
+      // changes frame to frame without needing an actual noise texture.
+      float hash(vec2 p) {
+        return fract(sin(dot(p, vec2(12.9898, 78.233)) + uSeed) * 43758.5453);
+      }
+      // three.js only runs its linear->sRGB OETF (the colorspace_fragment
+      // chunk every built-in material shader gets) when the CURRENT render
+      // target is the canvas itself (WebGLRenderer.render, colorSpace
+      // resolution around currentRenderTarget === null) — an offscreen
+      // WebGLRenderTarget like sceneRT stays in linear space regardless of
+      // renderer.outputColorSpace. tScene is exactly that offscreen target,
+      // so this raw ShaderMaterial (no built-in chunks of its own) has to
+      // do that encode by hand before this becomes the final, displayed
+      // frame — otherwise every colour reads darker and oversaturated,
+      // which is exactly the regression this note is here to prevent
+      // reintroducing. Same formula as three's own sRGBTransferOETF.
+      vec3 linearToSRGB(vec3 v) {
+        return mix(pow(v, vec3(0.41666)) * 1.055 - 0.055, v * 12.92, vec3(lessThanEqual(v, vec3(0.0031308))));
+      }
+      void main() {
+        vec3 c = linearToSRGB(texture2D(tScene, vUv).rgb);
+        vec2 centered = vUv - 0.5;
+        float vig = 1.0 - uVignette * dot(centered, centered) * 2.0;
+        c *= clamp(vig, 0.0, 1.0);
+        c += (hash(gl_FragCoord.xy) - 0.5) * uGrain;
+        gl_FragColor = vec4(c, 1.0);
+      }
+    `,
+    depthTest: false, depthWrite: false,
+  });
+  const postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMat);
+  postQuad.frustumCulled = false;
+  postScene.add(postQuad);
+
+  // seed is a function of animation progress p (0..1), not wall-clock time
+  // — keeps this render, like everything else in the file, a pure function
+  // of p rather than something that plays back slightly differently every
+  // load depending on real elapsed time between frames.
+  function renderWithPost(p) {
+    renderer.setRenderTarget(sceneRT);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    postMat.uniforms.uSeed.value = p * 97.0;
+    renderer.render(postScene, postCamera);
+  }
+
   /* ── Light: pre-dawn rig, relit every frame as the sun climbs ──
      The values below are just the p=0 starting point; applyLighting
      (defined below, after the sunrise timeline) drives all of it from p.
@@ -635,30 +783,41 @@ function initPipe3D(reduced) {
      wants) are exactly the pixels that near-zero green channel; multiplied
      against roughness:1.0 that drove effective roughness toward 0 at those
      same pixels, i.e. the darkest-LOOKING dirt became the SHINIEST dirt.
-     Combined with bumpMap perturbing the normal from the same noisy canvas,
-     raking sun light turned those into hot, streaky glints. Soil/dirt/spoil
-     are matte, unglazed materials with no business having any roughness
-     variation at all — dropped for all three, leaving a flat roughness:1.0
-     (already the maximum; nothing left for a texel to pull down). bumpScale
-     is trimmed too, since a strong per-pixel normal perturbation was the
-     other half of what turned ordinary noise into visible glint streaks. */
+     Combined with the per-pixel normal perturbation from that same noisy
+     canvas, raking sun light turned those into hot, streaky glints.
+     Soil/dirt/spoil are matte, unglazed materials with no business having
+     any roughness variation at all — dropped for all three, leaving a flat
+     roughness:1.0 (already the maximum; nothing left for a texel to pull
+     down). The normal strength below is trimmed for the same reason: a
+     strong per-pixel tilt was the other half of what turned ordinary noise
+     into visible glint streaks.
+
+     normalMap replaces bumpMap here and on the other materials below —
+     the audit's flag: strictly better for the same cost (a normal map
+     gives the lighting equation real per-pixel surface direction instead
+     of bumpMap's on-the-fly single-channel derivative), and it reuses the
+     exact same source canvas already computed for `map`/`roughnessMap`
+     via normalMapFromCanvas's Sobel pass, so there's no new noise to
+     tune or asset to author. Data, not colour, so every one of these
+     stays linear (srgb=false into toTexture → NoColorSpace) same as the
+     bumpMaps they replace. */
   const soilTex = soilCanvas();
   const soilMat = new THREE.MeshStandardMaterial({
     map: toTexture(soilTex, 1, 1, true),
-    bumpMap: toTexture(soilTex, 1, 1, false), bumpScale: 0.32,
+    normalMap: toTexture(normalMapFromCanvas(soilTex, 0.32), 1, 1, false),
     roughness: 1.0, metalness: 0, vertexColors: true,
   });
   const dirtTex = dirtCanvas();
   const dirtMat = new THREE.MeshStandardMaterial({
     map: toTexture(dirtTex, 1, 1, true),
-    bumpMap: toTexture(dirtTex, 1, 1, false), bumpScale: 0.24,
+    normalMap: toTexture(normalMapFromCanvas(dirtTex, 0.24), 1, 1, false),
     roughness: 1.0, metalness: 0, vertexColors: true,
   });
 
   const spoilTex = spoilCanvas();
   const spoilMat = new THREE.MeshStandardMaterial({
     map: toTexture(spoilTex, 3, 14, true),
-    bumpMap: toTexture(spoilTex, 3, 14, false), bumpScale: 0.4,
+    normalMap: toTexture(normalMapFromCanvas(spoilTex, 0.4), 3, 14, false),
     roughness: 1.0, metalness: 0,
   });
   // trench patch: the restored surface strip always reads lighter than grade
@@ -668,24 +827,25 @@ function initPipe3D(reduced) {
   });
 
   const concTex = concreteCanvas();
+  const concNormalCvs = normalMapFromCanvas(concTex, 0.16);
   const concMat = new THREE.MeshStandardMaterial({
     map: toTexture(concTex, 3, 2, true),
-    bumpMap: toTexture(concTex, 3, 2, false), bumpScale: 0.16,
+    normalMap: toTexture(concNormalCvs, 3, 2, false),
     roughnessMap: toTexture(concTex, 3, 2, false),
     roughness: 0.92, metalness: 0.02,
   });
   const mhMat = new THREE.MeshStandardMaterial({
     map: toTexture(concTex, 4, 2, true), color: 0xc8c4bc,
-    bumpMap: toTexture(concTex, 4, 2, false), bumpScale: 0.2,
+    normalMap: toTexture(concNormalCvs, 4, 2, false),
     roughnessMap: toTexture(concTex, 4, 2, false),
     roughness: 0.95, metalness: 0.02,
   });
 
   const gravelTex  = gravelCanvas();
   const gravelMap  = toTexture(gravelTex, 7, 26, true);
-  const gravelBump = toTexture(gravelTex, 7, 26, false);
+  const gravelNormal = toTexture(normalMapFromCanvas(gravelTex, 0.9), 7, 26, false);
   const gravelMat  = new THREE.MeshStandardMaterial({
-    map: gravelMap, bumpMap: gravelBump, bumpScale: 0.9,
+    map: gravelMap, normalMap: gravelNormal,
     roughnessMap: toTexture(gravelTex, 7, 26, false),
     roughness: 1.0, metalness: 0,
   });
@@ -1220,7 +1380,7 @@ function initPipe3D(reduced) {
     bedding.position.z = BED_FROM + bLen / 2;
     bedding.visible = bp > 0.001;
     // scale UV repeat with length, or the stone smears as the bed extends
-    gravelMap.repeat.y = gravelBump.repeat.y = Math.max(1, bLen * 1.1);
+    gravelMap.repeat.y = gravelNormal.repeat.y = Math.max(1, bLen * 1.1);
   }
 
   function applyBackfill(p) {
@@ -1297,7 +1457,7 @@ function initPipe3D(reduced) {
     applyProgress(1);
     applyCam(1);
     applyLighting(1);
-    renderer.render(scene, camera);
+    renderWithPost(1);
   }
 
   /* ── Resize ────────────────────────────────────────────── */
@@ -1307,6 +1467,7 @@ function initPipe3D(reduced) {
     camera.aspect = nw / nh;
     fitFov();
     renderer.setSize(nw, nh, false);
+    sceneRT.setSize(Math.round(nw * renderer.getPixelRatio()), Math.round(nh * renderer.getPixelRatio()));
     // Nothing is looping in reduced mode, so redraw or the frame goes stale.
     if (reduced) renderStill();
   });
@@ -1314,8 +1475,14 @@ function initPipe3D(reduced) {
 
   if (reduced) {
     renderStill();
-    // Reduced-motion visitors never see the ~6.5s build sequence, so the page
-    // integration still needs its completion signal to reveal the nav etc.
+    // Reduced-motion visitors never see the ~6.5s build sequence, but
+    // intro.js still drives the tagline/scroll-hint off these two events —
+    // without them it's stuck holding its pre-animation state (tagline at
+    // opacity 0, "SCROLL TO EXPLORE" stuck visible) forever. Fire progress
+    // at p=1 (this IS the finished condition, so there's nothing to ramp
+    // through) then complete, both after the still frame above is on
+    // screen, same contract normal playback's tick() publishes.
+    document.dispatchEvent(new CustomEvent('aldt:intro-progress', { detail: { p: 1 } }));
     document.dispatchEvent(new CustomEvent('aldt:intro-complete'));
     // skip() is a no-op here, not a missing feature: the still frame IS the
     // finished condition already, so Skip and the reduced path agree by
@@ -1448,7 +1615,7 @@ function initPipe3D(reduced) {
     applyContinuous(p);
     applyCam(p);
     applyLighting(p);
-    renderer.render(scene, camera);
+    renderWithPost(p);
 
     // Publish rather than read: main.js listens for these instead of
     // driving us via ScrollTrigger.
@@ -1491,7 +1658,7 @@ function initPipe3D(reduced) {
       applyContinuous(1);
       applyCam(1);
       applyLighting(1);
-      renderer.render(scene, camera);
+      renderWithPost(1);
       document.dispatchEvent(new CustomEvent('aldt:intro-progress', { detail: { p: 1 } }));
       document.dispatchEvent(new CustomEvent('aldt:intro-complete'));
     },
