@@ -1,8 +1,9 @@
 /* ============================================================
    ALDT — intro
    Trench intro overlay (3D canvas lives in assets/js/pipe3d.js; the DOM
-   overlay driver — tagline/hint crossfade, nav-reveal failsafes, Skip —
-   lives in assets/js/intro.js).
+   overlay driver — hint fade, closing accent-rule, nav-reveal failsafes,
+   Skip — lives in assets/js/intro.js). The tagline itself is static CSS,
+   not driven by that file — see .pipe-intro__text below.
    ============================================================ */
 
 /* ── Pipe Assembly Intro ────────────────────────────────────── */
@@ -37,25 +38,34 @@
   transform: translateX(-50%);
   z-index: 2;
   text-align: center;
-  opacity: 0;
+  /* Visible from frame one, not JS-driven opacity: this tagline IS the
+     page's largest real DOM text, so it has to be the LCP candidate — and
+     LCP is measured against first paint, long before pipe3d.js's module
+     has even fetched, let alone run its first animation frame. Gating it
+     behind a script-driven fade (the old p > 0.78 reveal) meant nothing
+     substantial painted until the 6.5s build was nearly over: measured
+     10.3s LCP. Static CSS opacity: 1 costs nothing and resolves in one
+     paint regardless of network/JS timing. See .pipe-intro__tagline below
+     for why the same style holds up at both ends of the sunrise. */
+  opacity: 1;
   pointer-events: none;
   white-space: nowrap;
 }
 
 /* The tagline and the scroll hint sit on the WebGL scene, not the page
    background, so neither is tied to the global light-theme text tokens.
-   But they appear at opposite ends of a sunrise, so they need opposite
-   treatments — the two used to share one white-on-dark style, which left
-   the tagline white-on-white.
-
-   The hint (below) shows early, over the dark pre-dawn cut: white on a
-   dark shadow.
-
-   The tagline only fades in from p > 0.78, by which point the sun is up
-   and the frame is pale sky over light tan spoil — white text on it was
-   invisible. It is dark, with a light halo rather than a dark one, and a
-   backdrop-blurred scrim behind it so it holds up wherever in the frame
-   it lands (it can sit over bright concrete pipe as easily as over soil). */
+   But the tagline is visible across the *entire* sunrise now (pre-dawn
+   navy through full daylight — see pipe3d.js's DAY keyframes), not just
+   the bright tail end, so it can't lean on either extreme alone. Dark
+   text over a translucent WHITE scrim (not a dark one) turns out to work
+   at both ends: mixing white into near-black pre-dawn sky still lifts the
+   composited background well clear of the dark text (~7:1+ measured
+   against the darkest sky stop, #03060c), and mixing white into the
+   pale midday sky only pushes it lighter still. A dark-scrim/light-text
+   treatment doesn't have that property — it was tried first and went
+   white-on-white the moment the sky brightened, which is why this is a
+   light scrim with dark text instead. The hint (below) only ever shows
+   over the dark pre-dawn cut, so it stays white on a dark shadow. */
 .pipe-intro__tagline {
   font-family: var(--font-display);
   font-size: clamp(1.1rem, 2.8vw, 1.9rem);
@@ -68,6 +78,25 @@
   -webkit-backdrop-filter: blur(6px);
   border-radius: 100px;
   padding: 0.5em 1.4em;
+}
+
+/* Closing beat: with the tagline itself visible for the whole animation
+   now, the old "reveal" moment at p > 0.78 (trench backfilled, sunrise
+   basically done) needed a new home instead of just disappearing — this
+   thin rule draws in under the pill in that same window, driven by
+   intro.js off the same progress clock the tagline used to fade on. Pure
+   decoration (aria-hidden, no text of its own), so it carries none of the
+   LCP/contrast requirements the tagline does. */
+.pipe-intro__accent {
+  display: block;
+  width: 2.75rem;
+  height: 2px;
+  margin: 0.6em auto 0;
+  background: var(--accent-warm);
+  border-radius: 2px;
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: center;
 }
 
 /* Scroll hint */
@@ -88,6 +117,20 @@
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.5);
   transition: opacity 0.4s;
   z-index: 2; /* see .pipe-intro__text above */
+}
+
+/* Reduced motion used to never fire a per-frame 'aldt:intro-progress' —
+   the event the hint's opacity is normally driven off (pipe3d.js held a
+   single finished frame instead) — so the hint's default opacity (1, the
+   CSS initial value) went uncleared forever. pipe3d.js's reduced path now
+   fires one such event at p:1 before completing, which intro.js's own
+   progress-listener math already resolves to hint opacity 0 — but this
+   media query is the real fix: same shape as .pipe-intro__skip below, it
+   needs no event to ever arrive, so it can't be left stuck by one that
+   doesn't (a blocked module, a WebGL failure, any future change to the
+   emitting side). Belt-and-suspenders, CSS is the belt. */
+@media (prefers-reduced-motion: reduce) {
+  .pipe-intro__hint { display: none; }
 }
 
 @media (max-width: 680px) {

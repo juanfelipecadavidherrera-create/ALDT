@@ -16,7 +16,7 @@
   if (!intro) return;
 
   const scrollHint = document.getElementById('pipeScrollHint');
-  const introText  = document.getElementById('pipeIntroText');
+  const accentRule = document.querySelector('.pipe-intro__accent');
 
   // Hide nav initially (intro covers full viewport)
   gsap.set('.nav', { opacity: 0, y: -10, pointerEvents: 'none' });
@@ -59,32 +59,30 @@
   // No scrubbed GSAP timeline here — that would add a second easing
   // layer fighting the clock that pipe3d.js already runs.
   const setHint = scrollHint ? gsap.quickSetter(scrollHint, 'opacity') : null;
-  const setText = introText  ? gsap.quickSetter(introText, 'opacity') : null;
 
-  // Tagline rises into place as it fades, driven off the same p as opacity.
-  // .pipe-intro__text is horizontally centred via `transform:
-  // translateX(-50%)` in CSS — a plain gsap y-setter would overwrite that
-  // transform outright and the text would jump to the left edge, so the
-  // -50% has to be composed into every write here rather than left to CSS.
-  // Direct style write (not a CSS transition): this listener fires every
-  // frame off pipe3d.js's own clock, and a transition would fight it the
-  // same way a second easing layer would.
-  const RISE_PX = 22;
-  function setTextY(p) {
-    if (!introText) return;
-    introText.style.transform = `translate(-50%, ${(1 - p) * RISE_PX}px)`;
+  // The tagline itself is plain CSS opacity: 1 now (see intro.css) — it
+  // has to be visible at first paint to be the LCP candidate, so nothing
+  // here gates its entrance any more. This accent rule is what took over
+  // the old p > 0.78 reveal moment: a closing flourish, not the text's
+  // entrance, so unlike the retired setText/setTextY it only touches its
+  // own small decorative element.
+  const setAccentOpacity = accentRule ? gsap.quickSetter(accentRule, 'opacity') : null;
+  function setAccentScale(p) {
+    if (!accentRule) return;
+    accentRule.style.transform = `scaleX(${p})`;
   }
 
   document.addEventListener('aldt:intro-progress', (e) => {
     const p = (e.detail && typeof e.detail.p === 'number') ? e.detail.p : 0;
 
-    // Scroll hint holds, then clears just before the tagline lands.
+    // Scroll hint holds, then clears just before the accent rule draws in.
     if (setHint) setHint(1 - Math.max(0, Math.min(1, (p - 0.60) / 0.14)));
 
-    // Tagline fades + rises in late, as the trench is backfilled.
-    const textP = Math.max(0, Math.min(1, (p - 0.78) / 0.16));
-    if (setText) setText(textP);
-    setTextY(textP);
+    // Accent rule draws in late, as the trench is backfilled — same
+    // window the tagline used to fade in on.
+    const accentP = Math.max(0, Math.min(1, (p - 0.78) / 0.16));
+    if (setAccentOpacity) setAccentOpacity(accentP);
+    setAccentScale(accentP);
   });
 })();
 

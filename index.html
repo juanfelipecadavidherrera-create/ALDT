@@ -112,13 +112,21 @@
        floating tags on a production hero risk a silent breaking bump.
        three.module.js was ~258KB gzipped unminified; jsdelivr serves the
        same 0.160.0 build pre-minified at the same path with .min before
-       the extension, so this is a same-version swap, not a version bump. -->
+       the extension, so this is a same-version swap, not a version bump.
+       animejs points at dist/bundles/anime.esm.min.js rather than
+       dist/modules/index.js: the modules entry is the *unbundled* source
+       tree — one request per submodule (draggable, layout, scroll, text
+       scramble/split, SVG morph/motionpath, WAAPI...) — 51 requests and
+       ~390KB for pipe3d.js's four named imports (createTimeline, spring,
+       stagger, engine). The prebuilt ESM bundle is the same 4.5.0 release,
+       tree-shaken down to one 118KB request; same pin, same reasoning
+       against floating tags. -->
   <script type="importmap">
   {
     "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
       "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-      "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/modules/index.js"
+      "animejs": "https://cdn.jsdelivr.net/npm/animejs@4.5.0/dist/bundles/anime.esm.min.js"
     }
   }
   </script>
@@ -156,9 +164,15 @@
     <canvas id="pipe-canvas" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;"></canvas>
 
 
-    <!-- Text reveal at end of assembly -->
+    <!-- Tagline: visible from frame one (see intro.css) so real DOM text,
+         not the WebGL scene, is the LCP candidate — the fixed 10.3s LCP
+         bug was this element sitting at opacity:0 until the animation was
+         almost over. The accent rule below is the old late-reveal beat's
+         new home: it draws in once the trench is backfilled (see
+         intro.js), a closing flourish rather than the text's entrance. -->
     <div class="pipe-intro__text" id="pipeIntroText">
       <p class="pipe-intro__tagline">Engineered. Piece&nbsp;by&nbsp;piece.</p>
+      <span class="pipe-intro__accent" aria-hidden="true"></span>
     </div>
 
     <!-- Initial scroll hint -->
