@@ -38,8 +38,16 @@ setTimeout(_boot, 50);
 // hand-rolled clock rescaled a 0-1 progress value by dividing by 0.92 every
 // frame; the timeline instead just IS 0.92 * RUNTIME_MS long, so p = timeline
 // progress directly, no per-frame rescale needed.
-const RUNTIME_MS = 14000;
-const ASSEMBLY_MS = Math.round(RUNTIME_MS * 0.92); // 12880ms
+//
+// Was 14000 (12.9s of assembly). The owner-approved brief for this pass was
+// "compress to roughly 6-7s and keep it as the opening beat" — 7065 lands
+// ASSEMBLY_MS at 6500ms, comfortably inside that window. The per-piece drop
+// physics (mhSpring/pipeSpring below) are tuned in absolute ms, not scaled
+// off this constant, so shrinking it doesn't need to touch them — verified
+// by hand that every piece still settles well before backfill reaches its
+// depth at the new pace (see addDropTween's call site comments).
+const RUNTIME_MS = 7065;
+const ASSEMBLY_MS = Math.round(RUNTIME_MS * 0.92); // 6500ms
 
 /* ── Site dimensions (world units ≈ feet) ──────────────────── */
 const GRADE       = 0;      // finished grade
@@ -349,6 +357,33 @@ function initPipe3D(reduced) {
     camera.updateProjectionMatrix();
   }
   fitFov();
+  /* Rest pose (t=1.00): the frame has to read as "an installed run", so the
+     camera sits just above grade near the trench centreline and looks DOWN
+     the trench rather than across it. Two earlier poses both failed, in
+     opposite directions, and the reason is the same in both cases — what a
+     given pose shows depends on the vertical FOV, and fitFov() derives that
+     from the viewport aspect:
+
+       - Wide and high, out over the shoulder: at 16:9 the vertical FOV is
+         only ~38°, so most of the frame was the flat backfilled ground beside
+         the trench rather than the run itself.
+       - Close and steep, looking straight down into the cut: legible on a
+         phone (portrait clamps vertical FOV to 70° and shows plenty), but at
+         16:9 that narrow vertical slice crops to just the manhole.
+
+     Looking along the trench instead of across it is what makes one pose work
+     at both aspects: the run recedes toward the vanishing point, so the walls
+     frame the shot and carry the eye regardless of how tall the slice is, and
+     the flat ground stays at the edges instead of filling the middle.
+
+     x=1.45 puts the camera nearly over the trench centreline rather than out
+     on the spoil side. Offset further out (x=2.55) the trench sat in the left
+     third and the flat backfilled ground filled the right 40% of the frame —
+     the same "mostly dirt" problem as the original pose, just less of it.
+     Being above the open cut is safe here: the wall-clearance problem the
+     descent keyframes below were tuned around only applies while y is
+     crossing zero, and y stays positive from t=0.92 onward. */
+
   /* Arc: establish from grade → descend into the trench → travel at pipe
      level for the placement → rise back out as the backfill sweeps in.
 
@@ -361,7 +396,27 @@ function initPipe3D(reduced) {
      tightest clearance was +0.007 units at p=0.414, near enough to zero to
      call it a coincidence, not a margin. Fixed the same way, via 0.40:
      pull x in low while still above grade, THEN descend with x already
-     safely inside the wall's envelope at every height on the way down. */
+     safely inside the wall's envelope at every height on the way down.
+
+     Rest pose (t=1.00, and its 0.92 lead-in) was rebuilt from a straight
+     "out at grade" wide shot — camera pulled back to (4.4, 1.8, 9) looking
+     at (-0.3, -2.2, -12), a near-horizontal 75°-off-vertical look — into a
+     closer, steeper 3/4 view standing over the open cutaway instead. The
+     subject (the installed run: manhole + pipe + gravel, only ~4.8 world
+     units wide) sits inside grade that spans TERRAIN_HW=16 to either side,
+     and it turns out proximity alone barely helps that ratio: a shallow,
+     near-horizontal look angle shows a flat plane stretching toward its own
+     horizon regardless of how close the camera stands to the subject, since
+     grazing incidence is what makes a flat plane fill a frame, not distance.
+     Cutting the look angle to roughly 50° off vertical (steeply down into
+     the cut, only slightly forward) is what actually shrinks the visible
+     grade: the ground plane forecloses much sooner in a downward look, so
+     the ~4.4-unit-wide open trench — the near manhole (MH_Z=-6), the
+     nearest pipe joints, bedding and all: everything from z=-14 to
+     Z_NEAR=20 stays unfilled per BACKFILL_NEAR, see below — reads as the
+     near-field subject instead of a ribbon lost in a wide flat plain. Both
+     keyframes stay above grade (y>0 throughout), so neither touches the
+     wall-clearance logic above; only the exit leg's tail was reshaped. */
   const camPath = [
     { t: 0.00, pos: [3.4,  3.2, 11], look: [0.2, -3.2,   1] }, // look into the empty cut
     { t: 0.26, pos: [2.8,  1.4, 11], look: [0.1, -2.8,  -4] }, // descending
@@ -369,8 +424,8 @@ function initPipe3D(reduced) {
     { t: 0.52, pos: [2.0, -0.8, 10], look: [0,   -2.5, -10] }, // over the rim
     { t: 0.76, pos: [1.5, -1.7,  8], look: [0,   -2.6, -15] }, // at pipe level
     { t: 0.86, pos: [1.7,  0.55, 8.6], look: [-0.1, -2.55, -14.5] }, // rise straight up, still inside the walls
-    { t: 0.92, pos: [2.6,  0.6,  9], look: [-0.2, -2.5, -14] }, // clear of grade, now moving outward
-    { t: 1.00, pos: [4.4,  1.8,  9], look: [-0.3, -2.2, -12] }, // out at grade
+    { t: 0.92, pos: [2.1, 2.2, 5.6], look: [-0.05, -2.2, -11.0] }, // clear of grade, tilting down into the run
+    { t: 1.00, pos: [1.45, 1.35, 7.4], look: [0.0, -2.4, -19.0] }, // rest: see the comment below
   ];
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -502,212 +557,26 @@ function initPipe3D(reduced) {
     return { a, b, u };
   }
 
-  /* ── ALDT mark — the payoff, not the establishing shot ────────
-     Rises late (0.70→0.95): the sun comes up, the crew installs the run,
-     and the brand rises as the reveal once the trench is backfilled — two
-     separate beats, not one. That also means it rises against a bright
-     pale-daylight sky rather than a dark/amber one, so an additive glow
-     (right for a dusk reveal) would wash out here — flipped to a solid
-     dark plaque, which reads at full contrast against any sky brightness
-     the same way the header's logo badge does against the page.
-     Still a real object beyond the grade plane's far edge (it ends at
-     Z_FAR - 12), occluded by the terrain until it clears that edge. */
-  const MARK_Z          = -70;
-  const MARK_RISE_S     = 0.70;
-  const MARK_RISE_E     = 0.95;
-  const MARK_RISE_DROP  = 20; // world units the hidden start sits below rest
-  // Flat, wide "banner" proportions rather than a tall badge — see the
-  // vertical-budget comment in fitMark() below for why: the rest camera
-  // sits low and tilted, so the safe vertical band between the ground
-  // horizon and the nav band is thin, and a wide-short shape makes better
-  // use of it than a tall-narrow one would.
-  const MARK_W = 1024, MARK_H = 150;
-  const MARK_FONT = "'Space Grotesk', 'Helvetica Neue', Arial, sans-serif";
-
-  function roundRectPath(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  function paintMark(ctx, w, h, font) {
-    ctx.clearRect(0, 0, w, h);
-    const bx = w * 0.06, by = h * 0.14, bw = w - bx * 2, bh = h - by * 2;
-    const r = bh * 0.22;
-
-    // Contact shadow grounds the plaque against the sky instead of glowing
-    // into it — the thing that made the mid-animation glow wash out.
-    ctx.save();
-    ctx.shadowColor = 'rgba(8,12,18,0.5)';
-    ctx.shadowBlur = h * 0.09;
-    ctx.shadowOffsetY = h * 0.03;
-    ctx.fillStyle = '#12161f'; // ≈ --text-primary, the site's own deep neutral
-    roundRectPath(ctx, bx, by, bw, bh, r);
-    ctx.fill();
-    ctx.restore();
-
-    // Faint top sheen — dimension, not gloss.
-    const sheen = ctx.createLinearGradient(0, by, 0, by + bh);
-    sheen.addColorStop(0.00, 'rgba(255,255,255,0.10)');
-    sheen.addColorStop(0.40, 'rgba(255,255,255,0)');
-    ctx.fillStyle = sheen;
-    roundRectPath(ctx, bx, by, bw, bh, r);
-    ctx.fill();
-
-    // Brand accent dot, echoing the header mark.
-    ctx.fillStyle = '#E64500'; // --accent-warm-bright
-    ctx.beginPath();
-    ctx.arc(bx + bw * 0.90, by + bh * 0.22, bh * 0.05, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = `700 ${bh * 0.56}px ${font}`;
-    ctx.fillStyle = '#F7F9FB';
-    ctx.fillText('ALDT', w / 2, by + bh / 2 + bh * 0.02);
-  }
-
-  const markCvs = makeCanvas(MARK_W, MARK_H);
-  const markCtx = markCvs.getContext('2d');
-  paintMark(markCtx, MARK_W, MARK_H, MARK_FONT);
-  const markTex = toTexture(markCvs, 1, 1, true);
-
-  // `font` strings fail silently to a fallback face when the webfont isn't
-  // loaded yet — the paint above may not be Space Grotesk. Repaint once it's
-  // confirmed ready instead of gambling on load order.
-  document.fonts?.ready?.then(() => {
-    paintMark(markCtx, MARK_W, MARK_H, MARK_FONT);
-    markTex.needsUpdate = true;
-  }).catch(() => {});
-
-  const markMat = new THREE.MeshBasicMaterial({
-    map: markTex, transparent: true, depthWrite: false, fog: false,
-  });
-  // Unit-square geometry — actual on-screen width AND height come entirely
-  // from mark.scale (set directly in world units by fitMark() below), never
-  // from a hardcoded size. The aspect ratio lives in fitMark's w/h math, not
-  // in this geometry, so scale.set(w, h, 1) isn't double-applying it.
-  const mark = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), markMat);
-  mark.position.z = MARK_Z; // fixed depth; fitMark() below only ever touches x/y
-  scene.add(mark);
-
-  /* ── Mark fit: size and rest position from the ACTUAL visible frustum ──
-     fitFov() clamps vertical FOV to 70°. The camera is framed by
-     HORIZONTAL fov (58° intended), so when that clamp binds — which it
-     does on any tall/narrow viewport — horizontal FOV silently shrinks to
-     compensate (down to ~36° on a phone portrait instead of 58°). A plane
-     sized to look right at 58° overflows at 36°. So both the mark's size
-     and its rest position are solved against the camera's real frustum,
-     evaluated at the REST pose specifically (camPath's last keyframe) —
-     a resize can land mid-animation, but what has to fit on screen is
-     where the mark ends up, not wherever the camera happens to be at that
-     instant. Re-solved on every resize (see the ResizeObserver below).
-
-     The vertical fit has a second constraint the first pass here missed:
-     it isn't enough to keep the TOP edge below the nav band — the BOTTOM
-     edge also has to clear the terrain, or the lower half of the plaque
-     sinks behind the ground and reads as a clipped sliver. At the rest
-     pose the camera sits low and tilted (it's "out at grade"), so the
-     safe band between "ray to the ground's far edge stays above y=0" and
-     "top edge stays below the nav" is thin — solved for on BOTH edges,
-     not assumed from one. */
-  const MARK_GROUND_MARGIN = 1.0;  // world units of clearance above the horizon line
-  const MARK_TOP_GAP       = 0.15; // fraction of frame height reserved above it (nav + air)
-  const MARK_FIT_W         = 0.55; // fallback cap: fraction of visible width
-  const MARK_FIT_H         = 0.50; // fallback cap: fraction of visible height
-  const GROUND_EDGE_Z      = Z_FAR - 12; // far edge of the terrain mesh — see TERRAIN_Z_MIN below
-  const restCam = new THREE.PerspectiveCamera();
-  const _mv = new THREE.Vector3();
-
-  function markNdc(x, y) {
-    _mv.set(x, y, MARK_Z);
-    _mv.project(restCam);
-    return _mv;
-  }
-
-  // Bisection rather than a closed form — the camera is tilted, so world
-  // position doesn't map to screen position by simple proportion, and a
-  // dozen iterations is nothing next to "once per resize".
-  function solve(lo, hi, f) {
-    let flo = f(lo);
-    for (let i = 0; i < 34; i++) {
-      const mid = (lo + hi) / 2, fm = f(mid);
-      if ((fm < 0) === (flo < 0)) { lo = mid; flo = fm; } else { hi = mid; }
-    }
-    return (lo + hi) / 2;
-  }
-
-  let markRestY = 6, markHiddenY = markRestY - MARK_RISE_DROP; // overwritten below; only matter before the first fitMark()
-
-  function fitMark() {
-    const rest = camPath[camPath.length - 1];
-    restCam.position.set(rest.pos[0], rest.pos[1], rest.pos[2]);
-    restCam.up.set(0, 1, 0);
-    restCam.lookAt(rest.look[0], rest.look[1], rest.look[2]);
-    restCam.aspect = camera.aspect;
-    restCam.fov = camera.fov;
-    restCam.near = camera.near;
-    restCam.far = camera.far;
-    restCam.updateProjectionMatrix();
-    restCam.updateMatrixWorld(true);
-
-    // Visible half-width/height in world units at the mark's depth.
-    _mv.set(0, 0, MARK_Z).applyMatrix4(restCam.matrixWorldInverse);
-    const depth = -_mv.z;
-    const halfH = depth * Math.tan(THREE.MathUtils.degToRad(restCam.fov) / 2);
-    const halfW = halfH * restCam.aspect;
-
-    // Lower bound: the world Y at which a ray from the camera to (0, Y,
-    // MARK_Z) is still above y = 0 by the time it crosses the ground
-    // plane's far edge — below this, the ground occludes the point before
-    // the ray ever gets past it, same mechanism that hides the mark during
-    // its rise.
-    const groundClearY = solve(-20, 20, Y => {
-      const t = (restCam.position.z - GROUND_EDGE_Z) / (restCam.position.z - MARK_Z);
-      return restCam.position.y + t * (Y - restCam.position.y);
-    });
-    const bottomMin = groundClearY + MARK_GROUND_MARGIN;
-
-    // Upper bound: the world Y at which a point projects to the reserved
-    // top-of-frame line (nav + air).
-    const targetTopNdc = 1 - 2 * MARK_TOP_GAP;
-    const topMax = solve(-20, 40, Y => markNdc(0, Y).y - targetTopNdc);
-
-    // Fit within whichever is tighter: the ground↔nav vertical band, or
-    // the fallback width/height fractions of the full frustum.
-    const markAspect = MARK_H / MARK_W;
-    const availH = Math.max(0.5, topMax - bottomMin); // floor so a degenerate band doesn't invert the sizing below
-    let h = Math.min(availH, halfH * 2 * MARK_FIT_H);
-    let w = h / markAspect;
-    const capW = halfW * 2 * MARK_FIT_W;
-    if (w > capW) { w = capW; h = w * markAspect; }
-    mark.scale.set(w, h, 1);
-
-    // Sit just above the ground-clear line — using whatever headroom is
-    // left toward the nav rather than centring, so it reads as "risen out
-    // of the trench" rather than floating arbitrarily high in the sky.
-    const centerY = bottomMin + h / 2;
-
-    // Horizontal: solve world X so the centre lands at screen-centre — the
-    // rest pose looks slightly off-axis from the trench centreline, so
-    // x = 0 isn't automatically centred.
-    const centerX = solve(-20, 20, x => markNdc(x, centerY).x);
-
-    markRestY = centerY;
-    markHiddenY = markRestY - MARK_RISE_DROP;
-    mark.position.x = centerX;
-    mark.position.y = markHiddenY; // applyLighting drives it from here each frame
-  }
-  fitMark();
+  /* ── ALDT mark: dropped ────────────────────────────────────
+     A previous pass put "ALDT" on a dark rounded-rectangle plaque rising
+     out of the backfilled trench at MARK_Z=-70 — see git history for
+     paintMark/fitMark if this is ever revisited. On review it read as a
+     UI chip pasted into 3D space rather than an object that belonged to
+     the world (no post, no mounting, no reason for a sign to be floating
+     at that height over open ground), and fitting it against the rest
+     camera's real frustum was a large chunk of this file's complexity for
+     a payoff that looked like a bug. Cut rather than reworked into a
+     grounded sign/stencil: the DOM tagline (#pipeIntroText, driven by
+     main.js off the same aldt:intro-progress event this file still
+     publishes) already carries the brand moment, and the header nav
+     carries the wordmark itself — the scene doesn't need to duplicate
+     either job. restCam/solve/fitMark and their ResizeObserver hook go
+     with it; nothing else in this file depended on them. */
 
   /* ── Per-frame relight ─────────────────────────────────────
-     Sky, fog, the sun, work lights, and the rising mark are all driven
-     from the single sunrise timeline above. Ambient fill now comes from
-     the environment map set up earlier, so it isn't part of this list. */
+     Sky, fog, the sun and work lights are driven from the single sunrise
+     timeline above. Ambient fill now comes from the environment map set
+     up earlier, so it isn't part of this list. */
   const _skyC = [new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color(), new THREE.Color()];
   const _sunC = new THREE.Color();
   const _fogC = new THREE.Color();
@@ -746,14 +615,6 @@ function initPipe3D(reduced) {
     // has no notion of time of day on its own.
     const envI = lerp(a.envI, b.envI, u);
     for (const m of envMaterials) m.envMapIntensity = envI;
-
-    // ALDT mark rises late, after backfill — the reveal, not the establishing
-    // shot. Its plaque colour is baked into the texture (paintMark), not
-    // tinted per-frame: by 0.70 the sky has been at full daylight for a
-    // while, so a sun-colour tint would just sit at a constant near-white
-    // and buys nothing.
-    const rp = smooth(clamp01((p - MARK_RISE_S) / (MARK_RISE_E - MARK_RISE_S)));
-    mark.position.y = lerp(markHiddenY, markRestY, rp);
   }
 
   /* ── Materials ─────────────────────────────────────────── */
@@ -764,30 +625,40 @@ function initPipe3D(reduced) {
      UV (see buildTerrain), so the tiling density lives in that formula
      instead of in texture.repeat — these are created at repeat (1,1).
      vertexColors:true lets the terrain's baked AO (terrainAO, below)
-     darken the invert/corners without a real occlusion pass. roughnessMap
-     reuses the same canvas noise already generated for map/bumpMap —
-     near-free variation, must stay linear (NoColorSpace), which
-     toTexture's srgb flag already handles. */
+     darken the invert/corners without a real occlusion pass.
+
+     roughnessMap USED to reuse this same canvas (soil/dirt/spoil all share
+     the pattern) for "near-free variation" — that was the bug behind the
+     harsh elongated highlights on the trench walls: roughnessMap reads its
+     value from the texture's green channel, and mottle()'s darkest dabs
+     ('#000000', '#241a11', etc. — the dirt-crack/shadow specks the albedo
+     wants) are exactly the pixels that near-zero green channel; multiplied
+     against roughness:1.0 that drove effective roughness toward 0 at those
+     same pixels, i.e. the darkest-LOOKING dirt became the SHINIEST dirt.
+     Combined with bumpMap perturbing the normal from the same noisy canvas,
+     raking sun light turned those into hot, streaky glints. Soil/dirt/spoil
+     are matte, unglazed materials with no business having any roughness
+     variation at all — dropped for all three, leaving a flat roughness:1.0
+     (already the maximum; nothing left for a texel to pull down). bumpScale
+     is trimmed too, since a strong per-pixel normal perturbation was the
+     other half of what turned ordinary noise into visible glint streaks. */
   const soilTex = soilCanvas();
   const soilMat = new THREE.MeshStandardMaterial({
     map: toTexture(soilTex, 1, 1, true),
-    bumpMap: toTexture(soilTex, 1, 1, false), bumpScale: 0.5,
-    roughnessMap: toTexture(soilTex, 1, 1, false),
+    bumpMap: toTexture(soilTex, 1, 1, false), bumpScale: 0.32,
     roughness: 1.0, metalness: 0, vertexColors: true,
   });
   const dirtTex = dirtCanvas();
   const dirtMat = new THREE.MeshStandardMaterial({
     map: toTexture(dirtTex, 1, 1, true),
-    bumpMap: toTexture(dirtTex, 1, 1, false), bumpScale: 0.35,
-    roughnessMap: toTexture(dirtTex, 1, 1, false),
+    bumpMap: toTexture(dirtTex, 1, 1, false), bumpScale: 0.24,
     roughness: 1.0, metalness: 0, vertexColors: true,
   });
 
   const spoilTex = spoilCanvas();
   const spoilMat = new THREE.MeshStandardMaterial({
     map: toTexture(spoilTex, 3, 14, true),
-    bumpMap: toTexture(spoilTex, 3, 14, false), bumpScale: 0.6,
-    roughnessMap: toTexture(spoilTex, 3, 14, false),
+    bumpMap: toTexture(spoilTex, 3, 14, false), bumpScale: 0.4,
     roughness: 1.0, metalness: 0,
   });
   // trench patch: the restored surface strip always reads lighter than grade
@@ -863,10 +734,10 @@ function initPipe3D(reduced) {
      visible: buildAxis() below packs a dense band across the trench walls
      and the far end-wall transition, and stays coarse everywhere else. */
   const BATTER       = TRENCH_D * 0.055;    // outward lean over the full depth — unchanged from the old wall math
-  const OUTER_HW      = TRENCH_HW + BATTER;  // trench half-width at grade (≈2.398, matches the fitMark() comment)
+  const OUTER_HW      = TRENCH_HW + BATTER;  // trench half-width at grade (≈2.398)
   const END_RAMP       = 0.35;                // z-width of the far-end wall's rise from floor to grade
   const TERRAIN_HW     = 16;                  // camera never sees past ~x14
-  const TERRAIN_Z_MIN  = Z_FAR - 12;           // == GROUND_EDGE_Z above: matches the old grade planes' far edge
+  const TERRAIN_Z_MIN  = Z_FAR - 12;           // matches the old grade planes' far edge
   const TERRAIN_Z_MAX  = Z_NEAR;
 
   function shapeX(ax) {
@@ -1435,7 +1306,6 @@ function initPipe3D(reduced) {
     if (!nw || !nh) return;
     camera.aspect = nw / nh;
     fitFov();
-    fitMark();
     renderer.setSize(nw, nh, false);
     // Nothing is looping in reduced mode, so redraw or the frame goes stale.
     if (reduced) renderStill();
@@ -1444,10 +1314,13 @@ function initPipe3D(reduced) {
 
   if (reduced) {
     renderStill();
-    // Reduced-motion visitors never see the 14s build sequence, so the page
+    // Reduced-motion visitors never see the ~6.5s build sequence, so the page
     // integration still needs its completion signal to reveal the nav etc.
     document.dispatchEvent(new CustomEvent('aldt:intro-complete'));
-    window.ALDTIntro = { play() {}, pause() {}, restart() {}, isReducedMotion: true };
+    // skip() is a no-op here, not a missing feature: the still frame IS the
+    // finished condition already, so Skip and the reduced path agree by
+    // construction — there's nothing left for a click to advance past.
+    window.ALDTIntro = { play() {}, pause() {}, restart() {}, skip() {}, isReducedMotion: true };
     return;
   }
 
@@ -1604,14 +1477,29 @@ function initPipe3D(reduced) {
               // resumes internally regardless of prior pause state, sync()
               // re-pauses it immediately if userPaused/off-screen still hold.
     },
+    // Backs the visible Skip control (see intro.js). timeline.complete()
+    // is anime.js's own seek-to-duration — it writes every piece's final
+    // position/rotation synchronously (the timeline owns those transforms
+    // directly, see addDropTween), so there's no stale frame to wait out.
+    // Rendering once here means a paused/off-screen intro still lands on
+    // its finished state immediately, instead of only on the next tick()
+    // that may never come if sync() has the render loop gated off.
+    skip() {
+      if (completed) return;
+      completed = true;
+      timeline.complete();
+      applyContinuous(1);
+      applyCam(1);
+      applyLighting(1);
+      renderer.render(scene, camera);
+      document.dispatchEvent(new CustomEvent('aldt:intro-progress', { detail: { p: 1 } }));
+      document.dispatchEvent(new CustomEvent('aldt:intro-complete'));
+    },
     isReducedMotion: false,
     __debug() {
       return {
-        markPos: mark.position.toArray(),
-        markScale: mark.scale.toArray(),
         camFov: camera.fov, camAspect: camera.aspect,
         camPos: camera.position.toArray(),
-        markRestY, markHiddenY,
         introW: intro.clientWidth, introH: intro.clientHeight,
         timelineProgress: timeline.progress,
       };

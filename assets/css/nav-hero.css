@@ -72,7 +72,17 @@
 }
 .nav__links a:hover { color: var(--text-primary); }
 
-.nav__cta { font-size: 0.85rem; padding: 0.55rem 1.2rem; }
+/* The colour has to be restated here, not left to .btn--primary. Both the
+   CTA and the plain nav links are matched by `.nav__links a` (specificity
+   0-1-1), which beats `.btn--primary` (0-1-0) — so the button rendered its
+   white label in the muted grey link colour instead: 1.99:1 on the accent
+   fill. `.nav__links .nav__cta` ties on specificity and wins on order. */
+.nav__links .nav__cta {
+  font-size: 0.85rem;
+  padding: 0.55rem 1.2rem;
+  color: var(--bg-primary);
+}
+.nav__links .nav__cta:hover { color: var(--bg-primary); }
 
 /* ── Mobile menu toggle ─────────────────────────────────────── */
 /* Hidden on desktop (see .nav__links display below); shown only under the

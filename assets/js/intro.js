@@ -41,6 +41,9 @@
   // Failsafe #2: backstop for the case where the module DID start but
   // never finished (it stalled, or an exception killed its loop). Must sit
   // clear of the normal completion time so it only fires on real breakage.
+  // The intro itself now finishes in ~6.5s (was ~12.9s) — 20s is still a
+  // wide margin over that, so it still only fires on a genuine stall rather
+  // than needing to be re-tightened for the shorter runtime.
   navFailsafeTimer = setTimeout(revealNav, 20000);
 
   // Failsafe #3: reveal as soon as the user scrolls, regardless of
@@ -82,5 +85,51 @@
     const textP = Math.max(0, Math.min(1, (p - 0.78) / 0.16));
     if (setText) setText(textP);
     setTextY(textP);
+  });
+})();
+
+/* ── Skip control ─────────────────────────────────────────────
+   Kept as its own IIFE rather than folded into initPipeAssembly above:
+   it doesn't touch Lenis/GSAP or the progress-driven overlays, it only
+   needs the button element and pipe3d.js's public skip() — so it has
+   nothing to share with that scope, and no reason to depend on
+   window.ALDT being present (a visitor should be able to skip the intro
+   even in the degraded case where the shared core failed to boot and the
+   nav-reveal failsafes above are the only thing keeping the page usable).
+   ───────────────────────────────────────────────────────────── */
+(function initIntroSkip() {
+  'use strict';
+
+  const btn = document.getElementById('pipeIntroSkip');
+  if (!btn) return;
+
+  function finish() {
+    // window.ALDTIntro is pipe3d.js's own proof of life (same flag
+    // initPipeAssembly's failsafe #1 checks above). It's normally set
+    // within a couple of frames of load, but on a slow connection the
+    // module may still be fetching when Skip is clicked — rather than the
+    // button doing nothing, fall back to firing the same completion
+    // signal the nav-reveal failsafes already listen for, so the visitor
+    // gets through either way.
+    if (window.ALDTIntro && typeof window.ALDTIntro.skip === 'function') {
+      window.ALDTIntro.skip();
+    } else {
+      document.dispatchEvent(new CustomEvent('aldt:intro-complete'));
+    }
+    btn.blur();
+  }
+
+  btn.addEventListener('click', finish);
+
+  // Nothing is left to skip past once the intro has actually finished (on
+  // its own, or via this same control) — retire it instead of leaving a
+  // dead button sitting over the rest frame for the rest of the page's
+  // life. Reduced-motion visitors never see an active control in the
+  // first place (see intro.css's prefers-reduced-motion rule), but
+  // pipe3d.js still fires this same event for them immediately on load,
+  // so this one listener keeps both paths in agreement.
+  document.addEventListener('aldt:intro-complete', () => {
+    btn.classList.add('is-done');
+    btn.disabled = true;
   });
 })();
