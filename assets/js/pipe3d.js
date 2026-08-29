@@ -397,8 +397,8 @@ function initPipe3D(reduced) {
     { t: 0.52, pos: [2.0, -0.8, 10], look: [0,   -2.5, -10] }, // over the rim
     { t: 0.76, pos: [1.5, -1.7,  8], look: [0,   -2.6, -15] }, // at pipe level
     { t: 0.86, pos: [1.7,  0.55, 8.6], look: [-0.1, -2.55, -14.5] }, // rise straight up, still inside the walls
-    { t: 0.92, pos: [1.9, 2.3, 3.9], look: [-0.05, -2.3, -6.5] }, // clear of grade, tilting down into the run
-    { t: 1.00, pos: [1.5, 3.2, 1.9], look: [-0.1, -2.7, -4.6] }, // rest: steep 3/4 look down into the open cutaway
+    { t: 0.92, pos: [1.8, 2.6, 4.6], look: [-0.05, -2.1, -7.2] }, // clear of grade, tilting down into the run
+    { t: 1.00, pos: [1.5, 3.3, 3.0], look: [-0.1, -2.3, -6.0] }, // rest: steep 3/4 look down into the open cutaway, with headroom above the manhole so the nav band doesn't crop it
   ];
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
