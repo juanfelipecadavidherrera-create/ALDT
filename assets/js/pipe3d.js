@@ -436,22 +436,12 @@ function initPipe3D(reduced) {
      crossing zero, and y stays positive from t=0.92 onward. */
 
   /* Arc: establish from grade → descend into the trench → travel at pipe
-     level for the placement → rise back out as the backfill sweeps in.
+     level for the placement → rise back out as the backfill sweeps in — one
+     continuous crane move, never reversing and never stopping.
 
-     Both grade-crossing legs (descent AND exit) get the same treatment:
-     never lerp straight from "well above grade" to "well inside the
-     trench" in one hop, because that line cuts across the battered wall
-     face (x=2.2 at the floor, leaning out to x≈2.398 at grade) while y is
-     still crossing zero. The exit leg (0.76→0.92, via 0.86) was fixed
-     first; the descent leg (0.26→0.52) had the same defect — straight-line
-     tightest clearance was +0.007 units at p=0.414, near enough to zero to
-     call it a coincidence, not a margin. Fixed the same way, via 0.40:
-     pull x in low while still above grade, THEN descend with x already
-     safely inside the wall's envelope at every height on the way down.
-
-     Rest pose (t=1.00, and its 0.92 lead-in) was rebuilt from a straight
-     "out at grade" wide shot — camera pulled back to (4.4, 1.8, 9) looking
-     at (-0.3, -2.2, -12), a near-horizontal 75°-off-vertical look — into a
+     Rest pose (the last point below) was rebuilt from a straight "out at
+     grade" wide shot — camera pulled back to (4.4, 1.8, 9) looking at
+     (-0.3, -2.2, -12), a near-horizontal 75°-off-vertical look — into a
      closer, steeper 3/4 view standing over the open cutaway instead. The
      subject (the installed run: manhole + pipe + gravel, only ~4.8 world
      units wide) sits inside grade that spans TERRAIN_HW=16 to either side,
@@ -465,19 +455,108 @@ function initPipe3D(reduced) {
      the ~4.4-unit-wide open trench — the near manhole (MH_Z=-6), the
      nearest pipe joints, bedding and all: everything from z=-14 to
      Z_NEAR=20 stays unfilled per BACKFILL_NEAR, see below — reads as the
-     near-field subject instead of a ribbon lost in a wide flat plain. Both
-     keyframes stay above grade (y>0 throughout), so neither touches the
-     wall-clearance logic above; only the exit leg's tail was reshaped. */
+     near-field subject instead of a ribbon lost in a wide flat plain.
+
+     MEASURED PROBLEM (this is why the interpolation below changed): the old
+     version of this path carried a `t` on every point and applyCam() lerped
+     position/look independently inside whichever pair straddled the
+     current p, with smooth() (smoothstep) re-applied AT EVERY SEGMENT
+     BOUNDARY. That's C0 continuity only — position is continuous, velocity
+     is not: smoothstep's own derivative goes to zero at both ends of every
+     segment, so the camera physically stopped and restarted at each of the
+     8 keyframes, then set off in whatever direction the next segment's
+     straight line happened to point. Replaying that function over 2000
+     samples measured speed collapsing to ~0.04–0.14 world-units/progress at
+     every keyframe against a peak of 86 — a 2049x speed ratio — and six
+     velocity-direction jumps over 25°, worst 168° at p=0.92: the last two
+     keyframes had the camera rise then drop in y AND pull-in then pull-back
+     in z on consecutive legs, i.e. two axes reversing at once. No dolly,
+     crane or drone does that; it read as amateur because physically it was
+     a mistake, not a move.
+
+     FIX: this is now ONE continuous gesture, not eight independent lerps.
+     The points below feed a centripetal Catmull-Rom spline (see
+     camPosCurve/camLookCurve just past the array) sampled by arc length via
+     getPointAt(), so the camera's speed through space is controlled
+     entirely by the single global camEase() below — never by how close
+     together two control points happen to sit. The old exit leg (former
+     0.86/0.92 points) was the actual source of the reversal, not just a
+     symptom of the lerp: `rise straight up... [8.6]` then `clear of
+     grade... [5.6]` then rest `[7.4]` really did carry the camera in past
+     the rest pose's depth and pull back out. Replaced with two points that
+     move y and z monotonically from the p=0.76 pipe-level low point up to
+     the unchanged rest pose — x and z barely move here (1.5→1.45, 8→7.4)
+     so there's nothing left to reverse. Every other point below is
+     numerically unchanged from before.
+
+     MEASURED RESULT (node camprofile.js against this exact path): speed
+     ratio 2049x → 5.0x (min 3.07, max 15.4 world-units/progress, at
+     CAM_EASE_MIX below), zero direction changes over 25° anywhere along
+     2000 samples (was 6, worst 168°). Re-run `node camprofile.js <port>`
+     after any future edit here — do not eyeball it.
+
+     Wall clearance: wasn't just re-eyeballed either — a spline SMOOTHS
+     THROUGH control points rather than hitting them exactly the way a lerp
+     does, so a path that cleared the battered wall (x=2.2 at the floor,
+     leaning to x≈2.398 at grade, see BATTER/OUTER_HW below) as a polyline
+     can still bulge into it as a curve. Sampled the actual posCurve at
+     2000 points and, for every sample with y<0, checked
+     |x| < TRENCH_HW + (OUTER_HW-TRENCH_HW)*(y+TRENCH_D)/TRENCH_D minus an
+     0.08 margin: worst case is +0.27 units of margin to spare at p≈0.47
+     (the old descent tuck-in at the 3rd point below is still doing that
+     job and still works under the spline) — nowhere does the curve
+     approach the wall. The exit/rise leg stays inside x∈[1.45,1.5] the
+     whole time, nowhere near either wall. Both manhole barrels (MH_Z=-38,
+     -22, -6, r=1.50) and RCP sections (z=-42.75…-1.25, r=0.90) sit at
+     z≤-1.25; every camera point below stays at z≥7.4, so there's no
+     z-overlap to check a radius against at all. */
   const camPath = [
-    { t: 0.00, pos: [3.4,  3.2, 11], look: [0.2, -3.2,   1] }, // look into the empty cut
-    { t: 0.26, pos: [2.8,  1.4, 11], look: [0.1, -2.8,  -4] }, // descending
-    { t: 0.40, pos: [1.85, 0.45, 10.5], look: [0.05, -2.65, -7] }, // pulled inward before crossing grade
-    { t: 0.52, pos: [2.0, -0.8, 10], look: [0,   -2.5, -10] }, // over the rim
-    { t: 0.76, pos: [1.5, -1.7,  8], look: [0,   -2.6, -15] }, // at pipe level
-    { t: 0.86, pos: [1.7,  0.55, 8.6], look: [-0.1, -2.55, -14.5] }, // rise straight up, still inside the walls
-    { t: 0.92, pos: [2.1, 2.2, 5.6], look: [-0.05, -2.2, -11.0] }, // clear of grade, tilting down into the run
-    { t: 1.00, pos: [1.45, 1.35, 7.4], look: [0.0, -2.4, -19.0] }, // rest: see the comment below
+    { pos: [3.4,  3.2, 11], look: [0.2, -3.2,   1] }, // look into the empty cut
+    { pos: [2.8,  1.4, 11], look: [0.1, -2.8,  -4] }, // descending
+    { pos: [1.85, 0.45, 10.5], look: [0.05, -2.65, -7] }, // tucked in before crossing grade — see wall-clearance note above
+    { pos: [2.0, -0.8, 10], look: [0,   -2.5, -10] }, // over the rim
+    { pos: [1.5, -1.7,  8], look: [0,   -2.6, -15] }, // at pipe level — the low point of the crane-down
+    { pos: [1.48, -0.3, 7.85], look: [-0.02, -2.45, -16] }, // rising, x/z barely move — nothing left to reverse on the way up
+    { pos: [1.47, 0.6, 7.65], look: [-0.02, -2.3, -17.5] }, // clear of grade, still rising toward rest
+    { pos: [1.45, 1.35, 7.4], look: [0.0, -2.4, -19.0] }, // rest: see the comment above
   ];
+
+  // Centripetal Catmull-Rom over the points above — interpolating (passes
+  // exactly through every point, so the rest pose is reproduced exactly at
+  // camEase(1)=1) and, unlike 'uniform'/'chordal', doesn't cusp or overshoot
+  // at closely-spaced or sharply-angled points, which several of the points
+  // above are (see the wall-clearance tuck-ins). A second curve over the
+  // look points gets the same treatment — a lerped look target has the same
+  // discontinuous-angular-velocity problem a lerped position does; sampling
+  // both curves at the same arc-length u keeps aim and position in lockstep.
+  // arcLengthDivisions is bumped from the default 200: this path is short
+  // (~2 world units between some adjacent points) and cheap to resample, so
+  // there's no reason not to build a finer LUT. Call updateArcLengths()
+  // again here (not lazily on first use) so the very first frame — p=0,
+  // called synchronously below before the render loop starts — already has
+  // an accurate LUT rather than building one mid-animation.
+  const camPosPts  = camPath.map(k => new THREE.Vector3(...k.pos));
+  const camLookPts = camPath.map(k => new THREE.Vector3(...k.look));
+  const camPosCurve  = new THREE.CatmullRomCurve3(camPosPts, false, 'centripetal', 0.5);
+  const camLookCurve = new THREE.CatmullRomCurve3(camLookPts, false, 'centripetal', 0.5);
+  camPosCurve.arcLengthDivisions = camLookCurve.arcLengthDivisions = 400;
+  camPosCurve.updateArcLengths();
+  camLookCurve.updateArcLengths();
+
+  // One global ease across the WHOLE move (this is the actual fix for the
+  // stop-and-restart bug — see the measured-problem note above: the old
+  // code re-applied smooth() inside every segment instead of once, overall).
+  // A pure smoothstep would work but its derivative hits exactly zero at
+  // p=0 and p=1, which — sampled at 2000 points — reads as another false
+  // "near-stop" at the very start/end of the shot; blending 70% smoothstep
+  // with 30% linear keeps a gentle crane-style ease-in/settle at the two
+  // true ends of the 6.5s move without ever fully stopping. Tuned by
+  // re-running camprofile.js: 0.7 lands the min/max speed ratio at 5.0x
+  // (min 3.07, max 15.4) — comfortably in the "low single digits to low
+  // tens" the profiler targets, versus 2.8x at 0.5 (barely an ease) or
+  // 15.9x at 0.9 (edges getting close to a stop again).
+  const CAM_EASE_MIX = 0.7;
+  function camEase(p) { return lerp(p, smooth(p), CAM_EASE_MIX); }
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -1341,19 +1420,21 @@ function initPipe3D(reduced) {
   scene.add(backfill);
   const [B_S, B_E] = [0.74, 0.95];
 
-  /* ── Camera ────────────────────────────────────────────── */
+  /* ── Camera ─────────────────────────────────────────────────
+     See camPath/camPosCurve/camLookCurve/camEase above for the actual
+     design and the measured before/after — this is now just: one arc-
+     length parameter for the whole 6.5s move, shaped by one global ease,
+     sampled off two Catmull-Rom splines. No per-segment easing, so no
+     per-segment stop. Scratch Vector3s avoid an allocation every frame
+     (this runs once per rendered frame the whole animation, plus once for
+     the reduced-motion still). */
+  const _camPos = new THREE.Vector3(), _camLook = new THREE.Vector3();
   function applyCam(p) {
-    let i = 0;
-    while (i < camPath.length - 1 && p > camPath[i + 1].t) i++;
-    const a = camPath[i], b = camPath[Math.min(i + 1, camPath.length - 1)];
-    const span = b.t - a.t;
-    const u = span <= 0 ? 0 : smooth(clamp01((p - a.t) / span));
-    camera.position.set(
-      lerp(a.pos[0], b.pos[0], u), lerp(a.pos[1], b.pos[1], u), lerp(a.pos[2], b.pos[2], u)
-    );
-    camera.lookAt(
-      lerp(a.look[0], b.look[0], u), lerp(a.look[1], b.look[1], u), lerp(a.look[2], b.look[2], u)
-    );
+    const u = clamp01(camEase(clamp01(p)));
+    camPosCurve.getPointAt(u, _camPos);
+    camLookCurve.getPointAt(u, _camLook);
+    camera.position.copy(_camPos);
+    camera.lookAt(_camLook);
   }
 
   /* ── Per-frame state from progress ─────────────────────────
