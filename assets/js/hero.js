@@ -20,6 +20,86 @@
     });
   }
 
+  /* ── Mobile navigation menu ──────────────────────────────
+     The .nav__links <ul> doubles as the mobile dropdown panel — CSS
+     repositions and hides it under 680px (see nav-hero.css), and this
+     just drives the open/closed state: aria-expanded on the toggle,
+     an .is-open class on the panel, a focus trap while it's open, and
+     Escape/outside-click/breakpoint-change to close it. main.js's
+     delegated a[href^="#"] handler already smooth-scrolls any link
+     clicked in here — this only needs to also drop the panel. */
+  const navToggle = document.getElementById('navToggle');
+  const navMenu = document.getElementById('navMenu');
+
+  if (navToggle && navMenu) {
+    const FOCUSABLE = 'a[href], button:not([disabled])';
+    let isOpen = false;
+
+    function setOpen(next, { restoreFocus = true } = {}) {
+      isOpen = next;
+      navMenu.classList.toggle('is-open', isOpen);
+      navToggle.setAttribute('aria-expanded', String(isOpen));
+      navToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+      // The panel is fixed/absolute and visually covers the page, but
+      // doesn't stop the page underneath from scrolling on its own —
+      // lock it explicitly while open.
+      document.body.classList.toggle('nav-open', isOpen);
+
+      if (isOpen) {
+        const first = navMenu.querySelector(FOCUSABLE);
+        if (first) first.focus();
+      } else if (restoreFocus) {
+        navToggle.focus();
+      }
+    }
+
+    navToggle.addEventListener('click', () => setOpen(!isOpen));
+
+    // Any link inside the panel — including the Download CTA — closes it.
+    // Focus is moving to the scrolled-to section already, so it isn't
+    // restored to the toggle button here.
+    navMenu.addEventListener('click', (e) => {
+      if (e.target.closest('a')) setOpen(false, { restoreFocus: false });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (isOpen && !nav.contains(e.target)) setOpen(false, { restoreFocus: false });
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
+
+      // Focus trap: Tab/Shift+Tab cycle within the panel's own focusable
+      // elements so keyboard focus can't wander into content hidden
+      // behind it while it's open.
+      if (e.key === 'Tab') {
+        const items = Array.from(navMenu.querySelectorAll(FOCUSABLE));
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    // A resize past the mobile breakpoint (e.g. a tablet rotation) while
+    // the panel is open shouldn't leave it stuck mid-state once the CSS
+    // that positions it as an overlay no longer applies.
+    window.matchMedia('(min-width: 681px)').addEventListener('change', (e) => {
+      if (e.matches && isOpen) setOpen(false, { restoreFocus: false });
+    });
+  }
+
   /* ── Hero pipe SVG draw animation ───────────────────────── */
   const heroLines = document.querySelectorAll('#hero-pipes .pipe-line');
   heroLines.forEach((line) => {

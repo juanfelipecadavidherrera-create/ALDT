@@ -519,6 +519,32 @@
     scroll-snap-type: none;
   }
 
+  /* Desktop with scripting unavailable. The rules above hand horizontal
+     motion to GSAP and switch native scrolling off (overflow:hidden,
+     snap:none) — correct while GSAP is there to drive the track, but with
+     no JS nothing ever translates it and only the first three of twelve
+     cards can be reached. The <html> element carries a js class only when
+     the site actually booted (set inline in index.html, removed again if
+     window.ALDT never appears), so this restores the same natively
+     scrollable strip the mobile fallback already uses. */
+  html:not(.js) .tools-scroll {
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+
+  html:not(.js) .tools-scroll__viewport {
+    display: block;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+  }
+
+  html:not(.js) .tools-scroll__track {
+    align-items: stretch;
+    padding: 0.5rem 6vw 1.5rem;
+  }
+
   .tools-scroll__track {
     gap: 1.5rem;
     padding: 0 6vw;
