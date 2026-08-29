@@ -393,7 +393,16 @@ function initPipe3D(reduced) {
   const skyCtx = skyCvs.getContext('2d');
   const skyTex = toTexture(skyCvs, 1, 1, true);
   scene.background = skyTex;
-  scene.fog = new THREE.Fog(0x0d131f, 45, 135); // overwritten per-frame by applyLighting
+  /* Aerial perspective. near=45 meant nothing inside 45 units was fogged at
+     all — but the entire subject (camera at z~7, run receding to z~-45) lives
+     inside that radius, so the scene had no atmospheric depth cue whatsoever
+     and the terrain's outer edge met the sky as a hard, visibly faceted line.
+     Pulling near in to 20 puts the far half of the run into measurable haze
+     while the near pipe and manhole stay clear, which is what separates
+     foreground from distance in any real outdoor plate. Colour is still
+     driven per-frame from the sky in applyLighting, so this stays correct
+     through the sunrise rather than fighting it. */
+  scene.fog = new THREE.Fog(0x0d131f, 20, 105); // colour overwritten per-frame by applyLighting
 
   const camera = new THREE.PerspectiveCamera(35, w / h, 0.1, 400);
 
@@ -609,8 +618,18 @@ function initPipe3D(reduced) {
      drop that encode: without it every colour reads darker and
      oversaturated, a regression that's easy to reintroduce by assuming
      the render-target texture is already display-ready). */
+  /* samples:4 is load-bearing, not a nicety. WebGLRenderTarget defaults to
+     samples:0, and the renderer's own `antialias: true` applies only to the
+     DEFAULT framebuffer — which, once the scene renders into this offscreen
+     target, never receives a single geometry edge (it only ever gets the
+     fullscreen post quad). Leaving it at the default silently turned MSAA off
+     for the whole scene: every silhouette in the frame — the terrain against
+     the sky, pipe rims, manhole cones — went stair-stepped. Requires WebGL2,
+     which is the r160 default context. */
+  const RT_SAMPLES = 4;
   let sceneRT = new THREE.WebGLRenderTarget(
-    Math.round(w * renderer.getPixelRatio()), Math.round(h * renderer.getPixelRatio())
+    Math.round(w * renderer.getPixelRatio()), Math.round(h * renderer.getPixelRatio()),
+    { samples: RT_SAMPLES }
   );
   const postScene  = new THREE.Scene();
   const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
@@ -880,16 +899,25 @@ function initPipe3D(reduced) {
      tune or asset to author. Data, not colour, so every one of these
      stays linear (srgb=false into toTexture → NoColorSpace) same as the
      bumpMaps they replace. */
+  /* The two ground materials carried a single roughness value across the
+     largest surfaces in frame. Concrete and gravel below already vary theirs
+     from their own canvas; these did not, and a constant roughness over a big
+     surface is the flattest-reading thing a PBR scene can do — every part of
+     the ground answers the sun identically, so nothing reads as damper in the
+     cut or drier on the spoil. Same source canvas, same trick, linear (data,
+     not colour). `roughness` stays as the multiplier the map scales. */
   const soilTex = soilCanvas();
   const soilMat = new THREE.MeshStandardMaterial({
     map: toTexture(soilTex, 1, 1, true),
     normalMap: toTexture(normalMapFromCanvas(soilTex, 0.32), 1, 1, false),
+    roughnessMap: toTexture(soilTex, 1, 1, false),
     roughness: 1.0, metalness: 0, vertexColors: true,
   });
   const dirtTex = dirtCanvas();
   const dirtMat = new THREE.MeshStandardMaterial({
     map: toTexture(dirtTex, 1, 1, true),
     normalMap: toTexture(normalMapFromCanvas(dirtTex, 0.24), 1, 1, false),
+    roughnessMap: toTexture(dirtTex, 1, 1, false),
     roughness: 1.0, metalness: 0, vertexColors: true,
   });
 
@@ -1003,7 +1031,22 @@ function initPipe3D(reduced) {
   // fit across the visible strip. Pulled down to 0.06; the mottled bump/
   // roughness texture carries the "looks like dirt" job, not the geometry.
   const AMP_FLOOR = 0.05, AMP_GRADE = 0.06;
-  function terrainNoiseAmp(x, z) { return lerp(AMP_GRADE, AMP_FLOOR, excavation(x, z)); }
+  /* Surface noise amplitude, damped to zero approaching the terrain's outer
+     boundary. The grid is deliberately coarse out there (buildAxis spends its
+     resolution near the cut), so displacing those far vertices puts a visible
+     stair-step on the one place the mesh is seen edge-on against the sky —
+     the silhouette. Flattening the last few units costs nothing visually,
+     because that band is only ever seen as a horizon line, and removes the
+     single most synthetic-looking edge in the frame. */
+  const EDGE_FADE = 4.0;   // world units over which noise falls off at the rim
+  function terrainEdgeDamp(x, z) {
+    const dx = clamp01((TERRAIN_HW - Math.abs(x)) / EDGE_FADE);
+    const dz = clamp01(Math.min(z - TERRAIN_Z_MIN, TERRAIN_Z_MAX - z) / EDGE_FADE);
+    return smooth(Math.min(dx, dz));
+  }
+  function terrainNoiseAmp(x, z) {
+    return lerp(AMP_GRADE, AMP_FLOOR, excavation(x, z)) * terrainEdgeDamp(x, z);
+  }
 
   // Local slope of the (pre-noise) height field, via central differences —
   // used to blend the UV projection below between "flat ground" and "wall"
@@ -1136,10 +1179,34 @@ function initPipe3D(reduced) {
     geo.addGroup(dirtIdx.length, soilIdx.length, 1);  // material[1] = soilMat
     geo.computeVertexNormals();
 
+    /* Vertex colours carry two things now: the baked AO they always did, and
+       a macro variation term.
+
+       The ground textures tile every ~3.6 world units — UV is world * 0.28
+       (TERRAIN_UV_SCALE) and repeat is 1 — which is 9 repeats across the
+       terrain and 23 along it. Fine grain at that density is right, but with
+       nothing varying above it the eye locks onto the grid and the ground
+       reads as wallpaper. Note the fix is NOT more tiling: measured density
+       is ~143 texels per world unit, which is already ample.
+
+       So this is a second field an order of magnitude lower in frequency,
+       evaluated in WORLD space per vertex — it cannot repeat with the
+       texture because it is not sampled through UVs at all. Two octaves so
+       it has structure rather than one smooth ripple, and a slight warm/cool
+       split on top of the brightness so it reads as damp and dry ground
+       rather than a lighting artefact. Free at runtime: this is baked once
+       at build time into an attribute that already existed. */
     const col = new Float32Array(nx * nz * 3);
     for (let k = 0, p3 = 0; k < nx * nz; k++, p3 += 3) {
-      const v = terrainAO(pos[p3], pos[p3 + 1]);
-      col[p3] = col[p3 + 1] = col[p3 + 2] = v;
+      const wx = pos[p3], wy = pos[p3 + 1], wz = pos[p3 + 2];
+      const ao = terrainAO(wx, wy);
+      const macro = noise2(wx * 0.085, wz * 0.085) * 0.6
+                  + noise2(wx * 0.021, wz * 0.021) * 0.4;
+      const tone = 1 + macro * 0.13;   // +/-13% brightness at metre scale
+      const warm = 1 + macro * 0.05;   // damp patches cooler, dry ones warmer
+      col[p3]     = ao * tone * warm;
+      col[p3 + 1] = ao * tone;
+      col[p3 + 2] = ao * tone / warm;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
 
