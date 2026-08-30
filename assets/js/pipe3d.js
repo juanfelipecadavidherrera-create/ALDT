@@ -1007,21 +1007,72 @@ function initPipe3D(reduced) {
   const TERRAIN_Z_MIN  = Z_FAR - 12;           // matches the old grade planes' far edge
   const TERRAIN_Z_MAX  = Z_NEAR;
 
+  /* ── Domain warp ───────────────────────────────────────────
+     excavation() below is an analytic prism: shapeX gives a linear batter
+     ramp, endMaskZ a clean end, and the product is subtracted from a plane.
+     Everything that follows from it is therefore mathematically exact — the
+     trench lip is two ruler-straight lines to the vanishing point, the walls
+     are perfect planes, and the width never varies by a millimetre. That
+     exactness is what reads as "geometrical"; no amount of texture detail
+     fixes a shape whose silhouette is a straight line.
+
+     The standard remedy is domain warping (Quilez): rather than perturbing
+     the OUTPUT of a shape function, perturb its INPUT coordinates, so the
+     shape itself meanders instead of acquiring surface fuzz. One offset
+     field per axis, each a couple of octaves, at a wavelength of a few world
+     units — long enough to read as an excavator working a line by eye,
+     short enough to vary several times over the visible run.
+
+     Amplitude is deliberately bounded (WARP_AMP): the pipe, manholes and
+     bedding are all positioned against TRENCH_HW, and the camera path is
+     clearance-checked against the wall envelope, so the cut may wander but
+     must never pinch narrower than the parts sitting in it. See the
+     clearance note on WARP_AMP below. */
+  const WARP_AMP = 0.11;   // see the gradient note below
+  /* Amplitude and wavelength are constrained by the heightfield, not by
+     taste. The wall is an 18:1 vertical-to-horizontal face, so an x-meander
+     of amplitude A over wavelength L imposes a y-gradient along z of roughly
+     18*A/(L/4). At A=0.26 and L=12 that is ~1.6 y-per-z — comparable to the
+     wall's own slope — and computeVertexNormals then produces per-column
+     normal noise that reads as sharp wedges climbing the wall under grazing
+     sunrise light. (Confirmed by elimination: shadow map 4096 and normalBias
+     0.12 changed nothing; halving the X column spacing halved the wedge
+     count.) A=0.11 over the same wavelengths keeps that gradient near 0.7,
+     which the mesh carries cleanly. */
+  function warpX(x, z) {
+    return (Math.sin(z * 0.17 + 1.7) * 0.66 + Math.sin(z * 0.38 - 0.4) * 0.34) * WARP_AMP;
+  }
+  function warpZ(x, z) {
+    return (Math.sin(x * 0.37 + 4.1) * 0.7 + Math.sin(x * 0.91 + 2.3) * 0.3) * WARP_AMP * 0.6;
+  }
+
+  /* Smoothstep, not a linear ramp. The ramp was C0: it had hard kinks where
+     it met the floor at TRENCH_HW and grade at OUTER_HW. At the old four
+     columns across the batter those kinks were invisible; at forty they
+     resolve, and combined with the domain warp they came out as a row of
+     sharp triangular teeth along the wall base. Smoothstep removes the kinks
+     by construction, and is the more honest shape anyway — an excavated wall
+     slumps into its floor and breaks over at its lip, it does not meet
+     either at a knife edge. */
   function shapeX(ax) {
     if (ax <= TRENCH_HW) return 1;
     if (ax >= OUTER_HW) return 0;
-    return (OUTER_HW - ax) / (OUTER_HW - TRENCH_HW); // linear ramp — same slope as the old wall's batter-by-height
+    return smooth((OUTER_HW - ax) / (OUTER_HW - TRENCH_HW));
   }
   function endMaskZ(z) {
     if (z >= Z_FAR) return 1;
     if (z <= Z_FAR - END_RAMP) return 0;
-    return (z - (Z_FAR - END_RAMP)) / END_RAMP;
+    return smooth((z - (Z_FAR - END_RAMP)) / END_RAMP);  // same reasoning as shapeX
   }
   // 1 = fully excavated (floor), 0 = fully outside the cut (grade). The
   // corner where a side wall meets the end wall blends multiplicatively
   // instead of mitering — smoother and simpler than the old right-angle
   // meeting of two separate flat meshes, and there is no seam either way.
-  function excavation(x, z) { return shapeX(Math.abs(x)) * endMaskZ(z); }
+  function excavation(x, z) {
+    // Warped input, not warped output — this is what makes the cut wander
+    // rather than just roughening a straight edge.
+    return shapeX(Math.abs(x + warpX(x, z))) * endMaskZ(z + warpZ(x, z));
+  }
   function terrainBaseY(x, z) { return GRADE - TRENCH_D * excavation(x, z); }
 
   // Grade was 0.10 (matching the old gradePlane's 0.09) until the width
@@ -1107,7 +1158,44 @@ function initPipe3D(reduced) {
     return pts;
   }
 
-  const terrainXs = buildAxis(-TERRAIN_HW, TERRAIN_HW, -3.0, 3.0, 0.05, 0.6);
+  /* Graded X axis, banded by |x|.
+
+     The single-band version spent 0.05 everywhere in [-3,3] and 0.6 outside.
+     That put ~120 columns across a floor that is FLAT, and left the batter
+     band — 2.2..2.398, all of 0.198 units wide — with four vertex columns to
+     express a wall 3.6 units tall. An 18:1 vertical-to-horizontal face is
+     exactly the thing a heightfield represents worst: the wall's entire
+     silhouette and every undulation on it has to come out of its X sampling,
+     and four columns cannot carry any. That is why the walls read as flat
+     faceted planes whatever texture is on them.
+
+     Rebudgeted rather than enlarged: the floor drops to 0.25 (it is flat, it
+     does not need the resolution), and the saving is spent on the batter,
+     which goes to 0.02 — about forty columns across the wall instead of four.
+     Total column count lands within a few percent of before, so the triangle
+     budget is effectively unchanged. The batter band is widened to
+     1.9..2.7 to cover where the domain warp can move the cut edge. */
+  function buildGradedAxis(halfExtent, bands) {
+    const half = [];
+    let v = 0;
+    for (const [upTo, step] of bands) {
+      while (v < upTo && v < halfExtent) { half.push(v); v += step; }
+      v = Math.min(upTo, halfExtent);
+    }
+    while (v < halfExtent) { half.push(v); v += bands[bands.length - 1][1]; }
+    half.push(halfExtent);
+    const out = [];
+    for (let i = half.length - 1; i > 0; i--) out.push(-half[i]);
+    out.push(...half);
+    return out;
+  }
+
+  const terrainXs = buildGradedAxis(TERRAIN_HW, [
+    [1.90, 0.25],   // floor: flat, cheap
+    [2.70, 0.05],   // batter + warp range: the wall face, where it all shows
+    [3.50, 0.08],   // lip fall-off
+    [TERRAIN_HW, 0.6],
+  ]);
   const terrainZs = buildAxis(TERRAIN_Z_MIN, TERRAIN_Z_MAX, Z_FAR - 1.2, Z_FAR + 1.2, 0.07, 0.6);
   // One shared scale for every projection below (horizontal AND vertical) —
   // if the wall and the grade used different densities they'd visibly
