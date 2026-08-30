@@ -324,6 +324,27 @@ function noise2(x, y) {
   );
 }
 
+/* Multi-octave version of noise2, for the ground surface specifically.
+   noise2's four octaves top out at frequency 3.90 with amplitude 0.06 of the
+   total — enough to modulate a texture, not enough to shape terrain. The
+   ground needs detail at several scales at once: broad swells you read as
+   site topography, metre-scale rolls, and a fine break-up on top. A single
+   octave at any amplitude reads as one smooth dune, which is exactly why an
+   earlier pass reduced the amplitude instead of adding octaves.
+
+   Lacunarity is 2.03, not 2.0: at an exact doubling every octave shares zero
+   crossings with the one below and the sum develops a visible lattice. */
+function fbm2(x, y, octaves = 5) {
+  let sum = 0, norm = 0, amp = 1, f = 1;
+  for (let i = 0; i < octaves; i++) {
+    sum  += noise2(x * f, y * f) * amp;
+    norm += amp;
+    amp *= 0.5;
+    f   *= 2.03;
+  }
+  return sum / norm;
+}
+
 /* Push vertices along the face normal so excavated faces aren't dead flat. */
 function roughen(geo, amt, axis) {
   const p = geo.attributes.position;
@@ -1000,7 +1021,23 @@ function initPipe3D(reduced) {
      roughly x ±14 — freeing resolution to spend where it is actually
      visible: buildAxis() below packs a dense band across the trench walls
      and the far end-wall transition, and stays coarse everywhere else. */
-  const BATTER       = TRENCH_D * 0.055;    // outward lean over the full depth — unchanged from the old wall math
+  /* Batter coefficient 0.055 -> 0.30, i.e. the wall leans out 1.08 units over
+     its 3.6-unit depth instead of 0.198.
+
+     This is the root fix for three separate symptoms, not a cosmetic tweak.
+     At 0.055 the wall was an 18:1 face, and a heightfield expresses a
+     near-vertical face through its HORIZONTAL sampling — so every attempt to
+     give the cut life (a meandering edge, undulating ground) produced steep
+     y-gradients along z that computeVertexNormals turned into sharp wedges
+     climbing the wall. Amplitude had to be kept so low that nothing read.
+     At 0.30 the wall is a 3.3:1 slope, which the mesh carries comfortably,
+     and the same variation lands as shape instead of artefact.
+
+     It is also the more honest geometry. An unshored cut in soil batters
+     back; a vertical-walled trench is a shored trench, and nothing in this
+     scene is shoring it. A constant-width vertical box is a large part of
+     why the excavation read as a rectangular prism rather than a hole. */
+  const BATTER       = TRENCH_D * 0.30;
   const OUTER_HW      = TRENCH_HW + BATTER;  // trench half-width at grade (≈2.398)
   const END_RAMP       = 0.35;                // z-width of the far-end wall's rise from floor to grade
   const TERRAIN_HW     = 16;                  // camera never sees past ~x14
@@ -1028,7 +1065,7 @@ function initPipe3D(reduced) {
      clearance-checked against the wall envelope, so the cut may wander but
      must never pinch narrower than the parts sitting in it. See the
      clearance note on WARP_AMP below. */
-  const WARP_AMP = 0.11;   // see the gradient note below
+  const WARP_AMP = 0.30;   // see the gradient note below
   /* Amplitude and wavelength are constrained by the heightfield, not by
      taste. The wall is an 18:1 vertical-to-horizontal face, so an x-meander
      of amplitude A over wavelength L imposes a y-gradient along z of roughly
@@ -1040,7 +1077,7 @@ function initPipe3D(reduced) {
      count.) A=0.11 over the same wavelengths keeps that gradient near 0.7,
      which the mesh carries cleanly. */
   function warpX(x, z) {
-    return (Math.sin(z * 0.17 + 1.7) * 0.66 + Math.sin(z * 0.38 - 0.4) * 0.34) * WARP_AMP;
+    return (Math.sin(z * 0.082 + 1.7) * 0.68 + Math.sin(z * 0.171 - 0.4) * 0.32) * WARP_AMP;
   }
   function warpZ(x, z) {
     return (Math.sin(x * 0.37 + 4.1) * 0.7 + Math.sin(x * 0.91 + 2.3) * 0.3) * WARP_AMP * 0.6;
@@ -1081,7 +1118,21 @@ function initPipe3D(reduced) {
   // large smooth dune instead of many small rolls, because fewer wavelengths
   // fit across the visible strip. Pulled down to 0.06; the mottled bump/
   // roughness texture carries the "looks like dirt" job, not the geometry.
-  const AMP_FLOOR = 0.05, AMP_GRADE = 0.06;
+  /* AMP_GRADE was 0.06 — about 0.7 inches of relief across an 84x32-unit
+     site, which is a plane. That, plus a constant-depth constant-width cut
+     run dead straight, is why the whole thing read as a rectangular prism
+     rather than an excavation: a constant cross-section extruded along a
+     line IS a prism.
+
+     0.34 gives the ground actual shape. The earlier reduction to 0.06 was a
+     correct observation with the wrong remedy — at a single octave, raising
+     amplitude does read as one smooth dune at grazing angles. fbm2 above
+     fixes that at the source by putting energy at five scales, so the same
+     amplitude reads as topography instead of a swell.
+
+     AMP_FLOOR stays near zero: the bedding, pipe and manholes are all
+     positioned against a flat invert, and the floor is barely seen anyway. */
+  const AMP_FLOOR = 0.035, AMP_GRADE = 0.34;
   /* Surface noise amplitude, damped to zero approaching the terrain's outer
      boundary. The grid is deliberately coarse out there (buildAxis spends its
      resolution near the cut), so displacing those far vertices puts a visible
@@ -1192,8 +1243,8 @@ function initPipe3D(reduced) {
 
   const terrainXs = buildGradedAxis(TERRAIN_HW, [
     [1.90, 0.25],   // floor: flat, cheap
-    [2.70, 0.05],   // batter + warp range: the wall face, where it all shows
-    [3.50, 0.08],   // lip fall-off
+    [3.75, 0.05],   // batter + warp range: the wall face, where it all shows
+    [4.60, 0.08],   // lip fall-off
     [TERRAIN_HW, 0.6],
   ]);
   const terrainZs = buildAxis(TERRAIN_Z_MIN, TERRAIN_Z_MAX, Z_FAR - 1.2, Z_FAR + 1.2, 0.07, 0.6);
@@ -1222,7 +1273,12 @@ function initPipe3D(reduced) {
       const z = terrainZs[j];
       for (let i = 0; i < nx; i++) {
         const x = terrainXs[i];
-        const y = terrainBaseY(x, z) + noise2(x, z) * terrainNoiseAmp(x, z);
+        // Four octaves, not five, at base 0.42. The mesh samples Z at 0.6
+        // units away from the trench, so its Nyquist wavelength is 1.2 units
+        // (frequency 5.24). A fifth octave lands at 9.34 — past Nyquist, so
+        // the grid cannot represent it and normals alias into hard triangular
+        // wedges on the wall face. Every octave here stays under that limit.
+        const y = terrainBaseY(x, z) + fbm2(x * 0.42, z * 0.42, 4) * terrainNoiseAmp(x, z);
         pos[vi++] = x; pos[vi++] = y; pos[vi++] = z;
 
         // Slope-aware UV: a single shared vertex buffer feeds both material
@@ -1325,7 +1381,7 @@ function initPipe3D(reduced) {
     m.rotation.x = -Math.PI / 2;
     // Sunk slightly: at y = GRADE the pile skirt is coplanar with the grade
     // plane and z-fights it into black patches.
-    m.position.set(-TRENCH_HW - WID / 2 - 0.5, GRADE - 0.18, (Z_NEAR + Z_FAR) / 2);
+    m.position.set(-OUTER_HW - WID / 2 - 0.5, GRADE - 0.18, (Z_NEAR + Z_FAR) / 2);  // OUTER_HW, not TRENCH_HW — the pile sits beside the opening at grade, and the batter widened it
     m.castShadow = true; m.receiveShadow = true;
     scene.add(m);
   })();
@@ -1568,8 +1624,26 @@ function initPipe3D(reduced) {
   });
 
   /* ── Backfill (sweeps far → near, stops short of camera) ─ */
+  /* The cut is a trapezoid in section now that the wall is battered back, so
+     the backfill that fills it has to be one too — a constant-width box left
+     a wedge of open trench down each side, visible as a bright seam along the
+     restored strip. Widen the top row of the box's vertices out to OUTER_HW
+     and leave the bottom at TRENCH_HW, which is exactly the section
+     shapeX describes. */
   const backfillMats = [spoilMat, spoilMat, patchMat, spoilMat, spoilMat, spoilMat];
-  const backfill = new THREE.Mesh(new THREE.BoxGeometry(TRENCH_HW * 2, TRENCH_D, 1), backfillMats);
+  const backfillGeo = new THREE.BoxGeometry(TRENCH_HW * 2, TRENCH_D, 1);
+  {
+    const bp = backfillGeo.attributes.position;
+    for (let i = 0; i < bp.count; i++) {
+      // local y runs -TRENCH_D/2 (floor) .. +TRENCH_D/2 (grade)
+      const t = (bp.getY(i) + TRENCH_D / 2) / TRENCH_D;   // 0 at floor, 1 at grade
+      const halfAt = lerp(TRENCH_HW, OUTER_HW, t);
+      bp.setX(i, Math.sign(bp.getX(i)) * halfAt);
+    }
+    bp.needsUpdate = true;
+    backfillGeo.computeVertexNormals();
+  }
+  const backfill = new THREE.Mesh(backfillGeo, backfillMats);
   backfill.position.y = GRADE - TRENCH_D / 2;
   backfill.castShadow = true; backfill.receiveShadow = true;
   scene.add(backfill);
