@@ -38,18 +38,21 @@ window.ALDT = (function () {
   lenis.on('scroll', ScrollTrigger.update);
 
   /* ── Generic scroll reveal ──────────────────────────────── */
+  // Matches the CSS tokens in base.css: 16px of travel, not 55, over a longer
+  // duration on a decelerating quint. The old 55px/power3 combination read as
+  // a slide-in on every element; this reads as content settling into place.
   gsap.utils.toArray('.reveal').forEach((el) => {
     gsap.fromTo(
       el,
-      { opacity: 0, y: 55 },
+      { opacity: 0, y: 16 },
       {
         opacity: 1,
         y: 0,
-        duration: 0.85,
-        ease: 'power3.out',
+        duration: 1.0,
+        ease: 'expo.out',
         scrollTrigger: {
           trigger: el,
-          start: 'top 88%',
+          start: 'top 90%',
         },
       }
     );

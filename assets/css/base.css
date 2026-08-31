@@ -34,13 +34,70 @@
   --border:       rgba(15, 23, 42, 0.12);
   --border-warm:  rgba(204, 62, 0, 0.28);
 
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body:    'Inter', sans-serif;
-  --font-mono:    'JetBrains Mono', monospace;
+  /* ── Type ───────────────────────────────────────────────────
+     --font-display now resolves to Inter, not Space Grotesk. Grotesk's
+     geometric quirk reads technical; Inter is the closest widely available
+     face to the neutral grotesque Apple sets its marketing in, and it was
+     already being loaded for body copy, so this costs nothing. It is kept as
+     a separate token rather than collapsed into --font-body so display and
+     body can diverge again later without touching every call site.
+     The mono face stays: the 53 command tokens are code, and engineers
+     recognise them as code. */
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-body:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, monospace;
 
-  --radius:    12px;
-  --radius-lg: 20px;
-  --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Fluid display scale. Tracking tightens as size grows — the single most
+     recognisable property of large neutral-grotesque headline setting, and
+     the thing that makes big type read as composed rather than merely big. */
+  --fs-display: clamp(2.75rem, 6vw, 4.75rem);
+  --fs-h2:      clamp(2rem, 4vw, 3.25rem);
+  --fs-h3:      clamp(1.25rem, 1.8vw, 1.6rem);
+  --fs-lead:    clamp(1.05rem, 1.4vw, 1.3rem);
+  --fs-body:    1rem;
+  --fs-small:   0.875rem;
+
+  --tracking-display: -0.035em;
+  --tracking-h2:      -0.025em;
+  --tracking-h3:      -0.015em;
+
+  /* ── Spacing ────────────────────────────────────────────────
+     A 4px-derived scale. Sections breathe: --space-section is the vertical
+     rhythm that does most of the work in making a page feel calm. */
+  --space-1: 0.25rem;  --space-2: 0.5rem;   --space-3: 0.75rem;
+  --space-4: 1rem;     --space-5: 1.5rem;   --space-6: 2rem;
+  --space-7: 3rem;     --space-8: 4rem;     --space-9: 6rem;
+  --space-section: clamp(5rem, 10vw, 9rem);
+
+  /* ── Shape ──────────────────────────────────────────────────
+     Buttons are pills. Cards get a generous radius and, crucially, no
+     border — depth comes from an almost-invisible shadow on a tinted
+     ground instead of a hairline, which is what separates a soft surface
+     from a boxed one. */
+  --radius:      12px;
+  --radius-lg:   20px;
+  --radius-card: 22px;
+  --radius-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04),
+               0 2px 8px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 2px 6px rgba(15, 23, 42, 0.05),
+               0 12px 32px rgba(15, 23, 42, 0.07);
+  --shadow-lg: 0 4px 12px rgba(15, 23, 42, 0.06),
+               0 24px 64px rgba(15, 23, 42, 0.10);
+
+  /* ── Motion ─────────────────────────────────────────────────
+     One easing curve for essentially everything. --ease-out is a decelerating
+     quint: it leaves fast and settles slowly, which is why interface motion
+     built on it feels physical rather than mechanical. Durations are longer
+     than the usual web default on purpose — unhurried motion reads as
+     confident, and nothing here is waiting on a network round trip. */
+  --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:   0.25s;
+  --dur-base:   0.45s;
+  --dur-slow:   0.8s;
+  --transition: var(--dur-base) var(--ease-out);
 }
 
 /* ── Reset & Base ───────────────────────────────────────────── */
@@ -87,39 +144,77 @@ img, svg { display: block; max-width: 100%; }
   border-color: var(--border-warm);
 }
 
+/* Was mono, uppercase, 0.18em tracked. That is a developer-tooling voice —
+   it shouts a category before the reader has been given anything to read.
+   Now a quiet sentence-case line in the body face: present for orientation,
+   invisible until wanted. */
 .section-label {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--text-muted);
-  margin-bottom: 0.8rem;
+  margin-bottom: var(--space-3);
+}
+
+/* ── Headings ───────────────────────────────────────────────
+   Set centrally so sections cannot drift apart. Display type is a single
+   near-black; colour is reserved for links and the primary action, which is
+   what keeps a page reading as calm rather than decorated. */
+h1, h2, h3 { font-family: var(--font-display); color: var(--text-primary); }
+h1 { font-size: var(--fs-display); letter-spacing: var(--tracking-display); line-height: 1.04; font-weight: 700; }
+h2 { font-size: var(--fs-h2);      letter-spacing: var(--tracking-h2);      line-height: 1.08; font-weight: 700; }
+h3 { font-size: var(--fs-h3);      letter-spacing: var(--tracking-h3);      line-height: 1.25; font-weight: 600; }
+
+/* One lead-paragraph treatment, used under headings site-wide. */
+.lead {
+  font-size: var(--fs-lead);
+  line-height: 1.55;
+  color: var(--text-muted);
+  letter-spacing: -0.01em;
+}
+
+/* Soft surface: the card treatment for the whole site. No hairline border —
+   depth is a shadow so faint it reads as the card sitting on the page rather
+   than being drawn onto it. */
+.surface {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Buttons ────────────────────────────────────────────────── */
+/* Pills, and a hover that changes tone rather than jumping. The old
+   translateY(-2px) plus a coloured glow on every button made the page feel
+   springy; lifting a control off the page on hover is a game-UI idiom, not a
+   product-page one. Scale is a hair under 1 on press instead. */
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.6rem;
-  border-radius: var(--radius);
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.8rem 1.6rem;
+  border-radius: var(--radius-pill);
   font-family: var(--font-body);
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
   cursor: pointer;
   border: none;
-  transition: var(--transition);
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
 }
+.btn:active { transform: scale(0.975); }
 
 .btn--primary {
   background: var(--accent);
   color: var(--bg-primary);
 }
-.btn--primary:hover {
-  background: var(--accent-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0,122,163,0.28);
-}
+.btn--primary:hover { background: var(--accent-dark); }
 
 .btn--outline {
   background: var(--bg-primary);
@@ -127,20 +222,15 @@ img, svg { display: block; max-width: 100%; }
   border: 1px solid var(--border);
 }
 .btn--outline:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  transform: translateY(-2px);
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.18);
 }
 
 .btn--warm {
   background: var(--accent-warm);
   color: #fff;
 }
-.btn--warm:hover {
-  background: var(--accent-warm-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(204,62,0,0.28);
-}
+.btn--warm:hover { background: var(--accent-warm-dark); }
 
 
 /* Autodesk App Store button */
@@ -170,7 +260,11 @@ img, svg { display: block; max-width: 100%; }
    heading, the pricing and the about copy at opacity:0 on a blank page.
    Progressive enhancement: hide only where something can un-hide. */
 .reveal { opacity: 1; transform: none; }
-.js .reveal { opacity: 0; transform: translateY(50px); }
+/* 50px of travel is a slide; 16px is a settle. Restrained displacement over a
+   longer duration is what separates considered motion from a page that
+   lurches as you scroll. The actual tween runs in main.js on the same
+   tokens. */
+.js .reveal { opacity: 0; transform: translateY(16px); }
 .reveal.is-visible { opacity: 1; transform: translateY(0); }
 
 /* Reduced motion: never hide content waiting on an animation that should
