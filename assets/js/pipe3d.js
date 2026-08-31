@@ -1623,30 +1623,76 @@ function initPipe3D(reduced) {
     );
   });
 
-  /* ── Backfill (sweeps far → near, stops short of camera) ─ */
-  /* The cut is a trapezoid in section now that the wall is battered back, so
-     the backfill that fills it has to be one too — a constant-width box left
-     a wedge of open trench down each side, visible as a bright seam along the
-     restored strip. Widen the top row of the box's vertices out to OUTER_HW
-     and leave the bottom at TRENCH_HW, which is exactly the section
-     shapeX describes. */
-  const backfillMats = [spoilMat, spoilMat, patchMat, spoilMat, spoilMat, spoilMat];
-  const backfillGeo = new THREE.BoxGeometry(TRENCH_HW * 2, TRENCH_D, 1);
-  {
-    const bp = backfillGeo.attributes.position;
-    for (let i = 0; i < bp.count; i++) {
-      // local y runs -TRENCH_D/2 (floor) .. +TRENCH_D/2 (grade)
-      const t = (bp.getY(i) + TRENCH_D / 2) / TRENCH_D;   // 0 at floor, 1 at grade
-      const halfAt = lerp(TRENCH_HW, OUTER_HW, t);
-      bp.setX(i, Math.sign(bp.getX(i)) * halfAt);
+  /* ── Backfill (sweeps far → near, stops short of camera) ─
+     Was a BoxGeometry scaled along z, which meant the dirt arrived as a
+     growing block with a flat vertical leading face. Loose soil cannot stand
+     in a vertical wall — it slumps to its angle of repose — so a square
+     advancing front is the single most artificial thing about the fill.
+
+     Rebuilt as an actual fill surface, regenerated per frame from the front
+     position: a crowned top and a leading slope at the repose angle. Only
+     those two faces are ever visible (the sides are against the trench walls
+     and the underside sits on the bedding), so this is a surface, not a
+     solid — a few hundred vertices, rebuilt on the frames the fill is
+     actually moving. Cross-section width follows the same trapezoid the cut
+     does, so the fill meets the battered wall instead of floating inside it. */
+  const REPOSE_DEG = 34;                                     // loose granular fill
+  const REPOSE_LEN = TRENCH_D / Math.tan(REPOSE_DEG * Math.PI / 180);
+  const BF_NZ = 96, BF_NX = 7;                               // surface resolution
+
+  const backfillGeo = new THREE.BufferGeometry();
+  const bfPos = new Float32Array(BF_NZ * BF_NX * 3);
+  const bfUv  = new Float32Array(BF_NZ * BF_NX * 2);
+  const bfIdx = [];
+  for (let j = 0; j < BF_NZ - 1; j++) {
+    for (let i = 0; i < BF_NX - 1; i++) {
+      const a = j * BF_NX + i, b = a + 1, c = a + BF_NX, d = c + 1;
+      bfIdx.push(a, c, b, b, c, d);
     }
-    bp.needsUpdate = true;
+  }
+  backfillGeo.setAttribute('position', new THREE.BufferAttribute(bfPos, 3));
+  backfillGeo.setAttribute('uv', new THREE.BufferAttribute(bfUv, 2));
+  backfillGeo.setIndex(bfIdx);
+
+  const backfill = new THREE.Mesh(backfillGeo, spoilMat);
+  backfill.castShadow = true; backfill.receiveShadow = true;
+  backfill.frustumCulled = false;   // rebuilt every frame; its bounds move
+  scene.add(backfill);
+
+  /* Surface height of the fill at a given z, for a front at fz. Full depth
+     well behind the front, ramping to nothing across REPOSE_LEN at it. The
+     crown sits slightly proud of grade — backfill is placed high because it
+     settles — and carries the same fbm2 the ground does so the restored
+     strip reads as loose material rather than a poured slab. */
+  function backfillTopY(x, z, fz) {
+    const ramp = clamp01((fz - z) / REPOSE_LEN);
+    const h = smooth(ramp) * TRENCH_D;
+    const crown = 0.10 + fbm2(x * 0.9, z * 0.9, 3) * 0.09;
+    return Math.min(FLOOR + h, GRADE + crown);
+  }
+
+  function rebuildBackfill(fz) {
+    let vi = 0, ui = 0;
+    for (let j = 0; j < BF_NZ; j++) {
+      const z = lerp(BACKFILL_FAR, fz, j / (BF_NZ - 1));
+      for (let i = 0; i < BF_NX; i++) {
+        const t = i / (BF_NX - 1);
+        // Probe the height first so the row can be as wide as the trapezoid
+        // is at that height, then re-evaluate at the resulting x.
+        const y0 = backfillTopY(0, z, fz);
+        const halfAt = lerp(TRENCH_HW, OUTER_HW, clamp01((y0 - FLOOR) / TRENCH_D)) - 0.02;
+        const x = lerp(-halfAt, halfAt, t);
+        const y = backfillTopY(x, z, fz);
+        bfPos[vi++] = x; bfPos[vi++] = y; bfPos[vi++] = z;
+        bfUv[ui++] = t * 2.0;
+        bfUv[ui++] = (z - BACKFILL_FAR) * 0.16;
+      }
+    }
+    backfillGeo.attributes.position.needsUpdate = true;
+    backfillGeo.attributes.uv.needsUpdate = true;
     backfillGeo.computeVertexNormals();
   }
-  const backfill = new THREE.Mesh(backfillGeo, backfillMats);
-  backfill.position.y = GRADE - TRENCH_D / 2;
-  backfill.castShadow = true; backfill.receiveShadow = true;
-  scene.add(backfill);
+
   const [B_S, B_E] = [0.74, 0.95];
 
   /* ── Camera ─────────────────────────────────────────────────
@@ -1693,14 +1739,18 @@ function initPipe3D(reduced) {
     gravelMap.repeat.y = gravelNormal.repeat.y = Math.max(1, bLen * 1.1);
   }
 
+  let _bfLastZ = null;
   function applyBackfill(p) {
     const fp = smooth(clamp01((p - B_S) / (B_E - B_S)));
     const fz = lerp(BACKFILL_FAR, BACKFILL_NEAR, fp);
-    const fLen = Math.max(0.001, fz - BACKFILL_FAR);
-    backfill.scale.z = fLen;
-    backfill.position.z = BACKFILL_FAR + fLen / 2;
     backfill.visible = fp > 0.001;
-    patchMap.repeat.y = Math.max(1, fLen * 0.5);
+    if (!backfill.visible) return;
+    // Only rebuild when the front has actually moved a meaningful distance —
+    // the surface is regenerated on the CPU, and at rest it is static.
+    if (_bfLastZ === null || Math.abs(fz - _bfLastZ) > 0.01) {
+      rebuildBackfill(fz);
+      _bfLastZ = fz;
+    }
   }
 
   // Dust burst keyed to this piece's own contact moment (t local to its own
