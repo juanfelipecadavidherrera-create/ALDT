@@ -304,9 +304,15 @@
   color: var(--text-muted);
 }
 
+/* --border is a 0.12-alpha hairline meant for edges seen against a
+   large flat area; as a glyph it renders at roughly 1.2:1 and simply
+   isn't there. A separator you can't see doesn't separate, so this uses
+   a light neutral that reads as a mark while staying quieter than the
+   text either side of it. Decorative and aria-hidden, so it carries no
+   contrast requirement — it just has to be visible. */
 .hero__trust-sep {
-  margin: 0 0.4em;
-  color: var(--border);
+  margin: 0 0.5em;
+  color: #A6AEB8;
 }
 
 /* ── Product illustration ──────────────────────────────────────
@@ -545,6 +551,31 @@
     margin-top: var(--space-3);
     padding: 0.8rem 1.2rem;
   }
+}
+
+/* Below 520px the two hero buttons no longer fit side by side, and
+   flex-wrap drops them into a column where each one shrink-wraps to its
+   own label — "Download Plugin" ends up visibly wider than "Explore
+   Tools", giving the primary action a ragged right edge directly above
+   the secondary one. Stretching them to the column width makes the pair
+   read as one stacked control group; it also gives the secondary action
+   the same full-width touch target as the primary, which is what a
+   thumb expects at this size. The buttons centre their own labels, so
+   stretching doesn't left-align the text. */
+@media (max-width: 520px) {
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* The price is a second, self-contained fact, not a continuation of
+     the sentence before it — at this width the single line wraps
+     mid-phrase ("$9.99/mo" ending one line, "or $99.99/yr" starting the
+     next), which reads as a broken sentence rather than two facts. Its
+     own line, and the middot separating them is redundant once they're
+     stacked. */
+  .hero__trust-sep { display: none; }
+  .hero__trust-price { display: block; }
 }
 
 /* While the mobile panel is open, lock background scroll — it visually
