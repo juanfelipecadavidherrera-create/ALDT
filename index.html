@@ -462,7 +462,15 @@
         <label class="tools-scroll__search">
           <svg class="tools-scroll__search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
           <span class="visually-hidden">Search all 53 commands</span>
-          <input type="search" id="toolsSearch" placeholder="Search 53 commands — “swept path”, “FEMA”, “invert”…" autocomplete="off">
+          <!-- The short placeholder is the one in the attribute, so it is what
+               renders with no JS and on a narrow phone, where the long form
+               was clipped mid-word ("…“swept path”, “FE"). tools.js swaps in
+               data-placeholder-wide once there is room for it — the example
+               queries are worth showing when they fit, and worth dropping
+               when they do not. -->
+          <input type="search" id="toolsSearch" placeholder="Search 53 commands"
+                 data-placeholder-wide="Search 53 commands — “swept path”, “FEMA”…"
+                 autocomplete="off">
           <span class="tools-scroll__search-count" id="toolsSearchCount" aria-live="polite"></span>
           <button type="button" class="tools-scroll__search-clear" id="toolsSearchClear" hidden aria-label="Clear search">
             <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/></svg>

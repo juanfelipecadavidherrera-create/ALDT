@@ -220,6 +220,57 @@
       }
     }
 
+    /* The long placeholder (with its example queries) only fits in a wide
+       field. The attribute in the HTML carries the short form, so that is
+       what renders with no JS and on a narrow phone; the long one is
+       swapped in only when it actually fits.
+
+       Measured, not guessed at a breakpoint: the field is capped at a
+       fixed max-width, so its inner width barely tracks the viewport at
+       all (360px of room at 1440 and at 640 alike, 283 at 390). A media
+       query would have shown the long form in a field it overflows, which
+       is exactly the bug this is fixing. Measuring also survives a change
+       to the field's width, its font, or the placeholder text itself
+       without anyone remembering to move a breakpoint.
+
+       document.fonts.ready matters here: measured against the fallback
+       face before Inter lands, the text comes out a different width and
+       the wrong form gets chosen for good. */
+    const wideHint = searchInput.dataset.placeholderWide;
+    if (wideHint) {
+      const shortHint = searchInput.placeholder;
+      const ruler = document.createElement('span');
+      ruler.setAttribute('aria-hidden', 'true');
+      ruler.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;top:0;left:-9999px';
+
+      const fitHint = () => {
+        const cs = getComputedStyle(searchInput);
+        const room = searchInput.getBoundingClientRect().width
+          - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        if (!room) return; // section not laid out yet (display:none, etc.)
+        ruler.style.font = cs.font;
+        ruler.style.letterSpacing = cs.letterSpacing;
+        ruler.textContent = wideHint;
+        document.body.appendChild(ruler);
+        const needed = ruler.getBoundingClientRect().width;
+        ruler.remove();
+        searchInput.placeholder = needed <= room ? wideHint : shortHint;
+      };
+
+      fitHint();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHint);
+
+      // Coalesced to one measurement per frame: fitHint appends to the
+      // document to measure, and a resize storm firing that per event
+      // would thrash layout for a placeholder nobody is watching change.
+      let queued = false;
+      window.addEventListener('resize', () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(() => { queued = false; fitHint(); });
+      });
+    }
+
     searchInput.addEventListener('input', () => applyFilter(searchInput.value));
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && searchInput.value) {
