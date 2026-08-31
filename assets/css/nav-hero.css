@@ -96,6 +96,20 @@
 }
 .nav__links a:hover { color: var(--text-primary); }
 
+/* privacy.html already marks its own nav entry aria-current="page", but
+   nothing rendered it — a screen reader knew which page it was on and a
+   sighted visitor didn't. Weight and full text colour rather than the
+   accent: the accent above the fold is reserved for the primary action,
+   and a coloured nav item would read as the thing to click rather than
+   the place you already are. Weight-only means no layout shift, since
+   the current item is the same one on every load of a given page.
+   :not(.nav__cta) keeps it off the pill button, which sets its own
+   colour. */
+.nav__links a[aria-current="page"]:not(.nav__cta) {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
 .nav__links a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
