@@ -1,7 +1,7 @@
 /* ============================================================
    ALDT — navigation + hero
-   Nav scroll state, the hero pipe-network SVG draw-on, and the
-   hero content entrance timeline.
+   Nav scroll state, mobile menu behaviour, and the hero content
+   entrance timeline.
    ============================================================ */
 
 (function initHero() {
@@ -46,8 +46,27 @@
       document.body.classList.toggle('nav-open', isOpen);
 
       if (isOpen) {
+        // The panel goes from visibility:hidden to visible on a CSS
+        // transition (see nav-hero.css), and .focus() on an element that
+        // still computes as hidden silently no-ops — focus was staying on
+        // the toggle button instead of moving into the panel. A fixed
+        // rAF count is the wrong fix: how many frames the browser needs
+        // before getComputedStyle reports "visible" varies (measured 1–2
+        // here, and it's not contractual), so this polls per-frame for
+        // the real signal instead of guessing a delay, capped so a future
+        // browser quirk degrades to "no auto-focus" rather than a stuck
+        // loop.
         const first = navMenu.querySelector(FOCUSABLE);
-        if (first) first.focus();
+        if (first) {
+          let attempts = 0;
+          (function waitToFocus() {
+            if (getComputedStyle(navMenu).visibility === 'visible' || ++attempts > 10) {
+              first.focus();
+            } else {
+              requestAnimationFrame(waitToFocus);
+            }
+          })();
+        }
       } else if (restoreFocus) {
         navToggle.focus();
       }
@@ -100,43 +119,55 @@
     });
   }
 
-  /* ── Hero pipe SVG draw animation ───────────────────────── */
-  const heroLines = document.querySelectorAll('#hero-pipes .pipe-line');
-  heroLines.forEach((line) => {
-    const len = line.getTotalLength ? line.getTotalLength() : 300;
-    gsap.set(line, { strokeDasharray: len, strokeDashoffset: len });
+  /* ── Hero content entrance ────────────────────────────────
+     gsap.matchMedia() (same idiom tools.js uses) rather than a bare
+     timeline: under prefers-reduced-motion the elements just fade in
+     place with no transform, and matchMedia is what lets that branch
+     react cleanly if the preference changes mid-session instead of only
+     being checked once on load. */
+  const heroMM = gsap.matchMedia();
+
+  heroMM.add('(prefers-reduced-motion: no-preference)', () => {
+    // Small travel (12–20px, in line with the .reveal system's own 16px
+    // settle) over longer durations on expo.out — the CSS system's
+    // --ease-out is the same decelerating-quint character. Each step
+    // starts before the last one finishes so elements arrive in reading
+    // order — eyebrow, headline, lead, actions, trust line, product
+    // panel — rather than as one simultaneous block.
+    gsap.timeline({ delay: 0.15 })
+      .fromTo('.hero__eyebrow',
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out' })
+      .fromTo('.hero__title',
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out' }, '-=0.5')
+      .fromTo('.hero__subtitle',
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'expo.out' }, '-=0.6')
+      .fromTo('.hero__actions',
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.7, ease: 'expo.out' }, '-=0.55')
+      .fromTo('.hero__trust',
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.6, ease: 'expo.out' }, '-=0.45')
+      .fromTo('.hero__mockup',
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.9, ease: 'expo.out' }, '-=0.65')
+      .fromTo('.hero__scroll-hint',
+        { opacity: 0 },
+        { opacity: 1, duration: 0.6 }, '-=0.2');
   });
 
-  gsap.to('#hero-pipes .pipe-line', {
-    strokeDashoffset: 0,
-    duration: 2.4,
-    ease: 'power2.out',
-    stagger: 0.12,
-    delay: 0.3,
+  heroMM.add('(prefers-reduced-motion: reduce)', () => {
+    // No transform-based entrance motion under reduced motion — a plain,
+    // near-instant opacity fade, still staggered so nothing pops in as
+    // one flash, but with none of the eased travel above.
+    gsap.timeline({ delay: 0.15 })
+      .fromTo(
+        ['.hero__eyebrow', '.hero__title', '.hero__subtitle', '.hero__actions',
+         '.hero__trust', '.hero__mockup', '.hero__scroll-hint'],
+        { opacity: 0 },
+        { opacity: 1, duration: 0.3, stagger: 0.06 }
+      );
   });
-
-  // Pipe node circles pop in after lines
-  gsap.fromTo(
-    '#hero-pipes .pipe-node',
-    { scale: 0, opacity: 0, transformOrigin: 'center center' },
-    { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.7)', stagger: 0.08, delay: 0.9 }
-  );
-
-  /* ── Hero content entrance ──────────────────────────────── */
-  gsap.timeline({ delay: 0.15 })
-    .fromTo('.hero__eyebrow',
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
-    .fromTo('.hero__title',
-      { opacity: 0, y: 40 },
-      { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out' }, '-=0.35')
-    .fromTo('.hero__subtitle',
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, '-=0.5')
-    .fromTo('.hero__actions',
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, '-=0.5')
-    .fromTo('.hero__scroll-hint',
-      { opacity: 0 },
-      { opacity: 1, duration: 0.6 }, '-=0.2');
 })();
