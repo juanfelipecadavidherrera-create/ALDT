@@ -757,6 +757,7 @@
   align-items: start;
   margin-bottom: var(--space-8);
 }
+
 .footer__brand .nav__logo { margin-bottom: var(--space-3); }
 
 .footer__brand p {
@@ -790,8 +791,9 @@
 
 /* Quiet sentence-case column headers, matching .section-label's move
    away from mono/uppercase — a footer full of shouted micro-labels is
-   exactly the "decorated, not composed" read this pass is fixing. */
-/* The hairline is what makes "Toolsets" unambiguous. That one heading
+   exactly the "decorated, not composed" read this pass is fixing.
+
+   The hairline is what makes "Toolsets" unambiguous. That one heading
    sits over a two-column list, so before this the right-hand six links
    had nothing above them and read as an orphaned list; the rule runs
    the full width of the column's grid area, visibly roofing both
