@@ -328,8 +328,11 @@
 /* .tools-scroll__cat-name is an h3 — sizing, tracking, weight and colour
    all come from base.css. Nothing to add here. */
 
+/* Narrative copy — a real one-to-two sentence description of what the
+   category does, meant to be read, not a secondary label — so it takes
+   --text-body rather than --text-muted. */
 .tools-scroll__cat-blurb {
-  color: var(--text-muted);
+  color: var(--text-body);
   font-size: var(--fs-small);
   line-height: 1.55;
 }
