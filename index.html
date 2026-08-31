@@ -157,7 +157,13 @@
          (an opaque sky-textured background) covers this completely. -->
     <div class="pipe-intro__fallback" aria-hidden="true">
       <p class="pipe-intro__fallback-mark">ALDT</p>
-      <p class="pipe-intro__fallback-tag">Engineered. Piece&nbsp;by&nbsp;piece.</p>
+      <!-- No tagline here. This block is only ever seen when the scene
+           never starts (JS off, or no WebGL context) — and in exactly
+           those cases .pipe-intro__tagline below is on screen too, since
+           it is deliberately visible from frame one to be the LCP
+           element. A mono copy of the same sentence here put "Engineered.
+           Piece by piece." on the page twice at once, which is the one
+           state this fallback exists to make look finished. -->
     </div>
 
     <!-- 3D canvas fills the intro; replaces the 2D SVG assembly -->
@@ -275,7 +281,7 @@
           <!-- .lead is the one lead-paragraph treatment defined in base.css;
                .hero__subtitle here only adds the local max-width/spacing. -->
           <p class="hero__subtitle lead">
-            ALDT adds 53 commands to Civil 3D 2026: automatic profile-view labeling, pipe-crossing inverts, alignment deployment, and surface QA — so the plugin runs the repetitive steps and you check the result.
+            ALDT adds 53 commands to Civil 3D 2026: automatic profile-view labeling, pipe-crossing inverts, alignment deployment, and surface QA&nbsp;— so the plugin runs the repetitive steps and you check the result.
           </p>
 
           <div class="hero__actions">
@@ -307,7 +313,7 @@
              what the plugin produces, and because it fills what was ~700px
              of blank space beside the headline on a 1440px viewport. -->
         <div class="hero__mockup" aria-hidden="true">
-          <span class="hero__mockup-badge">12 toolsets · 53 commands</span>
+          <span class="hero__mockup-badge">12 toolsets&nbsp;· 53 commands</span>
           <div class="mockup">
             <div class="mockup__ribbon">
               <span class="mockup__ribbon-label">ALDT</span>
@@ -319,7 +325,7 @@
             <div class="mockup__panel">
               <div class="mockup__panel-header">
                 <span class="mockup__panel-dot"></span>
-                <span class="mockup__panel-title">Profile View · FM-12 &nbsp;10+00–15+00</span>
+                <span class="mockup__panel-title">Profile View&nbsp;· FM-12 &nbsp;10+00–15+00</span>
               </div>
 
               <svg class="mockup__profile" viewBox="0 0 520 260" xmlns="http://www.w3.org/2000/svg">
@@ -379,7 +385,7 @@
                 <text x="500" y="224" class="mockup__label" text-anchor="middle">14+50</text>
               </svg>
 
-              <p class="mockup__caption">Illustrative output — ALDT places every crossing invert label automatically.</p>
+              <p class="mockup__caption">Illustrative output&nbsp;— ALDT places every crossing invert label automatically.</p>
             </div>
           </div>
         </div>
@@ -401,8 +407,12 @@
     <div class="container">
       <div class="tools__header">
         <p class="section-label reveal">53-Command Suite</p>
-        <h2 class="reveal">One plugin.<br>Twelve toolsets, fifty-three commands.</h2>
-        <p class="lead reveal">Every command below ships in a single install. Browse the full suite, organized the way you'd reach for it in the field — from pressure-pipe math to live GIS lookups to swept-path analysis.</p>
+        <!-- The hyphen in "fifty-three" is a non-breaking hyphen (U+2011): at 390px
+           the plain hyphen is a legal break point, so the heading wrapped as
+           "fifty-" / "three commands." — a compound number split across lines
+           reads as a typo. Same glyph, just not a break opportunity. -->
+        <h2 class="reveal">One plugin.<br>Twelve toolsets, fifty&#8209;three commands.</h2>
+        <p class="lead reveal">Every command below ships in a single install. Browse the full suite, organized the way you'd reach for it in the field&nbsp;— from pressure-pipe math to live GIS lookups to swept-path analysis.</p>
       </div>
     </div>
 
@@ -452,13 +462,21 @@
         <div class="tools-scroll__hud-top">
           <div class="tools-scroll__dots" id="toolsDots"></div>
           <p class="tools-scroll__counter" aria-live="polite">
-            <b id="toolsCounterIndex">01</b> / 12 — <span id="toolsCounterName">Pipes &amp; Pressure Networks</span>
+            <b id="toolsCounterIndex">01</b> / 12&nbsp;— <span id="toolsCounterName">Pipes &amp; Pressure Networks</span>
           </p>
         </div>
         <label class="tools-scroll__search">
           <svg class="tools-scroll__search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>
           <span class="visually-hidden">Search all 53 commands</span>
-          <input type="search" id="toolsSearch" placeholder="Search 53 commands — “swept path”, “FEMA”, “invert”…" autocomplete="off">
+          <!-- The short placeholder is the one in the attribute, so it is what
+               renders with no JS and on a narrow phone, where the long form
+               was clipped mid-word ("…“swept path”, “FE"). tools.js swaps in
+               data-placeholder-wide once there is room for it — the example
+               queries are worth showing when they fit, and worth dropping
+               when they do not. -->
+          <input type="search" id="toolsSearch" placeholder="Search 53 commands"
+                 data-placeholder-wide="Search 53 commands — “swept path”, “FEMA”…"
+                 autocomplete="off">
           <span class="tools-scroll__search-count" id="toolsSearchCount" aria-live="polite"></span>
           <button type="button" class="tools-scroll__search-clear" id="toolsSearchClear" hidden aria-label="Clear search">
             <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"><line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/></svg>
@@ -691,7 +709,7 @@
       <div class="workflow__header">
         <p class="section-label reveal">Getting started</p>
         <h2 class="reveal">Up and running in minutes</h2>
-        <p class="lead reveal">Install once — the full 53-command suite loads automatically into Civil 3D's ribbon.</p>
+        <p class="lead reveal">Install once&nbsp;— the full 53-command suite loads automatically into Civil 3D's ribbon.</p>
       </div>
 
       <div class="workflow__steps">
@@ -725,7 +743,7 @@
             <p class="workflow__step-num">Step 02</p>
           </div>
           <h3>Open Civil 3D</h3>
-          <p>Launch AutoCAD Civil 3D 2026. The <strong>Advanced Land Dev Tools</strong> ribbon tab appears automatically — no manual loading needed.</p>
+          <p>Launch AutoCAD Civil 3D 2026. The <strong>Advanced Land Dev Tools</strong> ribbon tab appears automatically&nbsp;— no manual loading needed.</p>
         </div>
 
         <!-- Step 3 -->
@@ -744,7 +762,7 @@
             <p class="workflow__step-num">Step 03</p>
           </div>
           <h3>Run commands</h3>
-          <p>Click any tool button in the ribbon — or type the command (BULKSUR, ALIGNDEPLOY, PIPEMAGIC, INVERTPULLUP) directly in the command line.</p>
+          <p>Click any tool button in the ribbon&nbsp;— or type the command (BULKSUR, ALIGNDEPLOY, PIPEMAGIC, INVERTPULLUP) directly in the command line.</p>
         </div>
       </div>
 
@@ -828,7 +846,7 @@
           </div>
         </div>
         </div>
-        <p class="workflow__showcase-caption">Illustration — the Advanced Land Dev Tools ribbon tab, grouped by toolset. Groups shown are a sample of the full 53-command suite.</p>
+        <p class="workflow__showcase-caption">Illustration&nbsp;— the Advanced Land Dev Tools ribbon tab, grouped by toolset. Groups shown are a sample of the full 53-command suite.</p>
       </div>
     </div>
   </section>
@@ -872,10 +890,10 @@
             I'm <strong>Juan Felipe Cadavid Herrera</strong>, a civil engineer specializing in land development. After years of watching project timelines expand because of repetitive, manual Civil 3D workflows, I built ALDT to solve the problem from the inside.
           </p>
           <p class="reveal">
-            Every tool in this plugin was designed to address a real bottleneck I encountered in the field — from batch-creating hundreds of surface profiles to instantly labeling pipe inverts that would otherwise require manual station math.
+            Every tool in this plugin was designed to address a real bottleneck I encountered in the field&nbsp;— from batch-creating hundreds of surface profiles to instantly labeling pipe inverts that would otherwise require manual station math.
           </p>
           <p class="reveal">
-            ALDT is the result of combining civil engineering expertise with modern .NET development — purpose-built for AutoCAD Civil 3D 2026 and designed to fit seamlessly into your existing workflow.
+            ALDT is the result of combining civil engineering expertise with modern .NET development&nbsp;— purpose-built for AutoCAD Civil 3D 2026 and designed to fit seamlessly into your existing workflow.
           </p>
           <div class="about__links reveal">
             <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer" class="btn btn--outline">
@@ -1087,9 +1105,9 @@
     <div class="download__glow"></div>
     <div class="container">
       <div class="download__content">
-        <p class="section-label reveal">Available now — Autodesk App Store</p>
+        <p class="section-label reveal">Available now&nbsp;— Autodesk App Store</p>
         <h2 class="reveal">Ready to automate your workflow?</h2>
-        <p class="lead reveal">Get ALDT directly through the Autodesk App Store — the official marketplace for Civil 3D plugins. Installs in minutes, loads automatically on launch.</p>
+        <p class="lead reveal">Get ALDT directly through the Autodesk App Store&nbsp;— the official marketplace for Civil 3D plugins. Installs in minutes, loads automatically on launch.</p>
 
         <div class="download__actions reveal">
           <a href="https://apps.autodesk.com/CIV3D/en/Detail/Index?id=790137523277155276&appLang=&os=Win64&mode=preview&autostart=True&loginRequired=True" class="btn btn--autodesk" target="_blank" rel="noopener noreferrer">
@@ -1110,7 +1128,7 @@
           Have a question first? <a href="https://www.linkedin.com/in/juanfelipecadavidherrera" target="_blank" rel="noopener noreferrer" class="download__link">Connect with Juan on LinkedIn</a>.
         </p>
 
-        <p class="download__reqs reveal">Requires Civil 3D 2026 · .NET 8 · Windows 10+ 64-bit · AutoCAD R26</p>
+        <p class="download__reqs reveal">Requires Civil 3D 2026&nbsp;· .NET 8&nbsp;· Windows 10+ 64-bit&nbsp;· AutoCAD R26</p>
       </div>
     </div>
   </section>
