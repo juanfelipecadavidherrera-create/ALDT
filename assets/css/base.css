@@ -29,6 +29,7 @@
   --accent-warm-bright: #E64500;  /* 4.03:1 — large graphics / thick strokes only */
 
   --text-primary: #14181F;  /* 17.8:1 on white — deep neutral, not pure black */
+  --text-body:    #33404F;  /* 10.6:1 on white, 9.9:1 on --bg-secondary */
   --text-muted:   #56606D;  /* 6.38:1 on white */
 
   --border:       rgba(15, 23, 42, 0.12);
@@ -115,6 +116,14 @@ body {
   font-family: var(--font-body);
   line-height: 1.6;
   overflow-x: hidden;
+  /* Antialiased rather than the default subpixel rendering. On macOS the
+     default thickens light-on-dark and dark-on-light text differently and
+     makes a geometric sans look heavier than drawn; this is most of why
+     carefully set type looks crisper on Apple's own pages than the same
+     font does elsewhere. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -162,7 +171,22 @@ img, svg { display: block; max-width: 100%; }
    Set centrally so sections cannot drift apart. Display type is a single
    near-black; colour is reserved for links and the primary action, which is
    what keeps a page reading as calm rather than decorated. */
-h1, h2, h3 { font-family: var(--font-display); color: var(--text-primary); }
+/* text-wrap: balance evens the line lengths of a heading instead of filling
+   each line greedily, which is what removes the single orphaned word
+   ("Up and running in / minutes"). It is the cheapest typographic upgrade
+   available and applies to every heading on the site at once. Paragraphs get
+   `pretty`, which does the narrower job of preventing a one-word last line. */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+p { text-wrap: pretty; }
+
+/* Rhythm. A lead sitting hard against its heading is the most common reason
+   a section reads as cramped no matter how much padding surrounds it. */
+h1 + .lead, h2 + .lead, h3 + .lead,
+h1 + p, h2 + p { margin-top: var(--space-5); }
 h1 { font-size: var(--fs-display); letter-spacing: var(--tracking-display); line-height: 1.04; font-weight: 700; }
 h2 { font-size: var(--fs-h2);      letter-spacing: var(--tracking-h2);      line-height: 1.08; font-weight: 700; }
 h3 { font-size: var(--fs-h3);      letter-spacing: var(--tracking-h3);      line-height: 1.25; font-weight: 600; }
@@ -171,7 +195,7 @@ h3 { font-size: var(--fs-h3);      letter-spacing: var(--tracking-h3);      line
 .lead {
   font-size: var(--fs-lead);
   line-height: 1.55;
-  color: var(--text-muted);
+  color: var(--text-body);
   letter-spacing: -0.01em;
 }
 
@@ -285,6 +309,20 @@ h3 { font-size: var(--fs-h3);      letter-spacing: var(--tracking-h3);      line
 
 /* ── Selection ──────────────────────────────────────────────── */
 ::selection { background: rgba(0,122,163,0.22); color: var(--text-primary); }
+
+/* ── Focus ──────────────────────────────────────────────────
+   One visible ring for every interactive element. .btn previously defined
+   no focus treatment at all, so keyboard users tabbing across the page had
+   nothing to follow on the primary actions. Scoped to :focus-visible so it
+   never appears on a mouse click. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
 
 /* ── Skip Link ──────────────────────────────────────────────── */
 /* Off-screen until focused, then pinned over the fixed nav (z-index 100)
