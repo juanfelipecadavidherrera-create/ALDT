@@ -5,7 +5,7 @@
 
 /* ── Tools Section ──────────────────────────────────────────── */
 .tools {
-  padding: 6rem 0;
+  padding: var(--space-section) 0;
   background: var(--bg-secondary);
   overflow: hidden;
 }
@@ -16,97 +16,27 @@
      the header and the pin engaging. Trimmed on both ends (see
      .tools-scroll margin-top) since the HUD bar at the top of the scroller
      now carries its own visual weight and no longer needs a big buffer. */
-  margin-bottom: 2.25rem;
+  margin-bottom: var(--space-7);
 }
 
-.tools__header h2 {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+/* h1/h2/h3 sizing, tracking and colour are set centrally in base.css —
+   nothing to override here. The heading's second line no longer carries a
+   coloured span: display type stays a single near-black, and colour is
+   reserved for links and the primary action elsewhere on the page. */
+
+.tools__header .lead {
+  max-width: 560px;
+  margin-top: var(--space-3);
 }
 
-.tools__header h2 span { color: var(--accent); }
-
-.tools__header p {
-  color: var(--text-muted);
-  max-width: 520px;
-  margin-top: 0.8rem;
-  font-size: 1rem;
-}
-
+/* Legacy hook: no .tool-card / .tools__grid markup exists in the DOM today
+   (the section is the horizontal showcase below) — kept only so tools.js's
+   harmless 0-match gsap.utils.toArray('.tool-card') has somewhere to point
+   if that layout is ever reintroduced. */
 .tools__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
-}
-
-.tool-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  transition: var(--transition);
-  position: relative;
-  overflow: hidden;
-}
-
-.tool-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--accent-glow) 0%, transparent 60%);
-  opacity: 0;
-  transition: opacity 0.4s;
-}
-
-.tool-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-4px);
-  box-shadow: 0 20px 48px rgba(15,23,42,0.10);
-}
-
-.tool-card:hover::before { opacity: 1; }
-
-.tool-card__icon {
-  width: 64px;
-  height: 64px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-  /* was rgba(255,255,255-adjacent blue at 0.04 alpha — invisible on white;
-     the off-white section token reads as an actual visible tint instead */
-  background: var(--bg-secondary);
-  position: relative;
-}
-
-.tool-card__command {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  color: var(--accent);
-  letter-spacing: 0.08em;
-  margin-bottom: 0.5rem;
-  position: relative;
-}
-
-.tool-card__name {
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 0.75rem;
-  position: relative;
-}
-
-.tool-card__desc {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-  line-height: 1.65;
-  position: relative;
+  gap: var(--space-5);
 }
 
 
@@ -146,6 +76,9 @@
   justify-content: space-between;
   gap: 0.85rem 1.5rem;
   padding: 0.25rem 6vw 1rem;
+  /* A quiet structural rule, not a decorative one — it separates the HUD
+     from the card track, so it stays even though the colour accents around
+     it went. Kept faint enough to read as a seam, not a line. */
   border-bottom: 1px solid var(--border);
 }
 
@@ -162,35 +95,39 @@
   gap: 0.4rem;
 }
 
+/* One accent, not two alternating per card-index — the dots track *position*
+   (which of 12 cards is on screen), and colour-coding position in two hues
+   that don't correspond to anything about the category was decoration, not
+   information. */
 .tools-scroll__dot {
   width: 8px;
   height: 8px;
   padding: 0;
   border: none;
-  border-radius: 100px;
+  border-radius: var(--radius-pill);
   background: var(--border);
   cursor: pointer;
-  transition: var(--transition);
+  transition: background var(--dur-fast) var(--ease-out),
+              width var(--dur-base) var(--ease-out);
 }
 
 .tools-scroll__dot:hover { background: var(--accent-dark); }
-.tools-scroll__dot--warm:hover { background: var(--accent-warm-dark); }
 
 .tools-scroll__dot[aria-current="true"] {
   width: 22px;
   background: var(--accent);
 }
-.tools-scroll__dot--warm[aria-current="true"] { background: var(--accent-warm); }
 
 .tools-scroll__dot:focus-visible {
   outline: 2px solid var(--accent-dark);
   outline-offset: 3px;
 }
 
+/* Was mono + letter-spaced, matching the old developer-tooling voice this
+   whole section is moving away from. Body face, quiet weight. */
 .tools-scroll__counter {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.03em;
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -200,6 +137,8 @@
   color: var(--text-primary);
 }
 
+/* Soft rounded field, not a bordered box: a filled pill that only gains a
+   focus ring, rather than a 1px outline that's visible at rest. */
 .tools-scroll__search {
   position: relative;
   display: flex;
@@ -209,14 +148,13 @@
   min-width: 200px;
   max-width: 420px;
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 100px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-sm);
   padding: 0.5em 0.7em 0.5em 1em;
-  transition: var(--transition);
+  transition: box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .tools-scroll__search:focus-within {
-  border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
@@ -246,8 +184,9 @@
 .tools-scroll__search input::placeholder { color: var(--text-muted); }
 
 .tools-scroll__search-count {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-family: var(--font-body);
+  font-size: var(--fs-small);
+  font-weight: 500;
   color: var(--accent-dark);
   white-space: nowrap;
 }
@@ -260,11 +199,13 @@
   height: 20px;
   padding: 0;
   border: none;
-  border-radius: 100px;
+  border-radius: var(--radius-pill);
   background: none;
   color: var(--text-muted);
   cursor: pointer;
   flex: 0 0 auto;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
 }
 .tools-scroll__search-clear[hidden] { display: none; }
 .tools-scroll__search-clear:hover { color: var(--text-primary); background: var(--bg-secondary); }
@@ -314,49 +255,45 @@
   padding: 0.5rem 6vw 1.5rem;
 }
 
+/* Soft surface, not a bordered box: shadow-sm on the card's own white
+   ground is what separates it from the section's tinted background, so the
+   hairline border and the coloured top rule (previously alternating
+   accent/warm card-to-card, purely decorative) are both gone. Hover moves
+   to --shadow-md — a tone/depth change, not a lift-and-glow. */
 .tools-scroll__card {
   scroll-snap-align: start;
   flex: 0 0 auto;
   width: min(82vw, 380px);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: var(--space-5);
   background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--cat-accent);
-  border-radius: var(--radius-lg);
-  padding: 1.75rem;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+  transition: box-shadow var(--dur-base) var(--ease-out);
 }
 
-/* Two accent hues, alternating card-to-card — the only way to tell 12
-   monochrome grey cards apart at a glance. Both are the AA-safe (4.5:1+)
-   text-weight tokens from base.css, not the brighter large-graphic-only
-   ones, since these colour small UI (icon, pill, hover ring), not a hero
-   graphic. */
-.tools-scroll__card:nth-child(odd) {
-  --cat-accent: var(--accent);
-  --cat-accent-dark: var(--accent-dark);
-  --cat-accent-glow: var(--accent-glow);
-}
-.tools-scroll__card:nth-child(even) {
-  --cat-accent: var(--accent-warm);
-  --cat-accent-dark: var(--accent-warm-dark);
-  --cat-accent-glow: rgba(204, 62, 0, 0.10);
+.tools-scroll__card:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .tools-scroll__cat-header {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-2);
 }
 
 .tools-scroll__cat-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--space-3);
 }
 
+/* One neutral icon tile per card, not one colour-keyed to the card. The
+   icon is orientation (which category), not a call to action, so it reads
+   in the same near-black ink as the rest of the card's text. */
 .tools-scroll__icon {
   display: flex;
   align-items: center;
@@ -364,10 +301,9 @@
   width: 42px;
   height: 42px;
   flex: 0 0 auto;
-  border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--bg-secondary);
-  color: var(--cat-accent);
+  color: var(--text-muted);
 }
 
 .tools-scroll__icon-svg {
@@ -381,29 +317,20 @@
 }
 .tools-scroll__icon-svg .dot { fill: currentColor; }
 
+/* Was a mono-uppercase bordered pill — plain caption text carries the same
+   information ("8 commands") without announcing itself as UI chrome. */
 .tools-scroll__cat-count {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--cat-accent-dark);
-  border: 1px solid var(--border);
-  padding: 0.3em 0.85em;
-  border-radius: 100px;
-  background: var(--cat-accent-glow);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
-.tools-scroll__cat-name {
-  font-family: var(--font-display);
-  font-size: clamp(1.15rem, 1.8vw, 1.4rem);
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
+/* .tools-scroll__cat-name is an h3 — sizing, tracking, weight and colour
+   all come from base.css. Nothing to add here. */
 
 .tools-scroll__cat-blurb {
   color: var(--text-muted);
-  font-size: 0.88rem;
+  font-size: var(--fs-small);
   line-height: 1.55;
 }
 
@@ -411,32 +338,32 @@
   list-style: none;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-  margin-top: 0.25rem;
+  gap: 0.15rem 1rem;
+  margin-top: var(--space-1);
 }
 
+/* A quiet two-column list of code tokens, not a grid of bordered chips:
+   token + title sit on one row, the row itself carries no fill or border
+   at rest so 53 of them read as text, not as fifty-three little boxes. */
 .tools-scroll__cmd-list li {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.55em 0.7em;
-  transition: var(--transition);
+  align-items: baseline;
+  gap: 0.55rem;
+  border-radius: var(--radius);
+  padding: 0.45em 0.55em;
+  transition: background var(--dur-fast) var(--ease-out),
+              opacity var(--dur-base) var(--ease-out);
 }
 
 /* Hover-only: chips are not individually focusable (see tools.js) — a
    12-card × ~4-command-tile keyboard tab stop count inside a pinned,
    transform-scrubbed section is a trap waiting to happen. The search box
    is the keyboard/screen-reader path to "find one command"; hover is a
-   mouse-only nicety on top of it. */
+   mouse-only nicety on top of it. A tone shift, not the old lift+border+
+   shadow combination. */
 @media (hover: hover) and (pointer: fine) {
   .tools-scroll__cmd-list li:hover {
-    border-color: var(--cat-accent);
-    background: var(--bg-card);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.10);
+    background: var(--bg-secondary);
   }
 }
 
@@ -444,13 +371,12 @@
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 400;
-  letter-spacing: 0.01em;
-  color: var(--cat-accent-dark);
-  word-break: break-word;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .tools-scroll__cmd-title {
-  font-size: 0.76rem;
+  font-size: 0.8rem;
   line-height: 1.35;
   color: var(--text-primary);
 }
@@ -458,20 +384,20 @@
 /* ── Command search (tools.js wires the input; this is just the paint) ──
    Non-matches dim rather than disappear: hiding them would change
    track.scrollWidth mid-filter, which is exactly what distance() /
-   invalidateOnRefresh (tools.js) exist to avoid having to chase. */
+   invalidateOnRefresh (tools.js) exist to avoid having to chase. Matches
+   get a soft accent-tinted fill — no ring, no border — and their token
+   picks up the same accent so a match reads at a glance without shouting. */
 .tools-scroll.has-query .tools-scroll__cmd-list li { opacity: 0.32; }
 
 .tools-scroll.has-query .tools-scroll__cmd-list li.is-match {
   opacity: 1;
-  border-color: var(--cat-accent);
-  background: var(--cat-accent-glow);
-  box-shadow: 0 0 0 1px var(--cat-accent) inset;
+  background: var(--accent-glow);
+}
+.tools-scroll.has-query .tools-scroll__cmd-list li.is-match .tools-scroll__cmd-token {
+  color: var(--accent-dark);
 }
 
 .tools-scroll.has-query .tools-scroll__card:not(.has-match) { opacity: 0.4; }
-.tools-scroll.has-query .tools-scroll__card:not(.has-match) .tools-scroll__icon {
-  filter: grayscale(1);
-}
 
 /* Desktop: GSAP owns the horizontal motion (tools.js, gsap.matchMedia
    scoped to this same breakpoint) — the section becomes a full-height pin
@@ -546,7 +472,7 @@
   }
 
   .tools-scroll__track {
-    gap: 1.5rem;
+    gap: var(--space-5);
     padding: 0 6vw;
     align-items: center;
   }
@@ -554,11 +480,7 @@
   .tools-scroll__card {
     scroll-snap-align: none;
     width: min(33vw, 420px);
-    padding: 2rem;
-  }
-
-  .tools-scroll__cat-blurb {
-    font-size: 0.85rem;
+    padding: var(--space-6);
   }
 }
 
@@ -606,7 +528,7 @@
     flex-direction: column;
     width: auto;
     padding: 0;
-    gap: 1.5rem;
+    gap: var(--space-5);
   }
 
   .tools-scroll__card {

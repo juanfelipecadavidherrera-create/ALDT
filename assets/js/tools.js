@@ -123,13 +123,16 @@
 
   // Dots are built here rather than hardcoded in index.html so the count
   // label and the card list can never drift out of sync with each other.
+  // One accent throughout (no odd/even colour split) — the dots track
+  // position, and colour-coding a position that carries no meaning was
+  // decoration, not information.
   let dots = [];
   if (dotsEl) {
     dotsEl.innerHTML = '';
     dots = cards.map((card, i) => {
       const dot = document.createElement('button');
       dot.type = 'button';
-      dot.className = 'tools-scroll__dot' + (i % 2 === 1 ? ' tools-scroll__dot--warm' : '');
+      dot.className = 'tools-scroll__dot';
       dot.setAttribute('aria-label', 'Jump to ' + catInfo[i].name + ' (' + (i + 1) + ' of ' + cards.length + ')');
       dot.setAttribute('aria-current', i === 0 ? 'true' : 'false');
       dot.addEventListener('click', () => scrollToCard(i));
