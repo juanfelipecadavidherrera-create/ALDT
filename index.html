@@ -157,7 +157,13 @@
          (an opaque sky-textured background) covers this completely. -->
     <div class="pipe-intro__fallback" aria-hidden="true">
       <p class="pipe-intro__fallback-mark">ALDT</p>
-      <p class="pipe-intro__fallback-tag">Engineered. Piece&nbsp;by&nbsp;piece.</p>
+      <!-- No tagline here. This block is only ever seen when the scene
+           never starts (JS off, or no WebGL context) — and in exactly
+           those cases .pipe-intro__tagline below is on screen too, since
+           it is deliberately visible from frame one to be the LCP
+           element. A mono copy of the same sentence here put "Engineered.
+           Piece by piece." on the page twice at once, which is the one
+           state this fallback exists to make look finished. -->
     </div>
 
     <!-- 3D canvas fills the intro; replaces the 2D SVG assembly -->

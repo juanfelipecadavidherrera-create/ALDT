@@ -181,15 +181,6 @@
   text-shadow: 0 2px 18px rgba(0, 0, 0, 0.5);
 }
 
-.pipe-intro__fallback-tag {
-  font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.82);
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
-}
-
 /* ── Skip control ───────────────────────────────────────────
    Same voice as .pipe-intro__hint above (mono, uppercase, small) — a
    returning visitor shouldn't have to sit through a build sequence every
