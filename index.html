@@ -401,7 +401,11 @@
     <div class="container">
       <div class="tools__header">
         <p class="section-label reveal">53-Command Suite</p>
-        <h2 class="reveal">One plugin.<br>Twelve toolsets, fifty-three commands.</h2>
+        <!-- The hyphen in "fifty-three" is a non-breaking hyphen (U+2011): at 390px
+           the plain hyphen is a legal break point, so the heading wrapped as
+           "fifty-" / "three commands." — a compound number split across lines
+           reads as a typo. Same glyph, just not a break opportunity. -->
+        <h2 class="reveal">One plugin.<br>Twelve toolsets, fifty&#8209;three commands.</h2>
         <p class="lead reveal">Every command below ships in a single install. Browse the full suite, organized the way you'd reach for it in the field — from pressure-pipe math to live GIS lookups to swept-path analysis.</p>
       </div>
     </div>
