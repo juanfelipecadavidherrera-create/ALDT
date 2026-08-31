@@ -28,20 +28,28 @@
         until well past where the intro handshake and its scroll failsafe
         (see intro.js) resolve, so it can never race that fade-in and
         make the nav appear already sliding as it becomes visible. Not
-        offered at all under reduced motion — nav just stays put. */
+        offered at all under reduced motion — nav just stays put.
+
+     Condense is deliberately NOT a GSAP tween of .nav: intro.js's own
+     revealNav() ends in `gsap.to('.nav', {..., overwrite: true})`, and
+     `overwrite: true` kills every other tween currently targeting that
+     same element regardless of which property it drives — it would
+     silently kill a condense tween the instant the intro handshake
+     resolves. A plain ScrollTrigger with onUpdate writing the custom
+     property directly isn't a tween GSAP tracks against the target at
+     all, so there's nothing for that overwrite to find and kill. */
   const nav = document.querySelector('.nav');
   if (nav) {
     const navMM = gsap.matchMedia();
 
     navMM.add('(prefers-reduced-motion: no-preference)', () => {
-      gsap.fromTo(nav,
-        { '--nav-condense': 0 },
-        {
-          '--nav-condense': 1,
-          ease: 'none',
-          scrollTrigger: { start: 0, end: 140, scrub: true },
-        }
-      );
+      ScrollTrigger.create({
+        start: 0,
+        end: 140,
+        onUpdate(self) {
+          nav.style.setProperty('--nav-condense', self.progress);
+        },
+      });
 
       const HIDE_AFTER = 480; // px — clear of the intro handshake
       let hidden = false;
