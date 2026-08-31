@@ -243,57 +243,12 @@
   ══════════════════════════════════════ -->
   <section class="hero" id="home" aria-label="Hero">
 
-    <!-- Plan-view backdrop: a survey grid plus one alignment with curve
-         data and station ticks, not a random pipe network. The grid is
-         uniform and faint everywhere; the alignment/curve-data detail is
-         drawn only at x > 680 in this 1440-wide viewBox, which is under
-         the hero__mockup column, not the text column to its left — so
-         nothing crosses behind the headline the way the old diagonal
-         "X" did. -->
+    <!-- Ground treatment only: one soft, off-center glow. The plan-view
+         survey grid, alignment path, curve-data callout and station ticks
+         that used to live here were removed outright — an Apple hero is
+         one idea on clean ground, and that layer was competing with the
+         headline and the product panel rather than supporting either. -->
     <div class="hero__bg">
-      <svg id="hero-pipes" viewBox="0 0 1440 800" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <!-- Survey grid: uniform, faint, no diagonals — reads as graph
-             paper you'd actually see under a plan, not a logo mark. -->
-        <g class="hero-grid" stroke="#0091C2" stroke-width="1">
-          <line x1="0" y1="120" x2="1440" y2="120"/>
-          <line x1="0" y1="280" x2="1440" y2="280"/>
-          <line x1="0" y1="440" x2="1440" y2="440"/>
-          <line x1="0" y1="600" x2="1440" y2="600"/>
-          <line x1="0" y1="760" x2="1440" y2="760"/>
-          <line x1="160" y1="0" x2="160" y2="800"/>
-          <line x1="400" y1="0" x2="400" y2="800"/>
-          <line x1="640" y1="0" x2="640" y2="800"/>
-          <line x1="880" y1="0" x2="880" y2="800"/>
-          <line x1="1120" y1="0" x2="1120" y2="800"/>
-          <line x1="1360" y1="0" x2="1360" y2="800"/>
-        </g>
-
-        <!-- One alignment: a centerline with a curve, PI/PC/PT nodes, tick
-             marks at even stations, and a curve-data callout — the kind of
-             plan annotation this plugin's commands actually work from. -->
-        <g class="hero-alignment">
-          <path class="pipe-line" d="M 700 620 L 900 440 Q 990 360 1080 360 L 1360 360" fill="none" stroke="#0091C2" stroke-width="2"/>
-          <!-- Station ticks along the tangent run -->
-          <g stroke="#0091C2" stroke-width="1.5" opacity="0.8">
-            <line x1="1140" y1="345" x2="1140" y2="375"/>
-            <line x1="1200" y1="345" x2="1200" y2="375"/>
-            <line x1="1260" y1="345" x2="1260" y2="375"/>
-            <line x1="1320" y1="345" x2="1320" y2="375"/>
-          </g>
-          <text x="1140" y="330" class="hero-station">42+00</text>
-          <text x="1260" y="330" class="hero-station">44+00</text>
-          <circle class="pipe-node" cx="700" cy="620" r="5" fill="#0091C2"/>
-          <circle class="pipe-node" cx="900" cy="440" r="5" fill="#CC3E00"/>
-          <circle class="pipe-node" cx="1080" cy="360" r="5" fill="#0091C2"/>
-          <!-- Curve data callout, PI-referenced -->
-          <g class="hero-callout" transform="translate(930, 250)">
-            <rect width="220" height="76" rx="6" fill="#FFFFFF" stroke="#0091C2" stroke-opacity="0.35"/>
-            <text x="14" y="24" class="hero-callout__label">PI STA 43+18.20</text>
-            <text x="14" y="42" class="hero-callout__label">&#916; 27&#176;30'00" R 350.00'</text>
-            <text x="14" y="60" class="hero-callout__label">L 168.02' T 85.77'</text>
-          </g>
-        </g>
-      </svg>
       <div class="hero__glow"></div>
     </div>
 
@@ -307,13 +262,19 @@
 
           <!-- Two lines, strongest claim first — was a 3-line stack of
                single words ("Civil 3D. / Automated. / Accelerated.")
-               leading with the least informative line. -->
+               leading with the least informative line. Both lines are now
+               the same near-black as every other heading on the site — the
+               old second line set in accent blue was the single biggest
+               thing making the hero read as decorated rather than composed;
+               colour stays reserved for links and the primary button. -->
           <h1 class="hero__title">
             Hours of Civil&nbsp;3D drafting,<br>
-            <span class="line--accent">back in minutes.</span>
+            back in minutes.
           </h1>
 
-          <p class="hero__subtitle">
+          <!-- .lead is the one lead-paragraph treatment defined in base.css;
+               .hero__subtitle here only adds the local max-width/spacing. -->
+          <p class="hero__subtitle lead">
             ALDT adds 53 commands to Civil 3D 2026: automatic profile-view labeling, pipe-crossing inverts, alignment deployment, and surface QA — so the plugin runs the repetitive steps and you check the result.
           </p>
 
@@ -331,17 +292,12 @@
 
           <!-- Trust row: nothing above the fold previously said this is a
                real, listed, paid product. Only verifiable facts — no
-               invented ratings or install counts. -->
-          <ul class="hero__trust" role="list">
-            <li>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-              Listed on the Autodesk App Store
-            </li>
-            <li>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-              $9.99/mo or $99.99/yr
-            </li>
-          </ul>
+               invented ratings or install counts. Was two checkmark-badge
+               chips; a single quiet line of small muted text reads calmer
+               and doesn't compete with the buttons above it for weight. -->
+          <p class="hero__trust">
+            Listed on the Autodesk App Store <span class="hero__trust-sep" aria-hidden="true">&middot;</span> $9.99/mo or $99.99/yr
+          </p>
         </div>
 
         <!-- Stylized product illustration: NOT a screenshot. Hand-built

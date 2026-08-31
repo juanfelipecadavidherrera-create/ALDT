@@ -10,25 +10,26 @@
    Rather than guessing, it carries its own translucent light backdrop at
    all times so its (dark) text stays legible regardless of what's behind
    — this doesn't fight the JS opacity fade, it's just what's rendered once
-   that opacity resolves to 1. .scrolled strengthens the same backdrop. */
+   that opacity resolves to 1. .scrolled strengthens the same backdrop into
+   a proper bar once there's page content to separate it from. */
 .nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 1.4rem 0;
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  padding: var(--space-4) 0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   transition: var(--transition);
 }
 
 .nav.scrolled {
-  padding: 0.8rem 0;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  padding: var(--space-3) 0;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
 }
 
@@ -42,44 +43,57 @@
 .nav__logo {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: var(--space-2);
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.15rem;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: var(--tracking-h3);
 }
 
 .nav__logo-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
 }
 
 .nav__links {
   display: flex;
   align-items: center;
-  gap: 2.5rem;
+  /* Generous spacing between a handful of quiet links is what makes a nav
+     feel unhurried rather than crowded — this is the single biggest lever
+     for the "light, gets out of the way" brief. */
+  gap: var(--space-7);
   list-style: none;
 }
 
 .nav__links a {
-  font-size: 0.88rem;
+  font-size: var(--fs-small);
   font-weight: 500;
-  /* Slightly darker than the page's --text-muted on purpose: the nav
-     backdrop is translucent, so link text needs extra contrast margin to
-     stay >=4.5:1 even when whatever's behind the blur is dark. */
+  /* Deliberately darker than --text-muted (#56606D): the nav backdrop is
+     translucent, so link text needs extra contrast margin to stay >=4.5:1
+     even when whatever's behind the blur is dark (the WebGL intro mid-fade,
+     for one). Not a token because it exists for this one legibility
+     reason, not as a reusable design-system colour. */
   color: #3D4552;
-  transition: color 0.2s;
+  transition: color var(--dur-fast) var(--ease-out);
 }
 .nav__links a:hover { color: var(--text-primary); }
+
+.nav__links a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
 
 /* The colour has to be restated here, not left to .btn--primary. Both the
    CTA and the plain nav links are matched by `.nav__links a` (specificity
    0-1-1), which beats `.btn--primary` (0-1-0) — so the button rendered its
    white label in the muted grey link colour instead: 1.99:1 on the accent
-   fill. `.nav__links .nav__cta` ties on specificity and wins on order. */
+   fill. `.nav__links .nav__cta` ties on specificity and wins on order.
+   Radius/pill shape comes free from .btn's --radius-pill — nothing to add
+   here. */
 .nav__links .nav__cta {
   font-size: 0.85rem;
-  padding: 0.55rem 1.2rem;
+  padding: 0.6rem 1.3rem;
   color: var(--bg-primary);
 }
 .nav__links .nav__cta:hover { color: var(--bg-primary); }
@@ -118,7 +132,9 @@
   height: 2px;
   border-radius: 2px;
   background: var(--text-primary);
-  transition: transform 0.25s ease, opacity 0.2s ease, background 0.2s ease;
+  transition: transform var(--dur-fast) var(--ease-out),
+              opacity var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
 }
 
 .nav__toggle-icon {
@@ -145,7 +161,7 @@
   display: flex;
   align-items: center;
   overflow: hidden;
-  padding: 7rem 0 4rem;
+  padding: var(--space-9) 0 var(--space-8);
 }
 
 .hero__bg {
@@ -155,45 +171,23 @@
   z-index: 0;
 }
 
-#hero-pipes {
-  width: 100%;
-  height: 100%;
-}
-
-/* Two different alphas on one SVG: the survey grid is uniform and stays
-   faint everywhere (including behind the headline), while the alignment /
-   curve-data group is drawn only at x > 680 in the 1440-wide viewBox so it
-   can read more clearly without fighting the type.
-
-   That x > 680 guarantee is a DESKTOP-ONLY one. The SVG uses
-   preserveAspectRatio="xMidYMid slice", which crops around the horizontal
-   midpoint: on a narrow viewport the right half of the viewBox is dragged
-   into the centre of the screen, and the alignment's leader line and
-   station text end up straight across the headline and buttons. So the
-   group is dropped at the same breakpoint that drops the mockup it was
-   drawn to sit under — see the media query at the bottom of this file. */
-.hero-grid { opacity: 0.14; }
-.hero-alignment { opacity: 0.6; }
-
-.hero-station,
-.hero-callout__label {
-  font-family: var(--font-mono);
-  font-size: 15px;
-  letter-spacing: 0.02em;
-  fill: var(--accent);
-}
-.hero-callout__label { fill: var(--text-muted); font-size: 13px; }
-.hero-callout rect { stroke-width: 1.5; }
-
+/* One soft, off-center glow — the entire background layer. Everything
+   this used to sit alongside (a survey grid, an alignment path with a
+   curve-data callout, a station-tick group) has been removed: an Apple
+   hero puts one idea on clean ground, and that layer of plan-view detail
+   was visual noise competing with the headline and the product panel for
+   attention, not supporting either. What's left is deliberately almost
+   nothing — a faint warmth behind the product panel, gone if you're not
+   looking for it. */
 .hero__glow {
   position: absolute;
-  width: 600px;
-  height: 600px;
+  width: 640px;
+  height: 640px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,122,163,0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(0, 122, 163, 0.07) 0%, transparent 70%);
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  right: 8%;
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
@@ -205,7 +199,7 @@
   display: grid;
   grid-template-columns: minmax(0, 560px) 1fr;
   align-items: center;
-  gap: 3rem;
+  gap: var(--space-7);
 }
 
 .hero__content {
@@ -215,8 +209,8 @@
 .hero__eyebrow {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.8rem;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
 
 .hero__eyebrow-dot {
@@ -232,65 +226,69 @@
   50%       { box-shadow: 0 0 0 8px rgba(0,122,163,0); }
 }
 
+/* A quiet compatibility/version badge, not a shout — muted colour, no
+   accent. Colour on large or attention-seeking type is reserved for links
+   and the primary action; this used to run in --accent blue, which put a
+   third colour voice above the fold before the reader even reached the
+   headline. */
 .hero__eyebrow-text {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--accent);
+  font-size: var(--fs-small);
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .hero__eyebrow-dot { animation: none; }
+}
+
+/* h1 is styled centrally in base.css (size, tracking, weight, the single
+   near-black colour) — this only adds the local spacing. The headline's
+   second line used to be set in accent blue; it is now the same colour as
+   the first, which is the change that does the most to make the hero read
+   as composed rather than decorated. */
 .hero__title {
-  font-family: var(--font-display);
-  font-size: clamp(2.75rem, 5.2vw, 4.4rem);
-  font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-  margin-bottom: 1.6rem;
+  margin-bottom: var(--space-5);
 }
-
-.hero__title .line--accent { color: var(--accent); }
-.hero__title .line--warm   { color: var(--accent-warm); }
 
 .hero__subtitle {
-  font-size: 1.1rem;
-  color: var(--text-muted);
-  max-width: 540px;
-  line-height: 1.7;
-  margin-bottom: 2.2rem;
+  max-width: 500px;
+  margin-bottom: var(--space-6);
 }
 
 .hero__actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--space-4);
   flex-wrap: wrap;
-  margin-bottom: 1.8rem;
+  margin-bottom: var(--space-5);
+}
+
+/* base.css's .btn has no focus-visible treatment of its own (border:none
+   plus no outline rule — verified by tabbing to these two buttons and
+   finding no visible ring at all), so it's added here, scoped to the
+   hero's own buttons. */
+.hero__actions .btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 /* ── Trust row ──────────────────────────────────────────────── */
 /* The only thing above the fold that told a visitor this is a real,
-   listed, paid product used to be the small mono eyebrow. Both lines
-   here are facts already stated elsewhere on the page (JSON-LD, the
-   download section) — nothing invented for credibility's sake. */
+   listed, paid product used to be the small mono eyebrow. What follows
+   here is stated elsewhere on the page too (JSON-LD, the download
+   section) — nothing invented for credibility's sake. Was two
+   checkmark-badge chips; now one small, calm line of text — quieter than
+   the buttons above it, present for the visitor who's already scanning
+   for reassurance rather than announcing itself to everyone. */
 .hero__trust {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem 1.6rem;
-  list-style: none;
-}
-
-.hero__trust li {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
+  font-size: var(--fs-small);
   color: var(--text-muted);
 }
 
-.hero__trust svg {
-  flex: none;
-  color: var(--accent);
+.hero__trust-sep {
+  margin: 0 0.4em;
+  color: var(--border);
 }
 
 /* ── Product illustration ──────────────────────────────────────
@@ -298,7 +296,9 @@
    simplified panel chrome that doesn't reproduce Autodesk's ribbon or
    any brand mark. A ribbon-style command strip (HTML) sits above a
    profile-view panel (inline SVG) — the two things ALDT actually adds
-   to Civil 3D and produces from it. ────────────────────────────── */
+   to Civil 3D and produces from it. Reads as a clean product shot: a
+   soft shadow instead of a hairline border, generous internal padding.
+   ────────────────────────────── */
 .hero__mockup {
   position: relative;
   justify-self: end;
@@ -312,21 +312,22 @@
   right: 20px;
   z-index: 1;
   background: var(--bg-primary);
-  border: 1px solid var(--border);
-  border-radius: 100px;
+  border-radius: var(--radius-pill);
   padding: 0.4em 1em;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   color: var(--accent);
-  box-shadow: 0 8px 20px rgba(15,23,42,0.08);
+  box-shadow: var(--shadow-sm);
 }
 
+/* No hairline border — depth comes from --shadow-lg on the site's soft
+   surface radius instead, which is what separates a clean product shot
+   from a boxed-in screenshot. */
 .mockup {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--bg-primary);
-  box-shadow: 0 20px 48px rgba(15,23,42,0.10);
+  border-radius: var(--radius-card);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 
@@ -336,8 +337,8 @@
 .mockup__ribbon {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1rem;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
@@ -348,8 +349,8 @@
   font-weight: 700;
   font-size: 0.78rem;
   color: var(--accent);
-  padding-right: 0.6rem;
-  margin-right: 0.2rem;
+  padding-right: var(--space-3);
+  margin-right: var(--space-1);
   border-right: 1px solid var(--border);
   white-space: nowrap;
 }
@@ -366,15 +367,18 @@
   white-space: nowrap;
 }
 
+/* Generous internal padding — was a tight 1.2rem, now on the spacing
+   scale and noticeably more breathing room, per a "clean product shot"
+   rather than a cropped screenshot. */
 .mockup__panel {
-  padding: 1.2rem 1.2rem 1.4rem;
+  padding: var(--space-6) var(--space-6) var(--space-7);
 }
 
 .mockup__panel-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.8rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
 .mockup__panel-dot {
@@ -409,8 +413,11 @@
   font-weight: 500;
 }
 
+/* Illustrative-output caption: an honesty requirement, not decoration —
+   it must stay legible and must not be styled to look like a real
+   screenshot's chrome. */
 .mockup__caption {
-  margin-top: 0.9rem;
+  margin-top: var(--space-4);
   font-size: 0.75rem;
   color: var(--text-muted);
   font-style: italic;
@@ -418,18 +425,22 @@
 
 .hero__scroll-hint {
   position: absolute;
-  bottom: 2.5rem;
+  bottom: var(--space-6);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   color: var(--text-muted);
-  font-size: 0.72rem;
-  font-family: var(--font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  /* Body face, sentence case. The mono-uppercase-tracked treatment was
+     removed from every other label on the page; leaving it on the one word
+     at the bottom of the hero would reintroduce the exact voice the restyle
+     set out to drop. */
+  font-size: var(--fs-small);
+  font-family: var(--font-body);
+  letter-spacing: 0;
+  text-transform: none;
   z-index: 1;
 }
 
@@ -442,6 +453,9 @@
   50%       { transform: translateY(6px); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .hero__scroll-arrow { animation: none; }
+}
 
 /* ── Responsive ─────────────────────────────────────────────── */
 /* The product illustration needs real width to read (station labels,
@@ -454,13 +468,6 @@
   .hero__layout { grid-template-columns: 1fr; }
   .hero__mockup { display: none; }
   .hero__content { max-width: 640px; }
-
-  /* The alignment group exists to annotate the space under the mockup.
-     With the mockup gone there is nothing for it to sit under, and
-     "slice" cropping would drag it across the copy instead (see the
-     .hero-alignment note above). The survey grid stays — it is uniform,
-     so cropping it is harmless. */
-  .hero-alignment { display: none; }
 }
 
 @media (max-width: 680px) {
@@ -484,15 +491,17 @@
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--border);
-    box-shadow: 0 16px 32px rgba(15,23,42,0.08);
-    padding: 0.5rem 1.4rem 1.4rem;
+    box-shadow: var(--shadow-md);
+    padding: var(--space-3) var(--space-5) var(--space-5);
     max-height: calc(100vh - 100%);
     overflow-y: auto;
     transform: translateY(-8px);
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: transform 0.25s ease, opacity 0.2s ease, visibility 0.25s;
+    transition: transform var(--dur-fast) var(--ease-out),
+                opacity var(--dur-fast) var(--ease-out),
+                visibility var(--dur-fast);
   }
 
   .nav__links.is-open {
@@ -515,11 +524,9 @@
 
   .nav__cta {
     justify-content: center;
-    margin-top: 0.8rem;
+    margin-top: var(--space-3);
     padding: 0.8rem 1.2rem;
   }
-
-  .hero__title { font-size: clamp(2.2rem, 11vw, 3.2rem); }
 }
 
 /* While the mobile panel is open, lock background scroll — it visually
