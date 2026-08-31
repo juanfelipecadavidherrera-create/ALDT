@@ -292,12 +292,23 @@
   max-width: 480px;
 }
 
+/* An explicit two-track grid rather than a wrapping flex row. The
+   badge-slot reservation below only buys anything while the cards are
+   side by side; the moment they stack it is just a hole above the
+   Monthly card. With flex-wrap the changeover happened at whatever
+   width 2×360px + the gap stopped fitting (~835px viewport) — a
+   threshold no media query could name, so the reservation could not be
+   switched off in step with it. Now one query at 900px owns "side by
+   side" vs "stacked", and the reservation keys off the same query.
+   --badge-slot is the single source of truth for that reserved height,
+   read by both .pricing__badge and the empty ::before slot. */
 .pricing__grid {
-  display: flex;
+  --badge-slot: 2rem;
+  display: grid;
+  grid-template-columns: repeat(2, 360px);
   gap: var(--space-7);
   justify-content: center;
   align-items: stretch;
-  flex-wrap: wrap;
 }
 
 /* Soft surfaces, no hairline borders — depth is a shadow, and the two
@@ -310,7 +321,7 @@
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-sm);
   padding: var(--space-8) var(--space-7);
-  width: 360px;
+  width: 100%; /* the grid track sets the column width; see .pricing__grid */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -350,6 +361,36 @@
   border-radius: var(--radius-pill);
   margin-bottom: var(--space-4);
   white-space: nowrap;
+  /* Fixed height, not min-height: the pill's height is the measurement
+     the Monthly card has to reproduce, and a min-height would let a
+     different font metric grow the pill past the reserved slot and
+     silently break the alignment again. nowrap means one line always,
+     so pinning the box costs nothing. */
+  height: var(--badge-slot);
+}
+
+/* A price comparison is a table the reader scans across, and the badge
+   was pushing the Annual card's plan name, price and feature list 47px
+   below the Monthly card's — the eye had to re-find its place in each
+   column. Any card *without* a badge reserves the same box, so the two
+   columns start their content on the same line.
+
+   :has() rather than :not(.pricing__card--featured) so the rule keys
+   off the thing that actually causes the offset; if the badge ever
+   moves to the other tier, or both tiers get one, this needs no edit.
+   Where :has() is unsupported the rule is simply dropped and the
+   layout falls back to today's behaviour rather than breaking.
+
+   A pseudo-element rather than an <span aria-hidden="true"> spacer:
+   nothing enters the accessibility tree at all, so there is no empty
+   element for a screen reader to announce or skip, and no markup to
+   keep in sync with the badge's height. Because the reservation sits
+   above the feature list, it also survives the two cards carrying
+   different numbers of bullets — as they already do. */
+.pricing__card:not(:has(.pricing__badge))::before {
+  content: "";
+  flex: 0 0 var(--badge-slot);
+  margin-bottom: var(--space-4);
 }
 
 .pricing__period {
@@ -698,16 +739,24 @@
   padding: var(--space-9) 0 var(--space-6);
 }
 
+/* Was flex + space-between, which meant the gutters were leftovers
+   rather than a rhythm: at 1440 that produced a 103px hole between the
+   brand and the first link column and 64px between columns that
+   actually belong together — the widest gap sat exactly where the
+   relationship was loosest, so the four blocks read as four unrelated
+   islands. Both levels are grids now, sharing one --space-7 gutter, so
+   every vertical channel down the footer is the same 48px and the
+   columns read as one set. The tracks themselves stay unequal on
+   purpose (the brand holds a paragraph, Toolsets holds a 12-item
+   two-column list) — it is the gutter, not the track width, that
+   carries the rhythm. */
 .footer__inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-6);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1.2fr 4fr;
+  gap: var(--space-7);
+  align-items: start;
   margin-bottom: var(--space-8);
 }
-
-.footer__brand { max-width: 260px; }
 .footer__brand .nav__logo { margin-bottom: var(--space-3); }
 
 .footer__brand p {
@@ -728,19 +777,34 @@
 .footer__store-link:hover { color: var(--accent-dark); }
 .footer__store-link svg { flex-shrink: 0; }
 
+/* Same --space-7 gutter as .footer__inner, so the channel between the
+   brand and Toolsets is identical to the ones between the link columns
+   — the two nested grids read as a single four-column field. Toolsets
+   gets 2fr because it carries twelve labels in two sub-columns; the
+   1fr tracks are sized for the longest single label they hold. */
 .footer__links {
-  display: flex;
-  gap: var(--space-8);
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: var(--space-7);
 }
 
 /* Quiet sentence-case column headers, matching .section-label's move
    away from mono/uppercase — a footer full of shouted micro-labels is
    exactly the "decorated, not composed" read this pass is fixing. */
+/* The hairline is what makes "Toolsets" unambiguous. That one heading
+   sits over a two-column list, so before this the right-hand six links
+   had nothing above them and read as an orphaned list; the rule runs
+   the full width of the column's grid area, visibly roofing both
+   sub-columns. Applied to all three headings rather than just that one,
+   so it reads as the footer's heading treatment instead of a marker on
+   a single column, and kept at the same 0.08 alpha as .footer__bottom
+   so it closes a group without drawing a table. */
 .footer__col h4 {
   font-size: var(--fs-small);
   font-weight: 600;
   color: var(--text-muted);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
   margin-bottom: var(--space-4);
 }
 
@@ -824,6 +888,19 @@
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
+/* Footer ladder. Below 1200px the container is no longer wide enough
+   to hold a brand paragraph and four columns without squeezing the
+   1fr tracks to ~150px, where "Autodesk App Store Listing" breaks over
+   three lines. Rather than let the columns degrade, the brand takes its
+   own full-width row and hands its share to the link grid, which keeps
+   the same 2fr 1fr 1fr proportions and the same gutter. */
+@media (max-width: 1200px) {
+  .footer__inner { grid-template-columns: 1fr; }
+  /* Uncapped in the two-track layout because the grid track caps it;
+     on its own row it needs a reading measure of its own. */
+  .footer__brand p { max-width: 46ch; }
+}
+
 @media (max-width: 900px) {
   .workflow__steps {
     grid-template-columns: 1fr;
@@ -846,6 +923,23 @@
   }
 
   .ribbon-mock__panel { justify-content: flex-start; }
+
+  /* Single column: 900px is the last width at which two 360px cards
+     plus the gap still fit inside the container (92vw), so this is
+     where the comparison stops being side-by-side. Once stacked there
+     is nothing to align across, and the reserved badge slot would be a
+     bare 2rem hole above the Monthly card — so it collapses here, in
+     the same query that causes the stacking. */
+  .pricing__grid { grid-template-columns: min(400px, 100%); }
+  .pricing__card:not(:has(.pricing__badge))::before { display: none; }
+
+  /* Three link columns no longer fit: at 900px a 2fr track leaves the
+     toolset sub-columns around 130px, which breaks most of the twelve
+     labels over two lines. Two equal columns for Navigate and Connect,
+     with Toolsets spanning both above them so its heading still roofs
+     the whole list. */
+  .footer__links { grid-template-columns: 1fr 1fr; }
+  .footer__col--toolsets { grid-column: 1 / -1; }
 }
 
 @media (max-width: 680px) {
@@ -862,19 +956,44 @@
     padding-bottom: var(--space-6);
   }
 
-  .footer__inner { flex-direction: column; }
-  .footer__links { gap: var(--space-6); }
+  .footer__links {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  .footer__col--toolsets { grid-column: auto; }
 
   /* Text links in a dense footer are the one interactive element this
-     file adds in quantity — pad them toward the ≥44px touch-target
-     guideline on mobile without inflating the desktop footer. */
-  .footer__col a { display: inline-block; padding: 0.55rem 0; }
+     file adds in quantity — pad them to the ≥44px touch-target
+     guideline on mobile without inflating the desktop footer. 0.55rem
+     only reached 40px against the 22.4px line box (measured), which is
+     under the floor; 0.7rem clears it at 44.8px. */
+  .footer__col a { display: inline-block; padding: 0.7rem 0; }
   .footer__social a { padding: var(--space-2); margin: calc(var(--space-2) * -1); }
 
-  .pricing__card { width: 100%; max-width: 400px; padding: var(--space-7) var(--space-6); }
+  /* Width is the grid track's job now (set at the 900px query above);
+     all that is left to do here is buy back some horizontal padding on
+     a narrow screen. */
+  .pricing__card { padding: var(--space-7) var(--space-6); }
 
   .ribbon-mock__group { padding: 0 1rem; }
   .ribbon-mock__btn { width: 60px; }
+}
+
+/* Same defect and same fix as .hero__actions in nav-hero.css, at the
+   same 520px so both sections change over together: below this width
+   the two buttons stop fitting side by side, flex-wrap drops them into
+   a column, and each shrink-wraps to its own label — "Connect on
+   LinkedIn" ends up visibly wider than "Get the Plugin", leaving the
+   pair a ragged right edge. Stretching them to the column width makes
+   the two read as one stacked control group and gives the secondary
+   action the same full-width touch target as the primary. .btn is
+   justify-content:center, so both the outline and the primary button
+   keep their labels centred when stretched. */
+@media (max-width: 520px) {
+  .about__links {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 @media (max-width: 480px) {
