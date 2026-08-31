@@ -41,21 +41,104 @@ window.ALDT = (function () {
   // Matches the CSS tokens in base.css: 16px of travel, not 55, over a longer
   // duration on a decelerating quint. The old 55px/power3 combination read as
   // a slide-in on every element; this reads as content settling into place.
-  gsap.utils.toArray('.reveal').forEach((el) => {
-    gsap.fromTo(
-      el,
-      { opacity: 0, y: 16 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1.0,
-        ease: 'expo.out',
-        scrollTrigger: {
-          trigger: el,
-          start: 'top 90%',
-        },
+  //
+  // Grouped, not one trigger per element: .reveal elements are clustered by
+  // on-page proximity (the gap between one element's bottom edge and the
+  // next one's top) rather than one flat pass, so a tight cluster like a
+  // section's label/heading/lead trio arrives as one staggered pass in
+  // reading order, while a .reveal that sits a full section away (e.g. the
+  // workflow showcase, well below its section's three-line intro) still
+  // gets its own trigger instead of firing early alongside a heading it's
+  // nowhere near yet. Measured once at load — this only has to be roughly
+  // right, not pixel-exact, to read as "arrives together" vs. "arrives on
+  // its own".
+  const GROUP_GAP = 220; // px
+  const revealGroups = [];
+  {
+    let current = [];
+    let prevBottom = null;
+    gsap.utils.toArray('.reveal').forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      const top = rect.top + window.scrollY;
+      const bottom = rect.bottom + window.scrollY;
+      if (prevBottom !== null && top - prevBottom > GROUP_GAP) {
+        revealGroups.push(current);
+        current = [];
       }
-    );
+      current.push(el);
+      prevBottom = prevBottom === null ? bottom : Math.max(prevBottom, bottom);
+    });
+    if (current.length) revealGroups.push(current);
+  }
+
+  // A handful of larger elements (a heading, a whole visual block) get a
+  // touch of scale added to the settle on top of the shared fade + rise;
+  // small text elements keep the plain version so the craft reads as
+  // considered rather than busy on every single line.
+  const REVEAL_SCALE_SELECTOR =
+    'h2, .about__visual, .pricing__grid, .workflow__showcase, .download__actions';
+
+  const revealMM = gsap.matchMedia();
+
+  revealMM.add('(prefers-reduced-motion: no-preference)', () => {
+    revealGroups.forEach((els) => {
+      gsap.fromTo(
+        els,
+        {
+          opacity: 0,
+          y: 16,
+          scale: (i, target) => (target.matches(REVEAL_SCALE_SELECTOR) ? 0.98 : 1),
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 1.0,
+          ease: 'expo.out',
+          stagger: 0.09,
+          scrollTrigger: {
+            trigger: els[0],
+            start: 'top 90%',
+          },
+        }
+      );
+    });
+
+    // Section headings drift a little slower than the content beneath
+    // them while their section scrolls through — the one continuous,
+    // scrubbed parallax in this generic system (the hero panel and the
+    // nav have their own, in hero.js). Driven as yPercent, not y: the
+    // fromTo above already animates each element's `y` (px) once on
+    // arrival, and yPercent is a distinct GSAP-tracked transform
+    // component, so this composes with that one-shot settle instead of
+    // fighting it for control of the same property.
+    gsap.utils.toArray('h2.reveal').forEach((h2) => {
+      const section = h2.closest('section');
+      if (!section) return;
+      gsap.fromTo(
+        h2,
+        { yPercent: 0 },
+        {
+          yPercent: -30,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top bottom',
+            end: 'bottom top',
+            scrub: true,
+          },
+        }
+      );
+    });
+  });
+
+  revealMM.add('(prefers-reduced-motion: reduce)', () => {
+    // No stagger, no scale, no drift — .js .reveal is already forced
+    // opaque/untransformed by base.css's reduced-motion rule, so this
+    // only has to make sure no leftover inline transform value (from a
+    // preference flip mid-session, which matchMedia re-runs this for)
+    // can linger on top of it.
+    gsap.set('.reveal', { clearProps: 'transform' });
   });
 
   /* ── Smooth anchor scroll ───────────────────────────────── */

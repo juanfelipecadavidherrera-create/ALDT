@@ -10,13 +10,66 @@
   const { gsap, ScrollTrigger } = window.ALDT;
 
   /* ── Navigation scroll behavior ─────────────────────────── */
+  /* Two independent moments, both scoped by gsap.matchMedia() so
+     reduced-motion gets a version with no scrub and no scrolled-linked
+     sliding at all:
+
+     1. Condense — nav-hero.css exposes --nav-condense (0-1) on .nav and
+        reads it via calc() for padding/background/blur/hairline. Under
+        no-preference this is a genuine scrub, tied 1:1 to the first
+        ~140px of scroll rather than snapping at a threshold. Under
+        reduced motion it's a single instant flip at a fixed point — same
+        end states, no continuous scroll-position tracking.
+
+     2. Hide on scroll down / reveal on scroll up — a direction change,
+        not a position, so it's a plain two-state GSAP tween (yPercent,
+        which composes with intro.js's own `y` fade-in instead of
+        fighting it for the same property) rather than a scrub. Held off
+        until well past where the intro handshake and its scroll failsafe
+        (see intro.js) resolve, so it can never race that fade-in and
+        make the nav appear already sliding as it becomes visible. Not
+        offered at all under reduced motion — nav just stays put. */
   const nav = document.querySelector('.nav');
   if (nav) {
-    ScrollTrigger.create({
-      start: 'top -60',
-      onUpdate(self) {
-        nav.classList.toggle('scrolled', self.progress > 0);
-      },
+    const navMM = gsap.matchMedia();
+
+    navMM.add('(prefers-reduced-motion: no-preference)', () => {
+      gsap.fromTo(nav,
+        { '--nav-condense': 0 },
+        {
+          '--nav-condense': 1,
+          ease: 'none',
+          scrollTrigger: { start: 0, end: 140, scrub: true },
+        }
+      );
+
+      const HIDE_AFTER = 480; // px — clear of the intro handshake
+      let hidden = false;
+      ScrollTrigger.create({
+        start: 0,
+        end: 'max',
+        onUpdate(self) {
+          if (document.body.classList.contains('nav-open')) return;
+          const y = self.scroll();
+          const goingDown = self.direction === 1;
+          if (goingDown && y > HIDE_AFTER && !hidden) {
+            hidden = true;
+            gsap.to(nav, { yPercent: -100, duration: 0.4, ease: 'power2.inOut', overwrite: 'auto' });
+          } else if (!goingDown && hidden) {
+            hidden = false;
+            gsap.to(nav, { yPercent: 0, duration: 0.4, ease: 'power2.inOut', overwrite: 'auto' });
+          }
+        },
+      });
+    });
+
+    navMM.add('(prefers-reduced-motion: reduce)', () => {
+      ScrollTrigger.create({
+        start: 'top -80',
+        onToggle(self) {
+          nav.style.setProperty('--nav-condense', self.isActive ? '1' : '0');
+        },
+      });
     });
   }
 
@@ -156,6 +209,32 @@
       .fromTo('.hero__scroll-hint',
         { opacity: 0 },
         { opacity: 1, duration: 0.6 }, '-=0.2');
+  });
+
+  /* ── Hero product panel parallax ──────────────────────────
+     A separate matchMedia context (desktop widths only — the mockup is
+     display:none below 980px, see nav-hero.css, so there's nothing to
+     drive there) scrubbed to the hero's own scroll traversal: the panel
+     lags a little behind the copy beside it as the hero scrolls past,
+     the one moment on the page where scrolling itself visibly moves two
+     things at different rates. Driven as yPercent, not y, so it composes
+     with the entrance tween's `y` above instead of fighting it for
+     control of the same property. */
+  heroMM.add('(prefers-reduced-motion: no-preference) and (min-width: 981px)', () => {
+    const heroSection = document.getElementById('home');
+    const mockup = document.querySelector('.hero__mockup');
+    if (!heroSection || !mockup) return;
+
+    gsap.to(mockup, {
+      yPercent: 12,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: heroSection,
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+      },
+    });
   });
 
   heroMM.add('(prefers-reduced-motion: reduce)', () => {

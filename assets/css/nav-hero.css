@@ -10,27 +10,38 @@
    Rather than guessing, it carries its own translucent light backdrop at
    all times so its (dark) text stays legible regardless of what's behind
    — this doesn't fight the JS opacity fade, it's just what's rendered once
-   that opacity resolves to 1. .scrolled strengthens the same backdrop into
-   a proper bar once there's page content to separate it from. */
+   that opacity resolves to 1.
+
+   --nav-condense (0 → 1) is what used to be the binary .scrolled class:
+   hero.js now drives it continuously (scrubbed under no-preference,
+   flipped instantly at a threshold under reduced motion) so the bar
+   condenses in step with the first ~140px of scroll instead of snapping.
+   The default of 0 in every var() below is the resting state, so a page
+   where that JS never runs (blocked CDN, JS disabled) still renders the
+   correct un-condensed nav — same progressive-enhancement contract as
+   the .reveal system in base.css.
+
+   The hide-on-scroll-down / reveal-on-scroll-up slide is a separate,
+   direction-triggered move, not a scrub — hero.js animates it with GSAP
+   directly (as `yPercent`, composing with intro.js's own `y` fade-in
+   rather than fighting it over the same property), so `transform` is
+   deliberately left out of the transition below. background-color keeps
+   a short transition of its own regardless of motion preference — it's
+   the one thing here that still needs smoothing under reduced motion,
+   since that branch flips --nav-condense in a single instant step
+   rather than scrubbing it. */
 .nav {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 100;
-  padding: var(--space-4) 0;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: var(--transition);
-}
-
-.nav.scrolled {
-  padding: var(--space-3) 0;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
+  padding: calc(var(--space-4) - var(--space-1) * var(--nav-condense, 0)) 0;
+  background: rgba(255, 255, 255, calc(0.7 + 0.18 * var(--nav-condense, 0)));
+  backdrop-filter: blur(calc(16px + 4px * var(--nav-condense, 0)));
+  -webkit-backdrop-filter: blur(calc(16px + 4px * var(--nav-condense, 0)));
+  border-bottom: 1px solid rgba(15, 23, 42, calc(0.12 * var(--nav-condense, 0)));
+  transition: background-color var(--dur-fast) var(--ease-out);
 }
 
 .nav__inner {
