@@ -343,14 +343,20 @@
 }
 
 /* A quiet two-column list of code tokens, not a grid of bordered chips:
-   token + title sit on one row, the row itself carries no fill or border
-   at rest so 53 of them read as text, not as fifty-three little boxes. */
+   the row carries no fill or border at rest, so 53 of them read as text
+   rather than as fifty-three little boxes.
+
+   Token sits ABOVE its title, not beside it. Side by side, the two share a
+   column roughly 190px wide and the token — which cannot wrap, being a
+   single code word — takes most of it, leaving the title to break across up
+   to five lines ("Coral Gables Sewer As-Built Importer"). Stacking gives the
+   title the full column and costs one line of height per row. */
 .tools-scroll__cmd-list li {
   display: flex;
-  align-items: baseline;
-  gap: 0.55rem;
+  flex-direction: column;
+  gap: 0.1rem;
   border-radius: var(--radius);
-  padding: 0.45em 0.55em;
+  padding: 0.4em 0.55em;
   transition: background var(--dur-fast) var(--ease-out),
               opacity var(--dur-base) var(--ease-out);
 }
