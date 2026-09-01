@@ -321,12 +321,19 @@
 /* --border is a 0.12-alpha hairline meant for edges seen against a
    large flat area; as a glyph it renders at roughly 1.2:1 and simply
    isn't there. A separator you can't see doesn't separate, so this uses
-   a light neutral that reads as a mark while staying quieter than the
-   text either side of it. Decorative and aria-hidden, so it carries no
-   contrast requirement — it just has to be visible. */
+   a neutral that reads as a mark while staying quieter than the text
+   either side of it.
+
+   It is decorative and aria-hidden, so WCAG does not require a ratio of
+   it — but the first value tried here, #A6AEB8, came back at 2.24:1 and
+   would have sat in the contrast report as a permanent explained
+   exception. #72777E is the lightest value on the same neutral axis that
+   clears 4.5:1 (it measures 4.51:1), so the check stays clean with no
+   exception to remember, and it is still visibly quieter than the
+   --text-muted (6.38:1) text on either side of it. */
 .hero__trust-sep {
   margin: 0 0.5em;
-  color: #A6AEB8;
+  color: #72777E;
 }
 
 /* ── Product illustration ──────────────────────────────────────

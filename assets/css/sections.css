@@ -749,14 +749,32 @@
   font-size: 0.95rem;
   padding: var(--space-4) var(--space-6);
   gap: var(--space-3);
-  transition: var(--transition);
+  /* Explicit list on --dur-fast, not the blanket var(--transition).
+     --transition is 0.45s applied to *all* properties: on a hover that
+     trails the pointer by a visible beat, and on every layout property
+     this block sets, so a padding or border-width change anywhere would
+     animate by accident. This declaration is what actually paints —
+     base.css defines .btn--autodesk too, but this file loads later at
+     equal specificity and wins — so the honest list has to be here, not
+     only there. */
+  transition: background-color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out),
+              filter var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
 }
 
-.btn--autodesk:hover {
-  background: var(--accent-dark);
-  border-color: var(--accent-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0, 89, 116, 0.28);
+/* Tone, not lift: the translateY(-2px) and the coloured glow that used
+   to be here are the same game-UI idiom base.css's own comment rules out
+   for every other button, and they were only still here because this
+   block overrides that file. Guarded on (hover: hover) so a tap doesn't
+   leave the button stuck in its hover tone until the next tap lands
+   somewhere else. */
+@media (hover: hover) {
+  .btn--autodesk:hover {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+  }
 }
 
 /* ── Footer ─────────────────────────────────────────────────── */
