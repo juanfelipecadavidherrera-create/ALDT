@@ -208,6 +208,28 @@ h3 { font-size: var(--fs-h3);      letter-spacing: var(--tracking-h3);      line
   box-shadow: var(--shadow-sm);
 }
 
+/* ── Interaction states ─────────────────────────────────────
+   Three states, three mechanisms, deliberately non-overlapping so a
+   keyboard user and a mouse user are never shown the same thing:
+
+     hover  changes tone only — fill or ink, nothing else. --dur-fast; a
+            hover on --dur-base (0.45s) trails the pointer by a visible
+            beat and reads as lag, not calm.
+     press  carries the tone one step further and adds one site-wide
+            scale(0.975). The tone half is what survives
+            prefers-reduced-motion and what a touch user gets.
+     focus  is a ring and only a ring, so it can never be mistaken for
+            hover on a control that happens to be under the pointer.
+
+   Every :hover block below sits inside @media (hover: hover). A tap on a
+   touch screen leaves the element in :hover until the next tap lands
+   elsewhere, so an unguarded hover is a state the user cannot dismiss.
+
+   Transition property lists are always explicit. `transition: all` (or the
+   bare `var(--transition)`, which is the same thing) hands the browser
+   padding, width and border-width to animate as well, and it will do so
+   the moment any of them change. */
+
 /* ── Buttons ────────────────────────────────────────────────── */
 /* Pills, and a hover that changes tone rather than jumping. The old
    translateY(-2px) plus a coloured glow on every button made the page feel
@@ -227,53 +249,91 @@ h3 { font-size: var(--fs-h3);      letter-spacing: var(--tracking-h3);      line
   line-height: 1;
   cursor: pointer;
   border: none;
-  transition: background var(--dur-fast) var(--ease-out),
+  /* iOS/Android paint their own grey flash on tap. With a real :active
+     state defined below, that flash is a second, uglier press state
+     landing a frame earlier than ours. */
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur-fast) var(--ease-out),
               color var(--dur-fast) var(--ease-out),
               border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out),
+              filter var(--dur-fast) var(--ease-out),
               transform var(--dur-fast) var(--ease-out);
 }
-.btn:active { transform: scale(0.975); }
+
+/* The press tone is a brightness step rather than a fifth colour token per
+   variant. Four variants carry four different fills and there is no
+   "darker than --accent-dark" in the palette; brightness darkens all of
+   them by the same perceptual amount for free. It is also contrast-safe by
+   construction: every variant is either a dark fill with light text or a
+   light fill with dark ink, so darkening the whole element can only widen
+   the gap between them, never close it. Measured ratios are in the report.
+   Pressing already implies hovering on a pointer device, so this has to be
+   a step *beyond* the hover tone or the press would be invisible. */
+.btn:active {
+  filter: brightness(0.94);
+  transform: scale(0.975);
+}
 
 .btn--primary {
   background: var(--accent);
   color: var(--bg-primary);
 }
-.btn--primary:hover { background: var(--accent-dark); }
 
 .btn--outline {
   background: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
 }
-.btn--outline:hover {
-  background: rgba(15, 23, 42, 0.04);
-  border-color: rgba(15, 23, 42, 0.18);
-}
 
 .btn--warm {
   background: var(--accent-warm);
   color: #fff;
 }
-.btn--warm:hover { background: var(--accent-warm-dark); }
 
+@media (hover: hover) {
+  .btn--primary:hover { background: var(--accent-dark); }
 
-/* Autodesk App Store button */
+  .btn--outline:hover {
+    background: rgba(15, 23, 42, 0.04);
+    /* The border is already 1px at rest, so darkening it changes no
+       geometry. A border that only appears on hover would reflow the row. */
+    border-color: rgba(15, 23, 42, 0.18);
+  }
+
+  .btn--warm:hover { background: var(--accent-warm-dark); }
+}
+
+/* Autodesk App Store button. The live paint for this variant — fill, hover
+   colour, padding — is overridden wholesale by a later, equal-specificity
+   block in sections.css, which this file cannot reach. What is kept here is
+   the shape and the honest transition list, so the variant is correct on
+   its own terms; see the report for the one line sections.css still needs. */
 .btn--autodesk {
-  background: #1a1a2e;
+  background: var(--text-primary);
   color: #fff;
-  border: 1px solid rgba(255,255,255,0.15);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   font-weight: 600;
   font-size: 0.95rem;
   padding: 0.85rem 1.8rem;
   gap: 0.6rem;
-  transition: var(--transition);
+  transition: background-color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out),
+              filter var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
 }
 
-.btn--autodesk:hover {
-  background: #222240;
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(0,122,163,0.22);
+@media (hover: hover) {
+  .btn--autodesk:hover {
+    background: var(--accent-dark);
+    border-color: var(--accent-dark);
+  }
+}
+
+/* The scale is the only part of the press that moves. Tone stays. */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active { transform: none; }
 }
 
 /* ── Reveal Animations ──────────────────────────────────────── */
@@ -314,14 +374,28 @@ h3 { font-size: var(--fs-h3);      letter-spacing: var(--tracking-h3);      line
    One visible ring for every interactive element. .btn previously defined
    no focus treatment at all, so keyboard users tabbing across the page had
    nothing to follow on the primary actions. Scoped to :focus-visible so it
-   never appears on a mouse click. */
+   never appears on a mouse click.
+
+   --accent at 2px clears 3:1 against every ground a ring can land on here:
+   4.87:1 on white, 4.62:1 on --bg-secondary, 4.35:1 on the download
+   section's accent-tinted glow, 4.12:1 on the featured pricing card's
+   --accent-glow wash. Measured, not assumed — see report. The offset is 3px
+   everywhere, so the ring never sits directly on a fill it shares a hue
+   with (a primary button focused with offset 0 would be an accent ring on
+   an accent button, i.e. no ring at all).
+
+   The `border-radius: var(--radius)` that used to be in this block is gone.
+   It was presumably there to shape the ring, but an outline already follows
+   the element's own radius; what it actually did was reshape the element:
+   `a:focus-visible` (0,1,1) outranks `.btn` (0,1,0), so every pill button
+   on the site snapped from a 999px pill to a 12px rounded rectangle the
+   moment it took keyboard focus, and back again on blur. */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-  border-radius: var(--radius);
 }
 
 /* ── Skip Link ──────────────────────────────────────────────── */
@@ -341,11 +415,22 @@ input:focus-visible,
   font-weight: 500;
   padding: 0.7rem 1.4rem;
   border-radius: 0 0 var(--radius) var(--radius);
-  transition: transform 0.2s ease;
+  /* Was `0.2s ease` — a duration and a curve that belong to no token and
+     match nothing else on the page. */
+  transition: transform var(--dur-fast) var(--ease-out);
 }
 
+/* --text-primary on the accent fill: 3.70:1, clear of the 3:1 a non-text
+   indicator needs. An --accent ring, the site default, would be invisible
+   here — the link's own background is --accent. */
 .skip-link:focus-visible {
   transform: translate(-50%, 0);
   outline: 2px solid var(--text-primary);
   outline-offset: 2px;
+}
+
+/* The travel is how the link appears at all, so it stays; only the
+   animating of it goes. It arrives in place instead of sliding in. */
+@media (prefers-reduced-motion: reduce) {
+  .skip-link { transition: none; }
 }
