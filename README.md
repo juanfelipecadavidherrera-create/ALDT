@@ -20,8 +20,17 @@ step and no framework: plain HTML, CSS and JS, deployed as-is to GitHub
 Pages (see the `.nojekyll` file — Jekyll processing is intentionally
 disabled).
 
-The hero intro renders a 3D pipe-assembly animation with Three.js; GSAP
-ScrollTrigger and anime.js drive the rest of the scroll-based motion.
+The opening “Below the surface” scene renders an 8.5-second Three.js
+infrastructure cutaway: survey, concrete placement, and a finished soil/pavement
+section. Local procedural materials provide concrete, iron, soil, and aggregate
+textures. A single clock drives the camera and assembly; GSAP ScrollTrigger
+drives the rest of the page. Pause, replay, and skip are available, reduced
+motion renders a still, and an inline SVG provides the WebGL fallback.
+Rendering stops at completion, while paused, or while the intro is offscreen.
+
+For repeatable local visual checks, `?intro-frame=0.46` holds an assembly
+checkpoint and `?intro-frame=1` shows the finished composition. This override
+is accepted only on localhost. Replay resumes ordinary playback.
 
 ## Running it locally
 
@@ -40,7 +49,7 @@ npx http-server -p 8000
 ```
 
 Opening `index.html` directly via `file://` will not work — the ES module
-imports (`<script type="module">`, the `three`/`animejs` import map) require
+imports (`<script type="module">`, the `three` import map) require
 an HTTP origin.
 
 ## File layout
@@ -62,8 +71,8 @@ assets/
   css/
     base.css            Design tokens (colors, fonts, spacing), CSS reset,
                          utility classes, buttons
-    intro.css           The pipe-assembly intro overlay (WebGL canvas host,
-                         text reveal, scroll hint)
+    intro.css           Cutaway intro layout, responsive composition,
+                         labels, progress phases, and playback controls
     nav-hero.css         Fixed nav bar + hero section
     tools.css             Tools section: the 53-command showcase, including
                          the GSAP-pinned horizontal scroll track on desktop
@@ -75,7 +84,9 @@ assets/
     main.js              Site logic: nav scroll state, Lenis smooth scroll,
                          GSAP ScrollTrigger setup (incl. the horizontal
                          tools pin), reveal-on-scroll, animated stat counters
-    pipe3d.js             The Three.js pipe-assembly scene used by the intro
+    pipe3d.js             Three.js cutaway scene, clock, and playback lifecycle
+    intro-materials.js    Seeded material textures and chamfered lathe geometry
+    intro.js              Intro controls, progress phases, navigation handoff
   img/
     og-image.png          1200×630 Open Graph / Twitter card image
 ```

@@ -1,133 +1,69 @@
-/* ============================================================
-   ALDT — trench intro overlay
-   The 3D scene itself is built in pipe3d.js (WebGL) and owns its
-   own clock — it autoplays and publishes progress via CustomEvents
-   on `document` instead of being driven by scroll. This file only
-   listens and drives the DOM overlays on top of it. #pipeIntro is
-   an ordinary 100vh section; nothing here pins the page.
-   ============================================================ */
-
-(function initPipeAssembly() {
+/* DOM controls share the WebGL clock through events. Links and the static
+   illustration remain usable when the scene or a CDN fails to load. */
+(function () {
   'use strict';
-
-  const { lenis, gsap } = window.ALDT;
-
   const intro = document.getElementById('pipeIntro');
   if (!intro) return;
-
-  const scrollHint = document.getElementById('pipeScrollHint');
-  const accentRule = document.querySelector('.pipe-intro__accent');
-
-  // Hide nav initially (intro covers full viewport)
-  gsap.set('.nav', { opacity: 0, y: -10, pointerEvents: 'none' });
-
-  let navRevealed = false;
-  let navFailsafeTimer;
-
+  const skip = document.getElementById('pipeIntroSkip');
+  const playback = document.getElementById('pipeIntroPlayback');
+  const phases = [...intro.querySelectorAll('.pipe-intro__phases li')];
+  const core = window.ALDT;
+  let revealed = false, finished = false, paused = false;
+  let failsafe;
+  const nav = document.querySelector('.nav');
+  if (core) {
+    core.gsap.set('.nav', { opacity: 0, y: -10, pointerEvents: 'none' });
+    if (nav) nav.inert = true;
+  }
   function revealNav() {
-    if (navRevealed) return;
-    navRevealed = true;
-    clearTimeout(navFailsafeTimer);
-    gsap.to('.nav', { opacity: 1, y: 0, duration: 0.55, pointerEvents: 'auto', overwrite: true });
+    if (revealed) return;
+    revealed = true; clearTimeout(failsafe);
+    intro.classList.add('nav-revealed');
+    if (nav) nav.inert = false;
+    if (core) core.gsap.to('.nav', { opacity: 1, y: 0, duration: 0.55, pointerEvents: 'auto', overwrite: true });
   }
-
-  // Failsafe #1: if pipe3d.js never initialised — module blocked, three.js
-  // CDN unreachable, WebGL unavailable — no intro-complete event is ever
-  // coming. window.ALDTIntro is the module's proof of life, so a missing
-  // one is a definite failure and we reveal straight away rather than
-  // leaving a dead 100vh panel with no navigation.
-  setTimeout(() => { if (!window.ALDTIntro) revealNav(); }, 3000);
-
-  // Failsafe #2: backstop for the case where the module DID start but
-  // never finished (it stalled, or an exception killed its loop). Must sit
-  // clear of the normal completion time so it only fires on real breakage.
-  // The intro itself now finishes in ~6.5s (was ~12.9s) — 20s is still a
-  // wide margin over that, so it still only fires on a genuine stall rather
-  // than needing to be re-tightened for the shorter runtime.
-  navFailsafeTimer = setTimeout(revealNav, 20000);
-
-  // Failsafe #3: reveal as soon as the user scrolls, regardless of
-  // whether the intro has finished — scrolling is always allowed now.
-  lenis.on('scroll', (e) => {
-    if (!navRevealed && e.scroll > 40) revealNav();
-  });
-
-  // Primary path: the intro finished on its own clock.
-  document.addEventListener('aldt:intro-complete', revealNav);
-
-  // Drive the overlays directly off the animation clock's progress.
-  // No scrubbed GSAP timeline here — that would add a second easing
-  // layer fighting the clock that pipe3d.js already runs.
-  const setHint = scrollHint ? gsap.quickSetter(scrollHint, 'opacity') : null;
-
-  // The tagline itself is plain CSS opacity: 1 now (see intro.css) — it
-  // has to be visible at first paint to be the LCP candidate, so nothing
-  // here gates its entrance any more. This accent rule is what took over
-  // the old p > 0.78 reveal moment: a closing flourish, not the text's
-  // entrance, so unlike the retired setText/setTextY it only touches its
-  // own small decorative element.
-  const setAccentOpacity = accentRule ? gsap.quickSetter(accentRule, 'opacity') : null;
-  function setAccentScale(p) {
-    if (!accentRule) return;
-    accentRule.style.transform = `scaleX(${p})`;
+  function updateControl() {
+    playback.innerHTML = finished ? 'Replay <span aria-hidden="true">↻</span>' : paused ? 'Play <span aria-hidden="true">▷</span>' : 'Pause <span aria-hidden="true">Ⅱ</span>';
+    playback.setAttribute('aria-label', finished ? 'Replay intro animation' : paused ? 'Play intro animation' : 'Pause intro animation');
   }
-
-  document.addEventListener('aldt:intro-progress', (e) => {
-    const p = (e.detail && typeof e.detail.p === 'number') ? e.detail.p : 0;
-
-    // Scroll hint holds, then clears just before the accent rule draws in.
-    if (setHint) setHint(1 - Math.max(0, Math.min(1, (p - 0.60) / 0.14)));
-
-    // Accent rule draws in late, as the trench is backfilled — same
-    // window the tagline used to fade in on.
-    const accentP = Math.max(0, Math.min(1, (p - 0.78) / 0.16));
-    if (setAccentOpacity) setAccentOpacity(accentP);
-    setAccentScale(accentP);
-  });
-})();
-
-/* ── Skip control ─────────────────────────────────────────────
-   Kept as its own IIFE rather than folded into initPipeAssembly above:
-   it doesn't touch Lenis/GSAP or the progress-driven overlays, it only
-   needs the button element and pipe3d.js's public skip() — so it has
-   nothing to share with that scope, and no reason to depend on
-   window.ALDT being present (a visitor should be able to skip the intro
-   even in the degraded case where the shared core failed to boot and the
-   nav-reveal failsafes above are the only thing keeping the page usable).
-   ───────────────────────────────────────────────────────────── */
-(function initIntroSkip() {
-  'use strict';
-
-  const btn = document.getElementById('pipeIntroSkip');
-  if (!btn) return;
-
+  function ready() { playback.hidden = false; }
   function finish() {
-    // window.ALDTIntro is pipe3d.js's own proof of life (same flag
-    // initPipeAssembly's failsafe #1 checks above). It's normally set
-    // within a couple of frames of load, but on a slow connection the
-    // module may still be fetching when Skip is clicked — rather than the
-    // button doing nothing, fall back to firing the same completion
-    // signal the nav-reveal failsafes already listen for, so the visitor
-    // gets through either way.
-    if (window.ALDTIntro && typeof window.ALDTIntro.skip === 'function') {
-      window.ALDTIntro.skip();
-    } else {
-      document.dispatchEvent(new CustomEvent('aldt:intro-complete'));
-    }
-    btn.blur();
+    finished = true; paused = false;
+    skip.classList.add('is-done'); skip.disabled = true;
+    updateControl();
+    if (window.scrollY > 40) revealNav();
   }
-
-  btn.addEventListener('click', finish);
-
-  // Nothing is left to skip past once the intro has actually finished (on
-  // its own, or via this same control) — retire it instead of leaving a
-  // dead button sitting over the rest frame for the rest of the page's
-  // life. Reduced-motion visitors never see an active control in the
-  // first place (see intro.css's prefers-reduced-motion rule), but
-  // pipe3d.js still fires this same event for them immediately on load,
-  // so this one listener keeps both paths in agreement.
-  document.addEventListener('aldt:intro-complete', () => {
-    btn.classList.add('is-done');
-    btn.disabled = true;
+  document.addEventListener('aldt:intro-ready', ready);
+  document.addEventListener('aldt:intro-progress', e => {
+    const p = e.detail?.p ?? 0;
+    const current = p < 0.12 ? 0 : p < 0.69 ? 1 : 2;
+    phases.forEach((el, i) => el.classList.toggle('is-active', i === current));
   });
+  document.addEventListener('aldt:intro-complete', finish);
+  document.addEventListener('aldt:intro-unavailable', () => { intro.classList.add('is-unavailable'); playback.hidden = true; finish(); });
+  document.addEventListener('aldt:intro-restart', () => {
+    finished = false; paused = false;
+    skip.classList.remove('is-done'); skip.disabled = false; updateControl();
+  });
+  skip.addEventListener('click', () => {
+    if (window.ALDTIntro) window.ALDTIntro.skip();
+    else finish();
+    // Move focus to a useful link when its triggering button disappears.
+    intro.querySelector('.pipe-intro__explore').focus({ preventScroll: true });
+  });
+  playback.addEventListener('click', () => {
+    const api = window.ALDTIntro;
+    if (!api) return;
+    if (finished) api.restart();
+    else { paused = !paused; paused ? api.pause() : api.play(); updateControl(); }
+  });
+  core?.lenis.on('scroll', e => { if (e.scroll > 40) revealNav(); });
+  window.addEventListener('scroll', () => { if (window.scrollY > 40) revealNav(); }, { passive: true });
+  setTimeout(() => { if (!window.ALDTIntro) { finish(); playback.hidden = true; } }, 3000);
+  failsafe = setTimeout(() => { if (!finished) revealNav(); }, 20000);
+  // Module/classic-script order may vary with cache state.
+  if (window.ALDTIntro) {
+    ready();
+    if (window.ALDTIntro.__debug().completed) finish();
+  }
 })();
