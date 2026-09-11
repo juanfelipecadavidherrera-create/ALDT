@@ -237,13 +237,11 @@ function init() {
   const scan = mesh(new THREE.PlaneGeometry(0.11, 6), new THREE.MeshBasicMaterial({ color: '#a4d7cf', transparent: true, opacity: 0.65, depthWrite: false }), -24, -6.56, 1.1);
   scan.rotation.x = -Math.PI / 2; scan.castShadow = false;
 
-  const markers = [...document.querySelectorAll('[data-intro-label]')];
-  const anchors = [new THREE.Vector3(17, 0.2, PIPE_Z), new THREE.Vector3(7, -6.9, 4.2)];
   let width = 1, height = 1, progress = reducedQuery.matches ? 1 : 0;
   let elapsed = progress * DURATION, lastTime = null, raf = null;
   let onscreen = false, paused = false, completed = false, disposed = false, lost = false;
   let lastRenderMs = 0;
-  const projected = new THREE.Vector3(), target = new THREE.Vector3();
+  const target = new THREE.Vector3();
 
   function draw(p) {
     const t0 = performance.now();
@@ -279,12 +277,6 @@ function init() {
     scan.visible = p < 0.3;
     lineMat.opacity = 0.42 * (1 - phase(p, 0.25, 0.5)) + 0.18 * phase(p, 0.84, 1);
     renderer.render(scene, camera);
-    markers.forEach((label, i) => {
-      projected.copy(anchors[i]).project(camera);
-      label.style.left = `${(projected.x * 0.5 + 0.5) * width}px`;
-      label.style.top = `${(-projected.y * 0.5 + 0.5) * height}px`;
-      label.style.opacity = String(phase(p, 0.84 + i * 0.025, 0.96 + i * 0.025));
-    });
     intro.style.setProperty('--intro-progress', p);
     document.dispatchEvent(new CustomEvent('aldt:intro-progress', { detail: { p } }));
     lastRenderMs = performance.now() - t0;

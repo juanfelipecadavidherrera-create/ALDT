@@ -1,290 +1,110 @@
-/* ============================================================
-   ALDT — tools showcase
-   Vertical scroll drives horizontal translation of #toolsTrack
-   (inside #toolsViewport) while #toolsScroll is pinned — the
-   standard GSAP ScrollTrigger idiom for a horizontal section.
-
-   CSS `view-timeline` was ruled out: Firefox still ships it behind
-   a flag, GSAP (already loaded) produces the same effect everywhere.
-
-   Scoped to desktop widths with gsap.matchMedia() — a full-viewport
-   horizontal pin is poor UX on a phone, and users with
-   prefers-reduced-motion get a static layout with no pin, no scrub.
-   Both non-desktop cases are handled by ordinary CSS in tools.css
-   (.tools-scroll): a swipeable snap strip on mobile, a vertical
-   stack under reduced motion. matchMedia also means the pin is
-   created and *cleanly reverted* as the viewport crosses the
-   breakpoint (e.g. rotating a tablet), which a plain window-resize
-   check wouldn't give us for free.
-
-   On top of the pin itself, this file also drives the HUD bar
-   (#toolsScroll .tools-scroll__hud): progress dots + a "N / 12"
-   counter that track whichever card is most on-screen, and a
-   command search across all 53 chips. Both are mode-agnostic by
-   design — an IntersectionObserver reports "which card is visible"
-   correctly whether that visibility change came from GSAP's
-   transform scrub, native horizontal scroll-snap on mobile, or
-   plain vertical page scroll under reduced motion, so one code path
-   covers all three instead of three.
-   ============================================================ */
-
-(function initTools() {
+/* Project cards select a collection; a focused preview explains each command.
+   The original static catalog is the source of truth and the no-JS fallback. */
+(function () {
   'use strict';
-
-  const { gsap, ScrollTrigger, lenis } = window.ALDT;
-
-  /* Legacy hook: no .tool-card / .tools__grid elements exist in the DOM
-     today (the Tools section is the horizontal-scroll showcase below),
-     but this stays intact and harmless (0 matches) for any future grid
-     layout that reuses these classes. */
-  const toolCards = gsap.utils.toArray('.tool-card');
-  if (toolCards.length) {
-    gsap.fromTo(
-      toolCards,
-      { opacity: 0, y: 60 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.75,
-        ease: 'power3.out',
-        stagger: 0.12,
-        scrollTrigger: { trigger: '.tools__grid', start: 'top 85%' },
-      }
-    );
+  const library = document.querySelector('.tool-library');
+  if (!library) return;
+  const byId = id => document.getElementById(id);
+  const search = byId('toolsSearch');
+  const filters = [...library.querySelectorAll('[data-category]')];
+  const groups = [...library.querySelectorAll('[data-group]')];
+  const normalize = text => text.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const titles = {
+    PIPESIZING: 'Size the pipe. Check the flow.', PIPESLOPER: 'Set the slope for the run.',
+    CHANGEELEVATION: 'Bring elevations into line.', INVERTPULLUP: 'Raise the inverts.',
+    LOWRIM: 'Find the lowest rim.', COVERADJUST: 'Set the cover to the surface.',
+    EEEBEND: 'Work out the bypass.', PRESSCOUNT: 'Account for every part.', ELEVSLOPE: 'Control the elevation change.',
+    PUMPCALCULATOR: 'Work through the pump station.', XYLEMSOLVER: 'Find a pump for the duty.',
+    BULKSUR: 'Build the profiles in one pass.', PIPEMAGIC: 'Bring the network into view.',
+    CHOPCHOP: 'Break the profile into sections.', OFFPV: 'Work with profile offsets.', PROFOFF: 'Work with profile offsets.',
+    PVSTYLE: 'Give the profile a consistent style.', PVIFIX: 'Get the vertical bends moving.',
+    PVIFIXDIAG: 'Inspect the profile connection.', RRNETWORKCHECK: 'Check what clears. Check what covers.', GETPARENT: 'Trace the profile to its alignment.',
+    LLABELGEN: 'Give every crossing its context.', PIPEPVLABEL: 'Put elevations at the pipe ends.',
+    MARKFITTINGS: 'Make the fittings visible.', MARKLINES: 'Mark where the lines cross.',
+    VTPANEL: 'Put vehicle tools within reach.', VTSWEEP: 'See what makes the turn.', VTDRIVE: 'Take the vehicle through it.',
+    VTEDIT: 'Refine the path.', VTPARK: 'Make room to park.',
+    BLOCKTOSURFACE: 'Build terrain from block elevations.', TEXTTOSURFACE: 'Turn spot elevations into terrain.',
+    SUR2MT: 'Bring surface elevations into the notes.', AREAMANAGER: 'Keep your takeoffs together.', EXF: 'Keep track of the excavation.',
+    FLOODZONE: 'Locate the flood zone.', FLOODCRITERIA: 'Find the site’s flood criteria.', FOLIO: 'Start with the property.',
+    GWMAY: 'Check May groundwater.', GWOCT: 'Check October groundwater.', SECTIONLOOKUP: 'Locate township, range, and section.',
+    MDWASDSEWER: 'Bring in the sewer network.', MWASDWATER: 'Bring in the water mains.',
+    LATERALBEAST: 'Find a feasible connection.', LATMANAGER: 'Keep lateral crossings organized.',
+    SECDRAW: 'Draw the road in section.', TABLEDRAW: 'Keep the table connected to its data.', CAD: 'Dimension the cross section.',
+    ALIGNDEPLOY: 'Repeat the alignment along the route.', STATIONMAKER: 'Connect the stations.', CORALASBUILT: 'Bring the as-built into the drawing.',
+    VPCUT: 'Frame the drawing.', ALDTTOOLBAR: 'Keep the toolkit close.', ALDTHELP: 'Find help inside Civil 3D.', ALDTLICENSE: 'Check your access.'
+  };
+  const collections = new Map(groups.map(group => [group.dataset.group, {
+    label: filters.find(button => button.dataset.category === group.dataset.group).querySelector('.discipline-card__bottom > span').textContent,
+    commands: [...group.querySelectorAll('[data-command]')].map(row => ({
+      code: row.dataset.command, description: row.querySelector('p').textContent,
+      badge: !!row.querySelector('.command__badge'), category: group.dataset.group,
+      title: titles[row.dataset.command] || row.dataset.command,
+      searchText: normalize(`${row.textContent} ${titles[row.dataset.command] || ''}`)
+    }))
+  }]));
+  const all = [...collections.values()].flatMap(group => group.commands);
+  const featured = { networks: 'PUMPCALCULATOR', profiles: 'PIPEMAGIC', vehicles: 'VTSWEEP', surfaces: 'AREAMANAGER' };
+  let category = filters[0].dataset.category;
+  let current = featured[category];
+  let matches = [];
+  function refreshLayout() { window.ALDT?.ScrollTrigger?.refresh(); }
+  function showCommand(code, animate = true) {
+    const index = matches.findIndex(command => command.code === code);
+    if (index < 0) return;
+    const command = matches[index]; current = code;
+    byId('toolsCommandTitle').textContent = command.title;
+    byId('toolsDescription').textContent = command.description;
+    byId('toolsCode').textContent = command.code;
+    byId('toolsBadge').hidden = !command.badge;
+    byId('toolsDiscipline').textContent = collections.get(command.category).label;
+    byId('toolsPosition').textContent = `${String(index + 1).padStart(2, '0')} / ${String(matches.length).padStart(2, '0')}`;
+    byId('toolsChoices').querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.code === code)));
+    byId('toolsPrevious').disabled = index === 0;
+    byId('toolsNext').disabled = index === matches.length - 1;
+    const spotlight = byId('toolsSpotlight');
+    if (animate) { spotlight.classList.remove('is-changing'); void spotlight.offsetWidth; spotlight.classList.add('is-changing'); }
+    refreshLayout();
   }
-
-  const section  = document.getElementById('toolsScroll');
-  const track    = document.getElementById('toolsTrack');
-  const viewport = document.getElementById('toolsViewport');
-  if (!section || !track || !viewport) return;
-
-  const cards = gsap.utils.toArray('.tools-scroll__card', section);
-  if (!cards.length) return;
-
-  // A function, not a stored number — re-evaluated on every refresh
-  // (invalidateOnRefresh) so resize and web-font load (both change
-  // track.scrollWidth) don't leave the scrub travelling the wrong
-  // distance and cutting the last card off.
-  const distance = () => track.scrollWidth - window.innerWidth;
-
-  // Set only while the desktop pin (matchMedia block below) exists; null
-  // on mobile / reduced-motion, where scrollToCard() falls back to
-  // native scroll instead of computing a pin-scroll position.
-  let pinST = null;
-
-  const toolsMM = gsap.matchMedia();
-
-  toolsMM.add('(min-width: 768px) and (prefers-reduced-motion: no-preference)', () => {
-    // With 12 category cards the raw pixel travel is long enough that a
-    // 1:1 vertical-to-horizontal pin (end === distance()) would pin the
-    // page for ~12+ viewports of scrolling. PIN_SPEED decouples the two:
-    // the tween still translates the track the *full* -distance() so the
-    // last card is always fully reachable, but the pin only occupies
-    // PIN_SPEED × distance() px of actual vertical scroll to get there —
-    // i.e. horizontal motion runs 1/PIN_SPEED times faster than vertical
-    // scroll. 0.78 keeps the section at ~4 viewports of pinned scroll
-    // while staying gentle enough not to feel twitchy.
-    const PIN_SPEED = 0.78;
-
-    const tween = gsap.to(track, {
-      x: () => -distance(),
-      ease: 'none',
-      scrollTrigger: {
-        trigger: section,
-        start: 'top top',
-        end: () => '+=' + (distance() * PIN_SPEED),
-        pin: true,
-        scrub: 1,
-        invalidateOnRefresh: true,
-      },
-    });
-
-    pinST = tween.scrollTrigger;
-
-    // gsap.matchMedia() calls this on revert (viewport crossing back
-    // below 768px, or reduced-motion toggling on) — drop the reference
-    // so scrollToCard() below falls back to native scroll again.
-    return () => { pinST = null; };
-  });
-
-  /* ── HUD: progress dots, "N / 12" counter, command search ────────── */
-  const hud         = section.querySelector('.tools-scroll__hud');
-  const dotsEl       = document.getElementById('toolsDots');
-  const counterIndex = document.getElementById('toolsCounterIndex');
-  const counterName  = document.getElementById('toolsCounterName');
-  const searchInput  = document.getElementById('toolsSearch');
-  const searchCount  = document.getElementById('toolsSearchCount');
-  const searchClear  = document.getElementById('toolsSearchClear');
-  if (!hud) return;
-
-  const catInfo = cards.map((card) => ({
-    name: card.querySelector('.tools-scroll__cat-name')?.textContent.trim() || '',
+  function update(preferred) {
+    const query = normalize(search.value.trim());
+    const terms = query.split(/\s+/).filter(Boolean);
+    matches = terms.length ? all.filter(command => terms.every(term => command.searchText.includes(term))) : collections.get(category).commands;
+    filters.forEach(button => button.setAttribute('aria-pressed', String(!query && button.dataset.category === category)));
+    byId('toolsResults').textContent = query ? `${matches.length} ${matches.length === 1 ? 'command' : 'commands'} matching “${search.value.trim()}”` : `${matches.length} commands · Choose one to explore`;
+    byId('toolsClear').hidden = !search.value;
+    byId('toolsEmpty').hidden = matches.length > 0;
+    byId('toolsSpotlight').hidden = matches.length === 0;
+    const choices = byId('toolsChoices');
+    choices.replaceChildren();
+    for (const command of matches) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'tool-choice'; button.dataset.code = command.code;
+      button.textContent = command.code; button.setAttribute('aria-controls', 'toolsSpotlight');
+      button.addEventListener('click', () => showCommand(command.code));
+      choices.append(button);
+    }
+    choices.scrollTop = 0;
+    if (matches.length) showCommand(matches.some(command => command.code === preferred) ? preferred : matches[0].code, false);
+    else { byId('toolsDiscipline').textContent = 'Search the toolkit'; byId('toolsPosition').textContent = '00 / 00'; refreshLayout(); }
+  }
+  search.addEventListener('input', () => update(current));
+  const resetSearch = () => { search.value = ''; update(featured[category]); search.focus({ preventScroll: true }); };
+  byId('toolsClear').addEventListener('click', resetSearch);
+  byId('toolsReset').addEventListener('click', resetSearch);
+  filters.forEach(button => button.addEventListener('click', () => {
+    category = button.dataset.category; search.value = ''; update(featured[category]);
   }));
-
-  // Dots are built here rather than hardcoded in index.html so the count
-  // label and the card list can never drift out of sync with each other.
-  // One accent throughout (no odd/even colour split) — the dots track
-  // position, and colour-coding a position that carries no meaning was
-  // decoration, not information.
-  let dots = [];
-  if (dotsEl) {
-    dotsEl.innerHTML = '';
-    dots = cards.map((card, i) => {
-      const dot = document.createElement('button');
-      dot.type = 'button';
-      dot.className = 'tools-scroll__dot';
-      dot.setAttribute('aria-label', 'Jump to ' + catInfo[i].name + ' (' + (i + 1) + ' of ' + cards.length + ')');
-      dot.setAttribute('aria-current', i === 0 ? 'true' : 'false');
-      dot.addEventListener('click', () => scrollToCard(i));
-      dotsEl.appendChild(dot);
-      return dot;
+  for (const [id, direction] of [['toolsPrevious', -1], ['toolsNext', 1]]) {
+    byId(id).addEventListener('click', () => {
+      const next = matches[matches.findIndex(command => command.code === current) + direction];
+      if (next) showCommand(next.code);
     });
   }
-
-  let activeIndex = -1;
-  function setActive(i) {
-    if (i === activeIndex) return;
-    activeIndex = i;
-    dots.forEach((dot, di) => dot.setAttribute('aria-current', di === i ? 'true' : 'false'));
-    if (counterIndex) counterIndex.textContent = String(i + 1).padStart(2, '0');
-    if (counterName) counterName.textContent = catInfo[i].name;
-  }
-  setActive(0);
-
-  // One IntersectionObserver, not three mode-specific ones: it reports
-  // real rendered visibility, which already accounts for GSAP's transform
-  // scrub (desktop pin), native scroll-snap (mobile), and plain document
-  // flow (reduced motion) without this file needing to know which one is
-  // currently active.
-  const ratios = new Map();
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach((entry) => ratios.set(entry.target, entry.intersectionRatio));
-    let bestI = 0;
-    let bestR = -1;
-    cards.forEach((card, i) => {
-      const r = ratios.get(card) || 0;
-      if (r > bestR) { bestR = r; bestI = i; }
-    });
-    if (bestR > 0) setActive(bestI);
-  }, { threshold: [0, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 1] });
-  cards.forEach((card) => io.observe(card));
-
-  function scrollToCard(i) {
-    const card = cards[i];
-    if (!card) return;
-    if (pinST) {
-      // Card-relative-to-track offset, independent of the track's current
-      // scrub position: since the card moves with its parent, subtracting
-      // the track's own rect cancels out whatever -x translate is
-      // currently applied, leaving the card's "distance travelled" figure.
-      const off = card.getBoundingClientRect().left - track.getBoundingClientRect().left;
-      const dist = distance();
-      const frac = dist > 0 ? Math.min(1, Math.max(0, off / dist)) : 0;
-      const y = pinST.start + frac * (pinST.end - pinST.start);
-      lenis.scrollTo(y, { duration: 1.2 });
-    } else if (window.matchMedia('(max-width: 767.98px)').matches) {
-      // Mobile: real horizontal overflow scroll, no pin math involved.
-      card.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-    } else {
-      // Reduced motion: cards are a plain vertical stack.
-      lenis.scrollTo(card, { offset: -24, duration: 1 });
-    }
-  }
-
-  /* ── Command search ──────────────────────────────────────────────
-     Filters by dimming non-matches rather than removing them from the
-     DOM — hiding elements would change track.scrollWidth mid-filter,
-     which is exactly what distance()/invalidateOnRefresh exist to avoid
-     having to chase down. */
-  if (searchInput) {
-    const chips = cards.map((card) => Array.from(card.querySelectorAll('.tools-scroll__cmd-list li')));
-    chips.forEach((list) => list.forEach((li) => { li.dataset.search = li.textContent.toLowerCase(); }));
-
-    function applyFilter(raw) {
-      const q = raw.trim().toLowerCase();
-      section.classList.toggle('has-query', !!q);
-      let total = 0;
-      cards.forEach((card, i) => {
-        let hits = 0;
-        chips[i].forEach((li) => {
-          const isMatch = !!q && li.dataset.search.includes(q);
-          li.classList.toggle('is-match', isMatch);
-          if (isMatch) hits++;
-        });
-        card.classList.toggle('has-match', !q || hits > 0);
-        total += hits;
-      });
-      if (searchClear) searchClear.hidden = !raw;
-      if (searchCount) {
-        searchCount.textContent = q ? total + (total === 1 ? ' match' : ' matches') : '';
-      }
-    }
-
-    /* The long placeholder (with its example queries) only fits in a wide
-       field. The attribute in the HTML carries the short form, so that is
-       what renders with no JS and on a narrow phone; the long one is
-       swapped in only when it actually fits.
-
-       Measured, not guessed at a breakpoint: the field is capped at a
-       fixed max-width, so its inner width barely tracks the viewport at
-       all (360px of room at 1440 and at 640 alike, 283 at 390). A media
-       query would have shown the long form in a field it overflows, which
-       is exactly the bug this is fixing. Measuring also survives a change
-       to the field's width, its font, or the placeholder text itself
-       without anyone remembering to move a breakpoint.
-
-       document.fonts.ready matters here: measured against the fallback
-       face before Inter lands, the text comes out a different width and
-       the wrong form gets chosen for good. */
-    const wideHint = searchInput.dataset.placeholderWide;
-    if (wideHint) {
-      const shortHint = searchInput.placeholder;
-      const ruler = document.createElement('span');
-      ruler.setAttribute('aria-hidden', 'true');
-      ruler.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;top:0;left:-9999px';
-
-      const fitHint = () => {
-        const cs = getComputedStyle(searchInput);
-        const room = searchInput.getBoundingClientRect().width
-          - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-        if (!room) return; // section not laid out yet (display:none, etc.)
-        ruler.style.font = cs.font;
-        ruler.style.letterSpacing = cs.letterSpacing;
-        ruler.textContent = wideHint;
-        document.body.appendChild(ruler);
-        const needed = ruler.getBoundingClientRect().width;
-        ruler.remove();
-        searchInput.placeholder = needed <= room ? wideHint : shortHint;
-      };
-
-      fitHint();
-      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHint);
-
-      // Coalesced to one measurement per frame: fitHint appends to the
-      // document to measure, and a resize storm firing that per event
-      // would thrash layout for a placeholder nobody is watching change.
-      let queued = false;
-      window.addEventListener('resize', () => {
-        if (queued) return;
-        queued = true;
-        requestAnimationFrame(() => { queued = false; fitHint(); });
-      });
-    }
-
-    searchInput.addEventListener('input', () => applyFilter(searchInput.value));
-    searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && searchInput.value) {
-        searchInput.value = '';
-        applyFilter('');
-        e.stopPropagation();
-      }
-    });
-    if (searchClear) {
-      searchClear.addEventListener('click', () => {
-        searchInput.value = '';
-        applyFilter('');
-        searchInput.focus();
-      });
-    }
-  }
+  document.querySelectorAll('[data-command-link]').forEach(link => link.addEventListener('click', () => {
+    const command = all.find(item => item.code === link.dataset.commandLink);
+    if (!command) return;
+    category = command.category; search.value = ''; update(command.code);
+  }));
+  library.classList.add('is-enhanced');
+  update(current);
 })();

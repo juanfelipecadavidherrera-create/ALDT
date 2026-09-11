@@ -1,7 +1,7 @@
 /* Below the surface — editorial framing for the infrastructure cutaway. */
 .pipe-intro {
   --intro-ink: #263c3d;
-  --intro-muted: #5d6c68;
+  --intro-muted: #56645f;
   --intro-progress: 0;
   position: relative;
   width: 100%; height: 100svh; min-height: 650px;
@@ -43,11 +43,6 @@
 .pipe-intro__playback:hover, .pipe-intro__skip:hover { background: #d8ddd2; }
 .pipe-intro__explore:focus-visible, .pipe-intro__playback:focus-visible, .pipe-intro__skip:focus-visible { outline: 2px solid #245e59; outline-offset: 5px; }
 .pipe-intro__progress { position: absolute; bottom: 0; left: 0; height: 2px; width: 100%; background: #467a72; transform-origin: left; transform: scaleX(var(--intro-progress)); z-index: 4; }
-.pipe-intro__label { position: absolute; pointer-events: none; z-index: 3; opacity: 0; transform: translate(12px, -78px); border-left: 1px solid #738b82; padding: 0 0 25px 12px; font-size: 10px; color: #293f3d; text-shadow: 0 1px 5px #e9e5dd; white-space: nowrap; }
-.pipe-intro__label span { display: block; font-family: var(--font-mono); font-size: 7px; letter-spacing: 0.13em; color: #4c6962; margin-bottom: 4px; }
-.pipe-intro__label::after { content: ''; position: absolute; left: -3px; bottom: 0; width: 5px; height: 5px; border-radius: 50%; background: #467a72; }
-.pipe-intro__label--pipe { transform: translate(14px, 20px); padding: 24px 0 0 12px; }
-.pipe-intro__label--pipe::after { top: 0; bottom: auto; }
 .pipe-intro__fallback { position: absolute; inset: 0; background: #e9e5dd; z-index: 0; }
 .pipe-intro__fallback svg { position: absolute; width: 65%; right: -3%; top: 24%; opacity: 0.7; }
 html:not(.js) .pipe-intro__skip { display: none; }
@@ -71,7 +66,6 @@ html:not(.js) .pipe-intro__skip { display: none; }
   .pipe-intro__description { margin-top: 15px; font-size: 12px; }
   .pipe-intro__description br { display: none; }
   .pipe-intro__explore { margin-top: 8px; font-size: 11px; gap: 25px; }
-  .pipe-intro__label { display: none; }
   .pipe-intro__footer { left: 6%; right: 6%; bottom: 26px; align-items: center; flex-wrap: wrap; gap: 19px; }
   .pipe-intro__caption { flex-basis: 100%; font-size: 10px; }
   .pipe-intro__caption-sub { display: none; }

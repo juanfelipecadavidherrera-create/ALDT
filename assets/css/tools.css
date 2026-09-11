@@ -1,678 +1,83 @@
-/* ============================================================
-   ALDT — tools
-   Tools section + horizontal command-suite showcase.
-   ============================================================ */
-
-/* ── Tools Section ──────────────────────────────────────────── */
-.tools {
-  padding: var(--space-section) 0;
-  background: var(--bg-secondary);
-  overflow: hidden;
+/* A project atlas: nine discipline cards and one focused command preview. */
+.tools { background: #e9e5dd; }
+.tools__heading { display: grid; grid-template-columns: 1.3fr 1fr; gap: 10%; align-items: end; margin-bottom: 42px; }
+.tools__heading > p { max-width: 440px; color: var(--text-body); }
+.tool-search { display: flex; align-items: center; justify-content: space-between; gap: 30px; margin-bottom: 32px; }
+.tool-search > label { font-size: .875rem; }
+.tool-search__field { width: min(100%, 470px); display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #83938a; padding: 8px 0; }
+.tool-search__field svg { flex-shrink: 0; }
+.tool-search input { min-width: 0; width: 100%; padding: 8px 0; background: transparent; border: 0; color: var(--text-primary); border-radius: 0; font-size: 1rem; }
+.tool-search input::placeholder { color: var(--text-muted); opacity: 1; }
+.tool-search button { background: transparent; border: 0; padding: 10px 0; text-decoration: underline; color: var(--text-primary); font-size: .875rem; }
+.tool-explorer { display: grid; grid-template-columns: 1.15fr 1fr; align-items: start; gap: 28px; }
+.tool-filters { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.discipline-card { display: flex; flex-direction: column; align-items: stretch; text-align: left; min-height: 196px; padding: 20px 16px 15px; color: var(--text-primary); background: #f4f1ea; border: 1px solid #c9ccc1; border-radius: 3px; transition: background .2s, color .2s, transform .2s, box-shadow .2s; }
+.discipline-card__top { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: .75rem; color: var(--text-muted); }
+.discipline-card__title { display: block; flex: 1; font-family: var(--font-editorial); font-size: clamp(1.45rem,2.1vw,2rem); line-height: 1.12; letter-spacing: -.025em; padding: 25px 0 22px; }
+.discipline-card__bottom { display: flex; justify-content: space-between; gap: 8px; align-items: end; font-size: .875rem; line-height: 1.4; }
+.discipline-card__bottom > span:last-child { font-size: 1.2rem; }
+.discipline-card[aria-pressed="true"] { background: #294840; color: #fffaf0; border-color: #294840; box-shadow: 0 5px 12px #263c3d18; }
+.discipline-card[aria-pressed="true"] .discipline-card__top { color: #d5e0cc; }
+@media(hover: hover) {
+  .discipline-card:hover { transform: translateY(-4px); box-shadow: 0 8px 16px #263c3d16; }
+  .discipline-card:not([aria-pressed="true"]):hover { background: #e1e7d7; }
 }
-
-.tools__header {
-  /* Was 4rem, stacked on top of the 3rem .tools-scroll margin below it —
-     7rem of dead whitespace the user had to scroll through between reading
-     the header and the pin engaging. Trimmed on both ends (see
-     .tools-scroll margin-top) since the HUD bar at the top of the scroller
-     now carries its own visual weight and no longer needs a big buffer. */
-  margin-bottom: var(--space-7);
+.tool-workbench { background: #f8f6f0; border: 1px solid #c4c9bd; border-radius: 3px; padding: clamp(24px,3vw,44px); position: sticky; top: 110px; }
+.tool-workbench__top { display: flex; justify-content: space-between; gap: 20px; align-items: start; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.tool-workbench__index { font-family: var(--font-mono); font-size: .75rem; white-space: nowrap; }
+.tool-results { font-size: .75rem; color: var(--text-muted); margin: 18px 0 12px; }
+.tool-choices { display: flex; flex-wrap: wrap; align-content: start; gap: 7px; max-height: 176px; overflow-y: auto; padding: 5px 5px 8px; margin: 0 -5px; scrollbar-width: thin; }
+.tool-choice { background: transparent; color: var(--text-body); border: 1px solid #bec8b9; border-radius: 3px; padding: 9px 10px; font-family: var(--font-mono); font-size: .875rem; line-height: 1.3; min-height: 44px; max-width: 100%; overflow-wrap: anywhere; }
+.tool-choice:hover { background: #e7ebdf; }
+.tool-choice[aria-pressed="true"] { background: #294840; color: #fffaf0; border-color: #294840; }
+.tool-spotlight { margin-top: 30px; }
+.tool-spotlight__eyebrow { font-family: var(--font-mono); font-size: .75rem; color: var(--text-muted); letter-spacing: .08em; }
+.tool-spotlight h3 { font-family: var(--font-editorial); font-size: clamp(2rem,3.15vw,3rem); font-weight: 400; letter-spacing: -.035em; line-height: 1.07; margin: 14px 0 20px; text-wrap: balance; }
+.tool-spotlight > p { color: var(--text-body); min-height: 80px; font-size: 1rem; }
+.tool-spotlight__footer { display: flex; justify-content: space-between; align-items: end; flex-wrap: wrap; gap: 10px; margin-top: 28px; padding: 18px 0; border-top: 1px solid var(--border); }
+.tool-spotlight__hint { display: block; font-size: .75rem; color: var(--text-muted); margin-bottom: 6px; }
+.tool-spotlight code { font-size: .875rem; overflow-wrap: anywhere; }
+.command__badge { font-size: .75rem; color: var(--text-muted); border: 1px solid var(--border); padding: 3px 7px; }
+.tool-pager { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin-top: 16px; }
+.tool-pager > span { font-size: .875rem; color: var(--text-muted); }
+.tool-pager > div { display: flex; gap: 6px; }
+.tool-pager button { height: 44px; width: 44px; border: 1px solid #98ab9b; background: transparent; color: var(--text-primary); font-size: 1.25rem; border-radius: 50%; }
+.tool-pager button:hover:enabled { background: #dce5d5; }
+.tool-pager button:disabled { opacity: .35; }
+.tool-library__note { color: var(--text-muted); font-size: .875rem; margin-top: 24px; }
+.tool-empty { padding: 30px 0; }
+.tool-empty p { margin: 18px 0; color: var(--text-muted); }
+.tool-library:not(.is-enhanced) .tool-explorer,.tool-library:not(.is-enhanced) .tool-search { display: none; }
+.tool-library.is-enhanced #commandGroups { display: none; }
+/* The complete guide remains available without JavaScript. */
+.command-group { border-bottom: 1px solid var(--border); padding: 20px 0; }
+.command-group summary { cursor: pointer; font-size: 1.25rem; }
+.command-group__count,.command-group__number { font-size: .875rem; margin-inline: 12px; }
+.command-group__intro { margin-top: 20px; color: var(--text-muted); }
+.command { padding: 20px 0; }
+.command h3 { font-size: 1rem; overflow-wrap: anywhere; margin-bottom: 8px; }
+.command p { color: var(--text-body); }
+@media(max-width: 1100px) {
+  .tool-explorer { grid-template-columns: 1fr 1fr; gap: 18px; }
+  .tool-filters { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .discipline-card { min-height: 180px; }
+  .discipline-card:last-child { grid-column: 1 / -1; min-height: 145px; }
+  .discipline-card:last-child .discipline-card__title br { display: none; }
 }
-
-/* h1/h2/h3 sizing, tracking and colour are set centrally in base.css —
-   nothing to override here. The heading's second line no longer carries a
-   coloured span: display type stays a single near-black, and colour is
-   reserved for links and the primary action elsewhere on the page. */
-
-.tools__header .lead {
-  max-width: 560px;
-  margin-top: var(--space-3);
+@media(max-width: 760px) {
+  .tools__heading { grid-template-columns: 1fr; gap: 24px; margin-bottom: 30px; }
+  .tool-search { flex-direction: column; align-items: stretch; gap: 8px; }
+  .tool-search__field { width: 100%; }
+  .tool-explorer { grid-template-columns: 1fr; }
+  .tool-filters { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 6px 18px; margin: -6px -6px 0; }
+  .discipline-card,.discipline-card:last-child { flex: 0 0 205px; min-height: 188px; scroll-snap-align: start; }
+  .discipline-card:last-child .discipline-card__title br { display: initial; }
+  .discipline-card__title { font-size: 1.8rem; }
+  .tool-workbench { position: static; }
+  .tool-spotlight h3 { font-size: 2.4rem; }
+  .tool-spotlight > p { min-height: 0; }
 }
-
-/* Legacy hook: no .tool-card / .tools__grid markup exists in the DOM today
-   (the section is the horizontal showcase below) — kept only so tools.js's
-   harmless 0-match gsap.utils.toArray('.tool-card') has somewhere to point
-   if that layout is ever reintroduced. */
-.tools__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--space-5);
-}
-
-
-/* ── Horizontal Tools Scroll ────────────────────────────────
-   Base rules here are the mobile-first / reduced-motion fallback: a
-   natively swipeable, scroll-snapped strip — no JS involved. At desktop
-   widths (min-width 768px) the media query below hands the horizontal
-   motion to GSAP ScrollTrigger instead (see tools.js), which pins this
-   element and scrubs the track's transform as the page scrolls. The
-   prefers-reduced-motion query, deliberately unconditional on width,
-   always wins last in the cascade and collapses everything back to a
-   plain static vertical stack — no pin, no scrub, no snap.
-
-   Structure: #toolsScroll (the pin target) now holds two children instead
-   of one — .tools-scroll__hud (progress dots, "N / 12" counter, command
-   search — see tools.js) and .tools-scroll__viewport (the actual
-   horizontally-scrolling/pinned element, wrapping #toolsTrack). Splitting
-   the old single scroll container into hud+viewport is what lets the hud
-   stay in view for the whole pin: it's a sibling of the thing that moves,
-   never a child of #toolsTrack, so GSAP's -x translate on the track never
-   touches it, and on mobile it sits above the swipeable strip as an
-   ordinary block instead of scrolling away with it.
-
-   Cards are category cards (12 of them, one per catalogue group) rather
-   than single-tool cards. Each holds an icon + a compact two-column grid
-   of command tokens instead of prose, which is what keeps 12 cards at a
-   narrower per-card width than a single-tool layout would need. ───────── */
-.tools-scroll {
-  /* was 3rem — see .tools__header comment above */
-  margin-top: 1.25rem;
-}
-
-.tools-scroll__hud {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.85rem 1.5rem;
-  padding: 0.25rem 6vw 1rem;
-  /* A quiet structural rule, not a decorative one — it separates the HUD
-     from the card track, so it stays even though the colour accents around
-     it went. Kept faint enough to read as a seam, not a line. */
-  border-bottom: 1px solid var(--border);
-}
-
-.tools-scroll__hud-top {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.tools-scroll__dots {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-/* One accent, not two alternating per card-index — the dots track *position*
-   (which of 12 cards is on screen), and colour-coding position in two hues
-   that don't correspond to anything about the category was decoration, not
-   information. */
-.tools-scroll__dot {
-  width: 8px;
-  height: 8px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-pill);
-  /* Not --border. These dots are buttons — cursor:pointer, focusable,
-     they jump the track when clicked — and --border (#D9DCE1) puts them
-     at 1.37:1 against the white HUD, well under the 3:1 a non-text UI
-     component needs to be perceivable. --border is a hairline colour,
-     meant to be seen as an edge across a large flat area, not as an
-     object you are supposed to aim at.
-
-     The ground to measure against is the tools section's own #F5F7FA,
-     not white — read off the composited ancestor chain, not assumed;
-     the HUD bar itself paints nothing. On that ground --border is
-     1.28:1.
-
-     #899099 is 3.00:1 there — the lightest value on the palette's
-     slightly-blue neutral axis that reaches the threshold, so the row
-     is lifted exactly as far as it has to be and no further. It stays
-     well behind the current dot (--accent, 4.54:1 on the same ground)
-     and further behind a hovered one (--accent-dark, 7.30:1), so the
-     row still reads as one marker among eleven rails rather than twelve
-     equal marks — the ordering the indicator depends on survives, it is
-     just lifted off the floor. */
-  background: #899099;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  /* width was on --dur-base. It is the only layout property animated
-     anywhere in this file and it is on a control, which the site's own
-     rule says never sits at 0.45s; --dur-fast both matches every other
-     control and shortens the window in which the dot row is relaying
-     out. Twelve 8px elements make that cheap, but the principle is that
-     an indicator morph should not outlast the hover feedback beside it. */
-  transition: background-color var(--dur-fast) var(--ease-out),
-              width var(--dur-fast) var(--ease-out);
-}
-
-.tools-scroll__dot[aria-current="true"] {
-  width: 22px;
-  background: var(--accent);
-}
-
-/* The [aria-current] selector above is (0,2,0) and a bare :hover is
-   (0,1,1), so the current dot — the one most likely to be under the
-   pointer, since it tracks the card on screen — used to be the single dot
-   on the page with no hover response at all. Restated at equal
-   specificity so it wins on order. */
-@media (hover: hover) {
-  .tools-scroll__dot:hover,
-  .tools-scroll__dot[aria-current="true"]:hover { background: var(--accent-dark); }
-}
-
-/* An 8px target cannot show a scale(0.975) press — 0.2px. Tone carries it
-   alone: --accent-dark on press regardless of hover, so a touch user gets
-   the same confirmation a mouse user does. */
-.tools-scroll__dot:active,
-.tools-scroll__dot[aria-current="true"]:active { background: var(--accent-dark); }
-
-/* --accent, at the 3px offset base.css uses site-wide, rather than the
-   --accent-dark/2px this file used to mix in: a second focus ring colour
-   is a second focus ring, and the reader has to learn both. */
-.tools-scroll__dot:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
-/* Was mono + letter-spaced, matching the old developer-tooling voice this
-   whole section is moving away from. Body face, quiet weight. */
-.tools-scroll__counter {
-  font-family: var(--font-body);
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.tools-scroll__counter b {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-/* Soft rounded field, not a bordered box: a filled pill that only gains a
-   focus ring, rather than a 1px outline that's visible at rest. */
-.tools-scroll__search {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  flex: 1 1 260px;
-  min-width: 200px;
-  max-width: 420px;
-  background: var(--bg-card);
-  border-radius: var(--radius-pill);
-  box-shadow: var(--shadow-sm);
-  padding: 0.5em 0.7em 0.5em 1em;
-  transition: box-shadow var(--dur-fast) var(--ease-out);
-}
-
-/* The field had no hover state of any kind — a white pill on a near-white
-   section reads as a label until you find the caret. Two changes, because
-   one was not enough: a 1px spread on the existing shadow draws the
-   hairline the field deliberately does not carry at rest (spread occupies
-   no space, so the HUD row does not reflow the way an appearing `border`
-   would), and the magnifier darkens from --text-muted to --text-body. The
-   hairline is a seam at 1.44:1 against the white fill — deliberately
-   quiet, and the same neutral .btn--outline takes on hover — so the ink
-   step, 6.38:1 -> 10.6:1, is the half of the state that actually carries. */
-@media (hover: hover) {
-  .tools-scroll__search:hover {
-    box-shadow: var(--shadow-sm), 0 0 0 1px rgba(15, 23, 42, 0.18);
-  }
-
-  .tools-scroll__search:hover .tools-scroll__search-icon {
-    color: var(--text-body);
-  }
-}
-
-/* Was `0 0 0 3px var(--accent-glow)` — accent at 0.10 alpha, which
-   composites to #DCEAF1 against this section's #F5F7FA ground: 1.15:1.
-   That is not a focus indicator, it is a tint. Solid --accent instead,
-   the same ring every other control on the site gets, at 4.62:1 against
-   --bg-secondary and 4.87:1 against the field's own white fill. The
-   resting shadow is restated so the field does not flatten as it gains
-   the ring. */
-.tools-scroll__search:focus-within {
-  box-shadow: var(--shadow-sm), 0 0 0 2px var(--accent);
-}
-
-.tools-scroll__search-icon {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 auto;
-  color: var(--text-muted);
-  transition: color var(--dur-fast) var(--ease-out);
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.tools-scroll__search input {
-  flex: 1 1 auto;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  color: var(--text-primary);
-}
-
-.tools-scroll__search input::placeholder { color: var(--text-muted); }
-
-.tools-scroll__search-count {
-  font-family: var(--font-body);
-  font-size: var(--fs-small);
-  font-weight: 500;
-  color: var(--accent-dark);
-  white-space: nowrap;
-}
-
-.tools-scroll__search-clear {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-pill);
-  background: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  flex: 0 0 auto;
-  transition: background var(--dur-fast) var(--ease-out),
-              color var(--dur-fast) var(--ease-out);
-}
-.tools-scroll__search-clear[hidden] { display: none; }
-
-/* Hover fill was --bg-secondary on a --bg-card field: #F5F7FA on #FFFFFF,
-   a 1.03:1 step, so the pill behind the glyph was doing nothing and the
-   ink change was carrying the whole state on its own. A neutral scrim at
-   the same alpha family .btn--outline uses gives it something to read as. */
-@media (hover: hover) {
-  .tools-scroll__search-clear:hover {
-    color: var(--text-primary);
-    background: rgba(15, 23, 42, 0.06);
-  }
-}
-
-/* One step past hover, and independent of it so it also fires on touch.
-   20px is too small for the site-wide scale press to register. */
-.tools-scroll__search-clear:active {
-  color: var(--text-primary);
-  background: rgba(15, 23, 42, 0.12);
-}
-
-.tools-scroll__search-clear:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-/* The field is the focus target, not the bare input inside it: an input
-   ring would draw within the pill, a second indicator stacked on the
-   :focus-within ring above. Stated rather than left to the
-   equal-specificity `outline: none` further up, which only wins on source
-   order and would flip if these rules were ever reordered. */
-.tools-scroll__search input:focus-visible { outline: none; }
-
-/* Sprite of category icons — see index.html; 0×0, never laid out. */
-.tools-scroll__icons {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-
-/* Screen-reader-only label for the search input (it already has a visible
-   placeholder, but a placeholder is not a substitute for an accessible
-   name once the field has a value). */
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.tools-scroll__viewport {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  scroll-padding-left: 6vw;
-  scrollbar-width: none;
-}
-.tools-scroll__viewport::-webkit-scrollbar { display: none; }
-
-.tools-scroll__track {
-  display: flex;
-  width: max-content;
-  gap: 1.25rem;
-  padding: 0.5rem 6vw 1.5rem;
-}
-
-/* Soft surface, not a bordered box: shadow-sm on the card's own white
-   ground is what separates it from the section's tinted background, so the
-   hairline border and the coloured top rule (previously alternating
-   accent/warm card-to-card, purely decorative) are both gone. Hover moves
-   to --shadow-md — a tone/depth change, not a lift-and-glow. */
-.tools-scroll__card {
-  scroll-snap-align: start;
-  flex: 0 0 auto;
-  width: min(82vw, 380px);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-sm);
-  padding: var(--space-6);
-  transition: box-shadow var(--dur-fast) var(--ease-out);
-}
-
-/* Depth only — no lift, matching the buttons. Guarded because on a touch
-   screen these cards are swiped: without the guard the last card tapped
-   keeps its raised shadow for the rest of the session while every card
-   beside it sits flat, which reads as a selection that cannot be
-   cleared. The card is not a control (nothing inside it is focusable, by
-   design — see the command-list comment below), so it gets hover and no
-   focus state; that is the one place on the page where the two do not
-   come as a pair, and it is because there is nothing to focus. */
-@media (hover: hover) {
-  .tools-scroll__card:hover {
-    box-shadow: var(--shadow-md);
-  }
-}
-
-.tools-scroll__cat-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.tools-scroll__cat-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-/* One neutral icon tile per card, not one colour-keyed to the card. The
-   icon is orientation (which category), not a call to action, so it reads
-   in the same near-black ink as the rest of the card's text. */
-.tools-scroll__icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  flex: 0 0 auto;
-  border-radius: var(--radius);
-  background: var(--bg-secondary);
-  color: var(--text-muted);
-}
-
-.tools-scroll__icon-svg {
-  width: 22px;
-  height: 22px;
-  stroke: currentColor;
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.tools-scroll__icon-svg .dot { fill: currentColor; }
-
-/* Was a mono-uppercase bordered pill — plain caption text carries the same
-   information ("8 commands") without announcing itself as UI chrome. */
-.tools-scroll__cat-count {
-  font-size: var(--fs-small);
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-/* .tools-scroll__cat-name is an h3 — sizing, tracking, weight and colour
-   all come from base.css. Nothing to add here. */
-
-/* Narrative copy — a real one-to-two sentence description of what the
-   category does, meant to be read, not a secondary label — so it takes
-   --text-body rather than --text-muted. */
-.tools-scroll__cat-blurb {
-  color: var(--text-body);
-  font-size: var(--fs-small);
-  line-height: 1.55;
-}
-
-.tools-scroll__cmd-list {
-  list-style: none;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.15rem 1rem;
-  margin-top: var(--space-1);
-}
-
-/* A quiet two-column list of code tokens, not a grid of bordered chips:
-   the row carries no fill or border at rest, so 53 of them read as text
-   rather than as fifty-three little boxes.
-
-   Token sits ABOVE its title, not beside it. Side by side, the two share a
-   column roughly 190px wide and the token — which cannot wrap, being a
-   single code word — takes most of it, leaving the title to break across up
-   to five lines ("Coral Gables Sewer As-Built Importer"). Stacking gives the
-   title the full column and costs one line of height per row. */
-.tools-scroll__cmd-list li {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  border-radius: var(--radius);
-  padding: 0.4em 0.55em;
-  transition: background-color var(--dur-fast) var(--ease-out),
-              opacity var(--dur-base) var(--ease-out);
-}
-
-/* Hover-only: chips are not individually focusable (see tools.js) — a
-   12-card × ~4-command-tile keyboard tab stop count inside a pinned,
-   transform-scrubbed section is a trap waiting to happen. The search box
-   is the keyboard/screen-reader path to "find one command"; hover is a
-   mouse-only nicety on top of it. A tone shift, not the old lift+border+
-   shadow combination. */
-@media (hover: hover) and (pointer: fine) {
-  .tools-scroll__cmd-list li:hover {
-    background: var(--bg-secondary);
-  }
-}
-
-.tools-scroll__cmd-token {
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 400;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.tools-scroll__cmd-title {
-  font-size: 0.8rem;
-  line-height: 1.35;
-  color: var(--text-primary);
-}
-
-/* ── Command search (tools.js wires the input; this is just the paint) ──
-   Non-matches dim rather than disappear: hiding them would change
-   track.scrollWidth mid-filter, which is exactly what distance() /
-   invalidateOnRefresh (tools.js) exist to avoid having to chase. Matches
-   get a soft accent-tinted fill — no ring, no border — and their token
-   picks up the same accent so a match reads at a glance without shouting. */
-.tools-scroll.has-query .tools-scroll__cmd-list li { opacity: 0.32; }
-
-.tools-scroll.has-query .tools-scroll__cmd-list li.is-match {
-  opacity: 1;
-  background: var(--accent-glow);
-}
-.tools-scroll.has-query .tools-scroll__cmd-list li.is-match .tools-scroll__cmd-token {
-  color: var(--accent-dark);
-}
-
-.tools-scroll.has-query .tools-scroll__card:not(.has-match) { opacity: 0.4; }
-
-/* Desktop: GSAP owns the horizontal motion (tools.js, gsap.matchMedia
-   scoped to this same breakpoint) — the section becomes a full-height pin
-   target and native scroll/snap is switched off so the two systems don't
-   fight each other. .tools-scroll__hud stays a normal flex row at the top
-   of the pinned column, so it's on screen for the whole ~4-viewport pin;
-   only .tools-scroll__viewport (and #toolsTrack inside it) is what GSAP
-   moves.
-
-   Card width is deliberately narrow (min(33vw, 420px)) — at 12 cards,
-   a wide single-tool-card pitch would push pinned scroll to ~12+
-   viewports. Narrower cards plus the PIN_SPEED multiplier in tools.js
-   (which decouples pin-scroll length from raw pixel travel) bring that
-   to ~4 viewports.
-
-   align-items was `stretch`, which forced every card to the height of
-   the tallest (Profile Views, 10 commands) — a 2-command card like
-   Laterals rendered with ~400px of empty white below its content. Cards
-   now size to their own content and sit vertically centred in the
-   pinned viewport instead. */
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  .tools-scroll {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .tools-scroll__hud {
-    flex: 0 0 auto;
-    /* Once pinned, #toolsScroll is position:fixed and covers the full
-       viewport from y:0 — including the space the site's own fixed nav
-       (nav-hero.css, ~85px tall incl. its blur backdrop) sits in. Without
-       this the HUD's top ~2rem render directly underneath the nav and
-       are invisible for the entire pin. 6rem clears it with room to
-       spare in both its resting and .scrolled (shorter) states. */
-    padding: 6rem 6vw 1.1rem;
-  }
-
-  .tools-scroll__viewport {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    scroll-snap-type: none;
-  }
-
-  /* Desktop with scripting unavailable. The rules above hand horizontal
-     motion to GSAP and switch native scrolling off (overflow:hidden,
-     snap:none) — correct while GSAP is there to drive the track, but with
-     no JS nothing ever translates it and only the first three of twelve
-     cards can be reached. The <html> element carries a js class only when
-     the site actually booted (set inline in index.html, removed again if
-     window.ALDT never appears), so this restores the same natively
-     scrollable strip the mobile fallback already uses. */
-  html:not(.js) .tools-scroll {
-    height: auto;
-    display: block;
-    overflow: visible;
-  }
-
-  html:not(.js) .tools-scroll__viewport {
-    display: block;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-  }
-
-  html:not(.js) .tools-scroll__track {
-    align-items: stretch;
-    padding: 0.5rem 6vw 1.5rem;
-  }
-
-  .tools-scroll__track {
-    gap: var(--space-5);
-    padding: 0 6vw;
-    align-items: center;
-  }
-
-  .tools-scroll__card {
-    scroll-snap-align: none;
-    width: min(33vw, 420px);
-    padding: var(--space-6);
-  }
-}
-
-/* Reduced motion: static, readable, no pin/scrub/snap regardless of width.
-   Declared after the desktop block so it wins on source order at any
-   viewport size the two queries overlap at. The hud is pinned via plain
-   CSS `position: sticky` here (no GSAP involved) so search/dots/counter
-   stay reachable while scrolling through 12 stacked cards instead of
-   scrolling off after the first one. */
-@media (prefers-reduced-motion: reduce) {
-  /* .tools has overflow:hidden (clips the wide horizontal track in the
-     other two modes) — any ancestor with overflow other than visible
-     becomes a sticky element's containing block, so left as-is it
-     silently breaks .tools-scroll__hud's position:sticky below. Nothing
-     in this stack overflows horizontally under reduced motion (cards are
-     width:100%, the track is a plain column), so it's safe to lift here. */
-  .tools {
-    overflow: visible;
-  }
-
-  .tools-scroll {
-    height: auto;
-    display: block;
-    overflow: visible;
-  }
-
-  .tools-scroll__hud {
-    position: sticky;
-    /* Not 0 — the site nav (nav-hero.css) is itself fixed at top:0,
-       ~85px tall, z-index 100. A sticky top:0 here sticks *behind* it
-       (invisible, not merely low z-index — content painted under an
-       opaque-backed fixed nav is still hidden regardless of this
-       element's own z-index) instead of clearing it. */
-    top: 5.25rem;
-    z-index: 2;
-    background: var(--bg-secondary);
-  }
-
-  .tools-scroll__viewport {
-    overflow: visible;
-  }
-
-  .tools-scroll__track {
-    display: flex;
-    flex-direction: column;
-    width: auto;
-    padding: 0;
-    gap: var(--space-5);
-  }
-
-  .tools-scroll__card {
-    width: 100%;
-  }
-
-  .tools-scroll__cmd-list {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-
-  /* No pin, no scrub, no hover-lift needed as a substitute for either —
-     but chip hover is otherwise mouse-only regardless of this query, so
-     nothing to override here beyond what (hover:hover) already gates.
-
-     The one interaction state on this section that does move is the
-     progress dot's 8px -> 22px width morph. Tone still switches; the
-     dot simply arrives at its new width. */
-  .tools-scroll__dot {
-    transition: background-color var(--dur-fast) var(--ease-out);
-  }
-}
-
-@media (max-width: 480px) {
-  .tools-scroll__cmd-list {
-    grid-template-columns: 1fr;
-  }
-
-  .tools-scroll__search {
-    order: 3;
-    flex-basis: 100%;
-    max-width: none;
-  }
+@media(prefers-reduced-motion: no-preference) {
+  .tool-spotlight.is-changing { animation: command-in .22s ease-out; }
+  @keyframes command-in { from { opacity: .35; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 }
